@@ -2,7 +2,7 @@
 
 Software em C++ focado na verificação e dimensionamento de **estruturas de aço, estruturas mistas e vigas mistas protendidas**, desenvolvido com **Clean Architecture** (Arquitetura Limpa) e **TDD** (*Test-Driven Development*), sem dependências de bibliotecas externas pesadas e com suporte integrado ao VS Code e CMake.
 
-Para uma explicação detalhada dos conceitos arquiteturais e dos *design patterns* aplicados, consulte o arquivo [ARQUITETURA.md](ARQUITETURA.md). Para acompanhar a sequência de implementação das rotinas de cálculo baseadas na dissertação de referência, consulte o [ROADMAP.md](ROADMAP.md).
+Para uma explicação detalhada dos conceitos arquiteturais, consulte o [ARQUITETURA.md](ARQUITETURA.md). Para acompanhar a sequência de implementação das rotinas, consulte o [ROADMAP.md](ROADMAP.md). Para um guia prático de como implementar cada padrão de projeto com código de exemplo, consulte o [PADROES_DE_PROJETO.md](PADROES_DE_PROJETO.md).
 
 ---
 
@@ -38,6 +38,7 @@ VMP/
 ├── CMakeLists.txt                   # Build system com detecção automática de arquivos
 ├── ARQUITETURA.md                   # Documentação detalhada da arquitetura e design patterns
 ├── ROADMAP.md                       # Sequência de desenvolvimento e aferição das rotinas
+├── PADROES_DE_PROJETO.md            # Guia prático de implementação dos padrões de projeto
 └── README.md                        # Este arquivo
 ```
 
