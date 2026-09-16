@@ -1,10 +1,12 @@
 #include "normas/nbr8800_2008/rotina_a.hpp"
 #include <cmath>
 #include <algorithm>
+#include <numbers>
 
 namespace vmp::normas::nbr8800_2008 {
 
-    const double PI = 3.14159265358979323846;
+    // const double PI = 3.14159265358979323846;
+    const double PI = std::numbers::pi;
 
     double RotinaA::calcular_euler_nex(double E, double Ix, double Kx, double Lv) {
         double kl = Kx * Lv;
