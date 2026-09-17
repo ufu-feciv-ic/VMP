@@ -503,3 +503,280 @@ cmake --build build
 .\build\vmp_tests.exe
 ```
 Se o teste passar, você concluiu com sucesso o ciclo TDD com código modular, limpo e testado!
+
+
+
+A aplicação do Notification Pattern (Padrão Notificação) na rotina_a.hpp resolve um dos maiores desafios de softwares de engenharia estrutural: como validar os critérios da norma sem travar    
+  o software com exceções (throw) e sem perder o diagnóstico detalhado retornando apenas um simples bool.
+
+  Abaixo está o detalhamento conceitual e a implementação prática de como essa arquitetura se aplica à compressão axial da NBR 8800:2008.
+  ──────
+  ### 1. O Problema: Por que NÃO usar throw nem bool?
+
+  Na rotina_a.hpp, um perfil pode falhar em diversos critérios normativos:
+
+  • A esbeltez global máxima exceder 200 (λ = KL/r > 200 — NBR 8800:2008, item 5.3.4);
+  • A mesa ou a alma sofrerem flambagem local (Qₛ < 1, 0 ou Qₐ < 1, 0 — item 5.1.2 e Anexo F);
+  • A solicitação de cálculo ultrapassar a resistência (N_{Sd} > N_{Rd} — item 5.3.1).
+  • Se usarmos throw std::runtime_error: O software trava. Se você criar um loop para testar 50 perfis do catálogo da Gerdau e achar o mais leve, a primeira viga esbelta disparará uma exceção    
+  e abortará o algoritmo de dimensionamento.
+  • Se retornarmos apenas bool: Sabemos que a peça foi reprovada, mas não sabemos o porquê (foi por esbeltez global? foi FLM na mesa? foi N_{Sd} > N_{Rd}?).
+  • Com o Notification Pattern: A rotina executa o cálculo físico completo e preenche um relatório/notificador com todas as checagens realizadas, suas severidades e mensagens detalhadas.
+  ──────
+  ### 2. O Objeto de Notificação (RelatorioVerificacao)
+
+  Criamos um objeto de diagnóstico no núcleo em include/nucleo/relatorio_verificacao.hpp:
+
+    #pragma once
+    #include <string>
+    #include <vector>
+
+    namespace vmp::nucleo {
+
+        enum class Severidade {
+            Passou,  // Critério atendido plenamente (ex: KL/r <= 200)
+            Aviso,   // Ponto de atenção normativo (ex: Q < 1.0 ou taxa de uso > 90%)
+            Falha    // Não atende à norma (ex: KL/r > 200 ou NSd > NRd)
+        };
+
+        struct ItemNotificacao {
+            std::string item_norma; // Ex: "NBR 8800:2008 - 5.3.4"
+            std::string criterio;   // Ex: "Índice de esbeltez máximo (KL/r)"
+            double valor_calculado; // Ex: 215.4
+            double valor_limite;    // Ex: 200.0
+            Severidade severidade;
+            std::string mensagem;   // Ex: "A esbeltez no eixo Y (215.4) excede o limite máximo normativo de 200."
+        };
+
+        class RelatorioVerificacao {
+        public:
+            void registrar(const ItemNotificacao& item) {
+                if (item.severidade == Severidade::Falha) {
+                    aprovado_ = false;
+                }
+                itens_.push_back(item);
+            }
+
+            bool esta_aprovado() const { return aprovado_; }
+            const std::vector<ItemNotificacao>& itens() const { return itens_; }
+
+        private:
+            bool aprovado_ = true;
+            std::vector<ItemNotificacao> itens_;
+        };
+
+    } // namespace vmp::nucleo
+  ──────
+  ### 3. Como a rotina_a.hpp implementaria o Padrão
+
+  Mantemos o princípio da separação de responsabilidades (conforme definido no PADROES_DE_PROJETO.md):
+
+  1. RotinaA::calcular: Função matemática pura que retorna o DTO rotina_a.hpp:8-37 (N_{Rd}, Qₛ, Qₐ, χ, …);
+  2. RotinaA::verificar: Método de alto nível que consome os dados físicos e preenche as notificações normativas.
+
+  #### No cabeçalho (include/normas/nbr8800_2008/rotina_a.hpp):
+
+    namespace vmp::normas::nbr8800_2008 {
+
+        class RotinaA {
+        public:
+            // 1. Calculo puro (ja existente)
+            static ResultadoRotinaA calcular(
+                const nucleo::SecaoI& secao,
+                const nucleo::Aco& material,
+                double Lv, double Lb,
+                double Kx = 1.0, double Ky = 1.0,
+                double gamma_a1 = 1.10
+            );
+
+            // 2. Metodo com Notification Pattern
+            static nucleo::RelatorioVerificacao verificar(
+                const nucleo::SecaoI& secao,
+                const nucleo::Aco& material,
+                double Lv, double Lb,
+                double Kx = 1.0, double Ky = 1.0,
+                double NSd_kN = 0.0, // Opcional: esforco solicitante atuante
+                double gamma_a1 = 1.10
+            );
+        };                                                                                                                                                                                         
+
+    }
+
+  #### Na implementação (src/normas/nbr8800_2008/rotina_a.cpp):
+
+    nucleo::RelatorioVerificacao RotinaA::verificar(
+        const nucleo::SecaoI& secao,
+        const nucleo::Aco& material,
+        double Lv, double Lb,
+        double Kx, double Ky,
+        double NSd_kN,
+        double gamma_a1
+    ) {
+        nucleo::RelatorioVerificacao relatorio;
+
+        // 1. Executa o calculo analitico
+        ResultadoRotinaA res = calcular(secao, material, Lv, Lb, Kx, Ky, gamma_a1);
+
+        // -------------------------------------------------------------
+        // Checagem 1: Esbeltez global limite (NBR 8800:2008, item 5.3.4)
+        // -------------------------------------------------------------
+        double lambda_x = (Kx * Lv) / secao.rx;
+        double lambda_y = (Ky * Lb) / secao.ry;
+        double lambda_max = std::max(lambda_x, lambda_y);
+
+        if (lambda_max > 200.0) {
+            relatorio.registrar({
+                "NBR 8800:2008 - 5.3.4",
+                "Índice de esbeltez de barra comprimida (KL/r)",
+                lambda_max,
+                200.0,
+                nucleo::Severidade::Falha,
+                "A barra possui esbeltez excessiva (" + std::to_string(lambda_max) + " > 200.0)."
+            });
+        } else {
+            relatorio.registrar({
+                "NBR 8800:2008 - 5.3.4",
+                "Índice de esbeltez de barra comprimida (KL/r)",
+                lambda_max,
+                200.0,
+                nucleo::Severidade::Passou,
+                "Esbeltez global conforme o limite normativo."
+            });
+        }
+
+        // -------------------------------------------------------------
+        // Checagem 2: Flambagem Local da Mesa - FLM (Item 5.1.2.2 / Anexo F)
+        // -------------------------------------------------------------
+        if (res.Qs < 1.0) {
+            relatorio.registrar({
+                "NBR 8800:2008 - Anexo F",
+                "Flambagem local da mesa (Elemento AL)",
+                res.lambda_mesa,
+                res.lambda_p_mesa,
+                nucleo::Severidade::Aviso,
+                "Mesa esbelta com redução de eficiência (Qs = " + std::to_string(res.Qs) + ")."
+            });
+        } else {
+            relatorio.registrar({
+                "NBR 8800:2008 - Anexo F",
+                "Flambagem local da mesa (Elemento AL)",
+                res.lambda_mesa,
+                res.lambda_p_mesa,
+                nucleo::Severidade::Passou,
+                "Mesa compacta (Qs = 1.0)."
+            });
+        }
+
+        // -------------------------------------------------------------
+        // Checagem 3: Flambagem Local da Alma - FLA (Item 5.1.2.3 / Anexo F)
+        // -------------------------------------------------------------
+        if (res.Qa < 1.0) {
+            relatorio.registrar({
+                "NBR 8800:2008 - Anexo F",
+                "Flambagem local da alma (Elemento AA)",
+                res.lambda_alma,
+                res.lambda_p_alma,
+                nucleo::Severidade::Aviso,
+                "Alma esbelta com largura efetiva reduzida (Qa = " + std::to_string(res.Qa) + ")."
+            });
+        } else {
+            relatorio.registrar({
+                "NBR 8800:2008 - Anexo F",
+                "Flambagem local da alma (Elemento AA)",
+                res.lambda_alma,
+                res.lambda_p_alma,
+                nucleo::Severidade::Passou,
+                "Alma compacta (Qa = 1.0)."
+            });
+        }
+
+        // -------------------------------------------------------------
+        // Checagem 4: Capacidade Resistente à Compressão (Item 5.3.1)
+        // -------------------------------------------------------------
+        if (NSd_kN > 0.0) {
+            double razao = NSd_kN / res.NRd_kN;
+
+            if (razao > 1.0) {
+                relatorio.registrar({
+                    "NBR 8800:2008 - 5.3.1",
+                    "Resistência à força axial de compressão",
+                    NSd_kN,
+                    res.NRd_kN,
+                    nucleo::Severidade::Falha,
+                    "Força solicitante excede a resistência de cálculo (NSd/NRd = " + std::to_string(razao * 100.0) + "%)."
+                });
+            } else if (razao > 0.90) {
+                relatorio.registrar({
+                    "NBR 8800:2008 - 5.3.1",
+                    "Resistência à força axial de compressão",
+                    NSd_kN,
+                    res.NRd_kN,
+                    nucleo::Severidade::Aviso,
+                    "Perfil muito solicitado (NSd/NRd = " + std::to_string(razao * 100.0) + "% > 90%)."
+                });
+            } else {
+                relatorio.registrar({
+                    "NBR 8800:2008 - 5.3.1",
+                    "Resistência à força axial de compressão",
+                    NSd_kN,
+                    res.NRd_kN,
+                    nucleo::Severidade::Passou,
+                    "Resistência satisfatória (NSd/NRd = " + std::to_string(razao * 100.0) + "%)."
+                });
+            }
+        }
+
+        return relatorio;
+    }
+  ──────
+  ### 4. Como isso é consumido na prática?
+
+  #### Exemplo A: Teste Unitário TDD
+
+    TEST_CASE("Rotina A - Perfil reprovado por esbeltez excessiva") {
+        SecaoI perfil = SecaoI::w360x57_8();
+        Aco aco = Aco::a572_gr50();
+
+        // Comprimento exagerado de 25 metros sem contraventamento (Lb = 25000 mm)
+        // ry = 37.9 mm -> lambda_y = 25000 / 37.9 = ~660 > 200
+        RelatorioVerificacao rel = RotinaA::verificar(perfil, aco, 25000.0, 25000.0);
+
+        // Verificacao direta sem try/catch
+        ASSERT_FALSE(rel.esta_aprovado());
+        ASSERT_EQ(rel.itens()[0].severidade, Severidade::Falha);
+    }
+
+  #### Exemplo B: Loop de Seleção Automática de Perfis de Catálogo
+
+    std::vector<SecaoI> catalogo = carregar_catalogo_gerdau();
+    SecaoI melhor_perfil;
+    double menor_massa = 1e9;
+
+    for (const auto& perfil : catalogo) {
+        RelatorioVerificacao relatorio = RotinaA::verificar(perfil, aco, 6000.0, 3000.0, 800.0 /* NSd = 800 kN */);
+
+        // O Notification Pattern permite filtrar sem qualquer exception
+        if (relatorio.esta_aprovado() && perfil.massa_linear < menor_massa) {
+            melhor_perfil = perfil;
+            menor_massa = perfil.massa_linear;
+        }
+    }
+
+  #### Exemplo C: Exibição na UI ou Terminal
+
+    ========================================================================
+    RELATÓRIO DE VERIFICAÇÃO - NBR 8800:2008 (ROTINA A)
+    ========================================================================
+    [ OK ] NBR 8800:2008 - 5.3.4 | Esbeltez (79.2 <= 200.0)
+    [AVISO] NBR 8800:2008 - Anexo F | Flambagem local da mesa (Qs = 0.94)
+    [ OK ] NBR 8800:2008 - Anexo F | Flambagem local da alma (Qa = 1.00)
+    [FALHA] NBR 8800:2008 - 5.3.1 | Compressão axial: NSd (1500 kN) > NRd (1416 kN)
+    ------------------------------------------------------------------------
+    STATUS FINAL: REPROVADO
+    ========================================================================
+  ──────
+  ### Resumo dos Ganhos
+
+  1. Separação Limpa: rotina_a.hpp:42-50 continua 100% matemática pura (usada por outras rotinas como a Rotina 2 e 3), enquanto RotinaA::verificar orquestra as regras normativas.
+  2. Robustez Algorítmica: Otimizadores e loops de catálogos podem testar centenas de perfis com alto desempenho e sem sobrecarga de exceções C++.
+  3. Pronto para Memória de Cálculo / UI: O vetor itens() do relatório alimenta diretamente telas, tabelas HTML e relatórios em PDF com cores e mensagens normativas exatas.
