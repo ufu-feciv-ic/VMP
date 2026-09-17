@@ -65,3 +65,60 @@ TEST_CASE("Secao I - Calculo automatico de d1 e Ag considerando o raio r") {
     double area_esperada = 9700.0 + (4.0 - 3.14159265358979323846) * 144.0;
     ASSERT_TRUE(std::abs(secao.Ag - area_esperada) < 1e-2);
 }
+
+TEST_CASE("Secao I - Perfil Soldado (r = 0, d1, Ag, Ix, Iy e cota k)") {
+    // Perfil soldado sem especificar d1, Ag, Ix, Iy manuais (calculo analitico automatico)
+    // d = 500, bf = 200, tf = 16, tw = 8, r = 0 (padrao para perfil soldado)
+    SecaoI secao(
+        "VS 500x86 Custom",
+        TipoFabricacao::Soldado,
+        500.0,
+        200.0,
+        16.0,
+        8.0
+    );
+
+    // Verificacoes de tipo e raio
+    ASSERT_TRUE(secao.eh_soldado());
+    ASSERT_FALSE(secao.eh_laminado());
+    ASSERT_EQ(secao.r, 0.0);
+
+    // Altura livre entre mesas: d - 2*tf = 500 - 32 = 468 mm
+    ASSERT_EQ(secao.altura_entre_mesas(), 468.0);
+
+    // Para soldados, d1 coincide exatamente com a altura entre mesas (d - 2*tf)
+    ASSERT_EQ(secao.d1, 468.0);
+
+    // Cota k para soldados e estritamente a espessura da mesa tf: tf + r = 16 + 0 = 16 mm
+    ASSERT_EQ(secao.cota_k(), 16.0);
+
+    // Area dos cantos curvos de concordancia deve ser nula
+    ASSERT_EQ(secao.area_cantos_raio(), 0.0);
+
+    // Area bruta: soma pura dos 3 retangulos sem adicao de cantos
+    // 2 * (200 * 16) + (468 * 8) = 6400 + 3744 = 10144 mm²
+    ASSERT_EQ(secao.Ag, 10144.0);
+
+    // Razoes de esbeltez locais
+    // Mesa: bf / (2*tf) = 200 / 32 = 6.25
+    ASSERT_EQ(secao.esbeltez_mesa(), 6.25);
+    // Alma: d1 / tw = 468 / 8 = 58.5
+    ASSERT_EQ(secao.esbeltez_alma(), 58.5);
+
+    // Inercia Ix calculada analiticamente pelas partes retangulares
+    // Alma: (8 * 468^3) / 12 = 68309408 mm⁴
+    // Mesas: 2 * [(200 * 16^3)/12 + (200 * 16) * ((500-16)/2)^2] = 374946133.33 mm⁴
+    double h_alma = 468.0;
+    double y_mesa = (500.0 - 16.0) / 2.0;
+    double ix_esperado = (8.0 * std::pow(h_alma, 3)) / 12.0 +
+                         2.0 * ((200.0 * std::pow(16.0, 3)) / 12.0 + (200.0 * 16.0) * std::pow(y_mesa, 2));
+    ASSERT_TRUE(std::abs(secao.Ix - ix_esperado) < 1e-4);
+
+    // Inercia Iy calculada analiticamente pelas partes retangulares
+    // Mesas: 2 * (16 * 200^3) / 12 = 21333333.33 mm⁴
+    // Alma: (468 * 8^3) / 12 = 19968 mm⁴
+    double iy_esperado = 2.0 * ((16.0 * std::pow(200.0, 3)) / 12.0) +
+                         (468.0 * std::pow(8.0, 3)) / 12.0;
+    ASSERT_TRUE(std::abs(secao.Iy - iy_esperado) < 1e-4);
+}
+
