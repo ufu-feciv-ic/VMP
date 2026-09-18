@@ -780,3 +780,32 @@ A aplicação do Notification Pattern (Padrão Notificação) na rotina_a.hpp re
   1. Separação Limpa: rotina_a.hpp:42-50 continua 100% matemática pura (usada por outras rotinas como a Rotina 2 e 3), enquanto RotinaA::verificar orquestra as regras normativas.
   2. Robustez Algorítmica: Otimizadores e loops de catálogos podem testar centenas de perfis com alto desempenho e sem sobrecarga de exceções C++.
   3. Pronto para Memória de Cálculo / UI: O vetor itens() do relatório alimenta diretamente telas, tabelas HTML e relatórios em PDF com cores e mensagens normativas exatas.
+
+
+    #### Passo 1: Particione os Ramos (if / else) da Norma
+
+  Cada equação da norma possui um domínio de validade. O seu teste deve garantir que nenhum ramo de código fique sem ser executado:
+
+  • Em calcular_kv: existe o ramo sem enrijecedor, o ramo a/h > 3, o ramo de esbeltez limite e o ramo da fórmula 5 + 5/(a/h)². Todos precisam de pelo menos uma asserção.  
+  • Em calcular_VRd: existem 3 regimes (λ ≤ λₚ, λₚ < λ ≤ λᵣ e λ > λᵣ). Teste cada um isoladamente com valores manuais controlados.
+
+  #### Passo 2: Teste as Fronteiras (Boundary Testing)
+
+  Os erros de programação quase sempre acontecem nas bordas:
+
+  • Se você escreveu lambda <= lambda_p, teste com λ = λₚ - 0, 01, λ = λₚ e λ = λₚ + 0, 01.
+  • O que acontece se a = 0? E se o usuário passar a = -10? O código quebra ou se protege?
+
+  #### Passo 3: Verifique a Física do Problema (Sanity Checks)
+
+  Mesmo sem fazer uma conta na calculadora, você como engenheiro sabe regras que a física impõe:
+
+  • Monotonicidade: Uma viga mais esbelta nunca pode ter V_{Rd} maior que uma viga mais robusta (ASSERT_TRUE(vrd_regime1 > vrd_regime2)).
+  • Efeito do enrijecedor: Adicionar enrijecedores transversais nunca pode diminuir V_{Rd}.
+  • Teto Plástico: V_{Rd} nunca pode ser maior que Vₚₗ/γₐ₁.
+  • Unidades: V_{Rd,kN} × 1000 deve ser igual a V_{Rd,N}.
+
+  #### Passo 4: Tenha um Caso Real de Referência (Golden Master)
+
+  Tenha sempre um caso canônico com valor da literatura (como o perfil W 360x57.8 da Tabela 13 da dissertação). Ele valida não apenas a matemática de uma fórmula, mas a   
+  integração de todo o sistema (área bruta, espessuras, módulo de elasticidade e unidades N → kN).
