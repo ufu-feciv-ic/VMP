@@ -43,7 +43,7 @@ namespace vmp::normas::nbr8800_2008
         res.Aw = d * tw;
         res.Vpl = 0.6 * res.Aw * fy;
 
-        res.lambda_alma = h / tw;
+        res.lambda_alma = secao.lambda_w;
         res.lambda_p_alma = 1.10 * std::sqrt((res.kv * E) / fy);
         res.lambda_r_alma = 1.37 * std::sqrt((res.kv * E) / fy);
 

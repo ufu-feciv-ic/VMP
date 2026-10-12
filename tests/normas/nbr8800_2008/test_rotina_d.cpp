@@ -100,8 +100,8 @@ TEST_CASE("Rotina D - Afericao Perfil Laminado W 360x57.8 (Dissertacao Tabela 13
     // 3. Coeficiente kv sem enrijecedores
     ASSERT_EQ(res.kv, 5.0);
 
-    // 4. Esbeltez da alma h / tw = 331.8 / 7.9 = 42.0
-    ASSERT_TRUE(std::abs(res.lambda_alma - (331.8 / 7.9)) < 1e-4);
+    // 4. Esbeltez da alma h / tw = 308.0 / 7.9
+    ASSERT_TRUE(std::abs(res.lambda_alma - (308 / 7.9)) < 1e-4);
 
     // 5. Limite de plastificacao lambda_p = 1.10 * sqrt(5.0 * 200000 / 345) = 59.22
     ASSERT_TRUE(res.lambda_p_alma > 59.2 && res.lambda_p_alma < 59.3);
@@ -126,9 +126,10 @@ TEST_CASE("Rotina D - Viga de Alma Esbelta: Sem Enrijecedores vs Com Enrijecedor
         TipoFabricacao::Soldado,
         1040.0, // d
         250.0,  // bf
-        20.0,   // tf (h = 1040 - 40 = 1000 mm)
-        8.0     // tw
+        8.0,    // tw
+        20.0   // tf (h = 1040 - 40 = 1000 mm)
     );
+    
     Aco aco = Aco::a572_gr50();
 
     // 1. Sem enrijecedores transversais

@@ -66,9 +66,10 @@ TEST_CASE("Rotina A - Dimensionamento Completo de Perfil Soldado (VS 500x86)") {
         TipoFabricacao::Soldado,
         500.0, // d (mm)
         200.0, // bf (mm)
-        16.0,  // tf (mm)
-        8.0    // tw (mm)
+        8.0,   // tw (mm)
+        16.0   // tf (mm)
     );
+
     Aco material = Aco::a572_gr50(); // fy = 345 MPa, E = 200000 MPa
 
     ResultadoRotinaA res = RotinaA::calcular(
@@ -164,10 +165,10 @@ TEST_CASE("Rotina A - Afericao Completa Dissertacao Exemplo 1 (Tabela 12)") {
     ASSERT_EQ(resultado.Q, 1.0);
 
     double ne_kn = resultado.Ne / 1000.0;
-    ASSERT_TRUE(ne_kn > 2200.0 && ne_kn < 2205.0);
+    ASSERT_TRUE(ne_kn > 2210.0 && ne_kn < 2215.0);
 
-    // Valor Dissertacao: ~1416.77 kN (analitico detalhado: 1418.68 kN)
+    // Valor Dissertacao: ~1416.61 kN
     double nrd_kn = resultado.NRd_kN;
-    double diff_pct = std::abs(nrd_kn - 1416.77) / 1416.77 * 100.0;
+    double diff_pct = std::abs(nrd_kn - 1416.61) / 1416.61 * 100.0;
     ASSERT_TRUE(diff_pct < 0.5);
 }

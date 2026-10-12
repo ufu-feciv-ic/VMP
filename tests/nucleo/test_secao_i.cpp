@@ -22,7 +22,7 @@ TEST_CASE("Secao I - Propriedades e esbeltez do perfil W 360x57.8") {
     ASSERT_EQ(secao.tf, 13.1);
     ASSERT_EQ(secao.tw, 7.9);
     ASSERT_EQ(secao.r, 10.2);
-    ASSERT_EQ(secao.Ag, 7320.0);
+    ASSERT_EQ(secao.Ag, 7250.0);
     
     // bf / (2 * tf) = 172 / (2 * 13.1) = 6.56488...
     double esb_mesa = secao.esbeltez_mesa();
@@ -33,6 +33,7 @@ TEST_CASE("Secao I - Propriedades e esbeltez do perfil W 360x57.8") {
 
     // Cota k para dispersao de forcas concentradas: tf + r = 13.1 + 10.2 = 23.3 mm
     ASSERT_TRUE(std::abs(secao.cota_k() - 23.3) < 1e-4);
+
 }
 
 TEST_CASE("Secao I - Calculo automatico de d1 e Ag considerando o raio r") {
@@ -43,8 +44,8 @@ TEST_CASE("Secao I - Calculo automatico de d1 e Ag considerando o raio r") {
         TipoFabricacao::Laminado,
         400.0,
         200.0,
-        15.0,
         10.0,
+        15.0,
         12.0 // r = 12 mm
     );
 
@@ -74,8 +75,8 @@ TEST_CASE("Secao I - Perfil Soldado (r = 0, d1, Ag, Ix, Iy e cota k)") {
         TipoFabricacao::Soldado,
         500.0,
         200.0,
-        16.0,
-        8.0
+        8.0,
+        16.0
     );
 
     // Verificacoes de tipo e raio
