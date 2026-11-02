@@ -5,9 +5,9 @@
 
 const double PI = std::numbers::pi;
 
-namespace nbr8800::v2008 {
+namespace nbr8800::inline v2008 {
 
-ResultadoRotinaA calcular_rotina_a(PerfilI& perfil, Aco& aco, double Lb_mm, double lv_mm, double kx, double ky, double gamma_a1)
+ResultadoRotinaA calcular_rotina_a(const PerfilI& perfil, const Aco& aco, double Lb_mm, double lv_mm, double kx, double ky, double gamma_a1)
 {
     ResultadoRotinaA res;
 
@@ -16,7 +16,7 @@ ResultadoRotinaA calcular_rotina_a(PerfilI& perfil, Aco& aco, double Lb_mm, doub
     res.Ney_kN = ((PI * PI * aco.E * perfil.Iy) / std::pow(ky * Lb_mm, 2)) / 1000;
     res.Ne_kN = std::min(res.Nex_kN, res.Ney_kN);
 
-    if (perfil.tipo = TipoFabricacao::LAMINADO)
+    if (perfil.tipo == TipoFabricacao::LAMINADO)
     {
         double lbf = perfil.lbf;
         double lbf_p = 0.56 * sqrt(aco.E / aco.fy);
@@ -26,7 +26,7 @@ ResultadoRotinaA calcular_rotina_a(PerfilI& perfil, Aco& aco, double Lb_mm, doub
         else if (lbf <= lbf_r) res.Qs = 1.415 - 0.74 * lbf * sqrt(aco.fy / aco.E);
         else res.Qs = 0.69 * aco.E / aco.fy * lbf * lbf;
     }
-    else if (perfil.tipo = TipoFabricacao::SOLDADO)
+    else if (perfil.tipo == TipoFabricacao::SOLDADO)
     {
         double lbw = perfil.lbw;
         double kc = 4 / sqrt(lbw);
@@ -73,4 +73,4 @@ ResultadoRotinaA calcular_rotina_a(PerfilI& perfil, Aco& aco, double Lb_mm, doub
     return res;
 }
 
-};
+} // namespace nbr8800::v2008

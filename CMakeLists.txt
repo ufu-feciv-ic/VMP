@@ -49,10 +49,10 @@ add_test(NAME AllUnitTests COMMAND vmp_tests)
 # ============================================================================
 if (EXISTS "C:/raylib/raylib/src/raylib.h" OR EXISTS "C:/raylib/w64devkit/include/raylib.h")
     set(RAYLIB_INCLUDE_DIR "C:/raylib/raylib/src")
-    if (EXISTS "C:/raylib/w64devkit/lib/libraylib.a")
-        set(RAYLIB_LIB "C:/raylib/w64devkit/lib/libraylib.a")
-    else()
+    if (EXISTS "C:/raylib/raylib/src/libraylib.a")
         set(RAYLIB_LIB "C:/raylib/raylib/src/libraylib.a")
+    elseif (EXISTS "C:/raylib/w64devkit/lib/libraylib.a")
+        set(RAYLIB_LIB "C:/raylib/w64devkit/lib/libraylib.a")
     endif()
 
     add_executable(vmp_gui
@@ -76,5 +76,6 @@ if (EXISTS "C:/raylib/raylib/src/raylib.h" OR EXISTS "C:/raylib/w64devkit/includ
         opengl32
         gdi32
         winmm
+        "-Wl,--defsym=stat64i32=_stat64i32"
     )
 endif()

@@ -2,7 +2,8 @@
 #include "modelos.h"
 
 
-namespace nbr8800::v2008 {
+namespace nbr8800 {
+inline namespace v2008 {
 // ============================================================================
 // ROTINAS NORMATIVAS BÁSICAS (ABNT NBR 8800:2008 / NBR 6118)
 // ============================================================================
@@ -112,4 +113,5 @@ ResultadoRotinaF calcular_rotina_f_armadura_costura(
     double gamma_c = 1.40
 );
 
-};
+} // namespace v2008
+} // namespace nbr8800

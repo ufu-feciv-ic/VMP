@@ -7,5 +7,8 @@ RelatorioVMP verificar_viga_vmp(const VigaVMP& viga) {
     PerfilI perfil = viga.perfil;
     calcular_propriedades_secao_i(perfil);
 
-    
+    // Rotina A: Compressão Axial (NBR 8800:2008)
+    rel.compressao_aco = nbr8800::calcular_rotina_a(perfil, viga.aco, viga.Lb, viga.L, 1.0, 1.0);
+
+    return rel;
 }

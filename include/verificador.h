@@ -5,6 +5,8 @@
 #include <vector>
 #include <string>
 
+using namespace nbr8800;
+
 // Item individual de verificação com diagnóstico simples
 struct ItemVerificacao {
     std::string rotina;
