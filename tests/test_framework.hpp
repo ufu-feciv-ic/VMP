@@ -5,6 +5,7 @@
 #include <string>
 #include <functional>
 #include <sstream>
+#include <cmath>
 #include <exception>
 
 #ifdef _WIN32
@@ -51,7 +52,7 @@ namespace TestFramework {
             int failed = 0;
 
             std::cout << "\n======================================================\n";
-            std::cout << "                 SUITE DE TESTES TDD                  \n";
+            std::cout << "        VMP SIMPLES - SUITE DE TESTES UNITARIOS       \n";
             std::cout << "======================================================\n\n";
 
             for (const auto& test : tests_) {
@@ -118,58 +119,16 @@ namespace TestFramework {
         } \
     } while (0)
 
-#define ASSERT_FALSE(expr) \
-    do { \
-        if (expr) { \
-            std::ostringstream _ss; \
-            _ss << "Falha em ASSERT_FALSE(" #expr ") em " << __FILE__ << ":" << __LINE__; \
-            throw ::TestFramework::TestFailureException(_ss.str()); \
-        } \
-    } while (0)
-
-#define ASSERT_EQ(actual, expected) \
+#define ASSERT_NEAR(actual, expected, tol) \
     do { \
         auto _act = (actual); \
         auto _exp = (expected); \
-        if (!(_act == _exp)) { \
+        auto _diff = std::abs(_act - _exp); \
+        if (_diff > (tol)) { \
             std::ostringstream _ss; \
-            _ss << "Falha em ASSERT_EQ: " #actual " == " #expected \
-                << " (Obtido: " << _act << ", Esperado: " << _exp << ") em " \
+            _ss << "Falha em ASSERT_NEAR: |" #actual " - " #expected "| <= " #tol \
+                << " (| " << _act << " - " << _exp << " | = " << _diff << " > " << (tol) << ") em " \
                 << __FILE__ << ":" << __LINE__; \
-            throw ::TestFramework::TestFailureException(_ss.str()); \
-        } \
-    } while (0)
-
-#define ASSERT_NE(actual, expected) \
-    do { \
-        auto _act = (actual); \
-        auto _exp = (expected); \
-        if (_act == _exp) { \
-            std::ostringstream _ss; \
-            _ss << "Falha em ASSERT_NE: " #actual " != " #expected \
-                << " (Valores sao iguais a " << _act << ") em " \
-                << __FILE__ << ":" << __LINE__; \
-            throw ::TestFramework::TestFailureException(_ss.str()); \
-        } \
-    } while (0)
-
-#define ASSERT_THROWS(expr, ExceptionType) \
-    do { \
-        bool _threw = false; \
-        try { \
-            expr; \
-        } catch (const ExceptionType&) { \
-            _threw = true; \
-        } catch (...) { \
-            std::ostringstream _ss; \
-            _ss << "Falha em ASSERT_THROWS: Excecao lancada mas nao do tipo " #ExceptionType \
-                << " em " << __FILE__ << ":" << __LINE__; \
-            throw ::TestFramework::TestFailureException(_ss.str()); \
-        } \
-        if (!_threw) { \
-            std::ostringstream _ss; \
-            _ss << "Falha em ASSERT_THROWS: Nenhuma excecao do tipo " #ExceptionType \
-                << " foi lancada em " << __FILE__ << ":" << __LINE__; \
             throw ::TestFramework::TestFailureException(_ss.str()); \
         } \
     } while (0)

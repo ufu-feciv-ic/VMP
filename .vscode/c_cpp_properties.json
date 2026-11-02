@@ -4,7 +4,12 @@
       "name": "Win32",
       "includePath": [
         "${workspaceFolder}/include",
-        "${workspaceFolder}/tests"
+        "${workspaceFolder}/tests",
+        "${workspaceFolder}/gui",
+        "${workspaceFolder}/gui/third_party/imgui",
+        "${workspaceFolder}/gui/third_party/rlImGui",
+        "C:/raylib/raylib/src",
+        "C:/raylib/w64devkit/include"
       ],
       "defines": [],
       "compilerPath": "C:/raylib/w64devkit/bin/g++.exe",

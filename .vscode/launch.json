@@ -2,7 +2,28 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Debugar Testes (vmp_tests)",
+      "name": "Debugar Interface Gráfica (vmp_gui)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/vmp_gui.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "C:/raylib/w64devkit/bin/gdb.exe",
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ],
+      "preLaunchTask": "Compilar Tudo"
+    },
+    {
+      "name": "Debugar Testes Unitários (vmp_tests)",
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/build/vmp_tests.exe",
@@ -23,10 +44,10 @@
       "preLaunchTask": "Compilar Tudo"
     },
     {
-      "name": "Debugar App (vmp_app)",
+      "name": "Debugar Demo Console (vmp_demo)",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/vmp_app.exe",
+      "program": "${workspaceFolder}/build/vmp_demo.exe",
       "args": [],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",

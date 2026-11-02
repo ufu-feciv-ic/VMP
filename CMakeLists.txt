@@ -1,50 +1,80 @@
 cmake_minimum_required(VERSION 3.20)
 project(VMP CXX)
 
-# Padrao C++ moderno
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Opcoes de compilacao e avisos rigorosos
-if(MSVC)
-    add_compile_options(/W4 /permissive-)
-else()
-    add_compile_options(-Wall -Wextra -Wpedantic)
-endif()
-
-# Headers publicos disponiveis globalmente
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
-
-# Reconhecimento automatico de arquivos na pasta src/ e include/
-# A flag CONFIGURE_DEPENDS instrui o CMake a reconfigurar automaticamente ao adicionar/remover arquivos
-file(GLOB_RECURSE LIB_SOURCES CONFIGURE_DEPENDS "src/*.cpp")
-file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS "include/*.hpp")
-
-# Remove src/main.cpp da biblioteca para nao colidir com o ponto de entrada dos testes
-list(FILTER LIB_SOURCES EXCLUDE REGEX ".*/main\\.cpp$")
-
-# Biblioteca estatica contendo as regras de negocio do projeto
-add_library(vmp_core STATIC ${LIB_SOURCES} ${HEADERS})
-target_include_directories(vmp_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
-
-# Executavel principal (apenas se main.cpp existir)
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp")
-    add_executable(vmp_app src/main.cpp)
-    target_link_libraries(vmp_app PRIVATE vmp_core)
-endif()
-
-# Configuracao da Suite de Testes (TDD)
-enable_testing()
-
-file(GLOB_RECURSE TEST_SOURCES CONFIGURE_DEPENDS "tests/*.cpp")
-file(GLOB_RECURSE TEST_HEADERS CONFIGURE_DEPENDS "tests/*.hpp")
-
-add_executable(vmp_tests ${TEST_SOURCES} ${TEST_HEADERS})
-target_link_libraries(vmp_tests PRIVATE vmp_core)
-target_include_directories(vmp_tests PRIVATE 
-    ${CMAKE_CURRENT_SOURCE_DIR}/include 
-    ${CMAKE_CURRENT_SOURCE_DIR}/tests
+# Inclui a pasta include/ globalmente para que qualquer arquivo encontre os headers do motor
+include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-add_test(NAME AllTests COMMAND vmp_tests)
+# Arquivos de implementação do motor de cálculo
+set(MOTOR_SOURCES
+    src/geometria.cpp
+    src/rotinas_nbr8800.cpp
+    src/rotinas_vmp.cpp
+    src/verificador.cpp
+)
+
+# ============================================================================
+# 1. EXECUTÁVEL DE CONSOLE / MEMÓRIA DE CÁLCULO
+# ============================================================================
+add_executable(vmp_demo
+    src/main.cpp
+    ${MOTOR_SOURCES}
+)
+
+# ============================================================================
+# 2. SUÍTE DE TESTES UNITÁRIOS (TDD)
+# ============================================================================
+enable_testing()
+
+add_executable(vmp_tests
+    tests/test_main.cpp
+    tests/test_rotinas_nbr8800.cpp
+    tests/test_rotinas_vmp.cpp
+    ${MOTOR_SOURCES}
+)
+
+target_include_directories(vmp_tests PRIVATE
+    tests
+)
+
+add_test(NAME AllUnitTests COMMAND vmp_tests)
+
+# ============================================================================
+# 3. INTERFACE GRÁFICA INTERATIVA (RAYLIB + DEAR IMGUI)
+# ============================================================================
+if (EXISTS "C:/raylib/raylib/src/raylib.h" OR EXISTS "C:/raylib/w64devkit/include/raylib.h")
+    set(RAYLIB_INCLUDE_DIR "C:/raylib/raylib/src")
+    if (EXISTS "C:/raylib/w64devkit/lib/libraylib.a")
+        set(RAYLIB_LIB "C:/raylib/w64devkit/lib/libraylib.a")
+    else()
+        set(RAYLIB_LIB "C:/raylib/raylib/src/libraylib.a")
+    endif()
+
+    add_executable(vmp_gui
+        gui/app_gui.cpp
+        ${MOTOR_SOURCES}
+        gui/third_party/imgui/imgui.cpp
+        gui/third_party/imgui/imgui_draw.cpp
+        gui/third_party/imgui/imgui_tables.cpp
+        gui/third_party/imgui/imgui_widgets.cpp
+        gui/third_party/rlImGui/rlImGui.cpp
+    )
+
+    target_include_directories(vmp_gui PRIVATE
+        ${RAYLIB_INCLUDE_DIR}
+        gui/third_party/imgui
+        gui/third_party/rlImGui
+    )
+
+    target_link_libraries(vmp_gui PRIVATE
+        ${RAYLIB_LIB}
+        opengl32
+        gdi32
+        winmm
+    )
+endif()
