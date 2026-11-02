@@ -1,7 +1,7 @@
 #pragma once
-#include "modelos.hpp"
-#include "rotinas_nbr8800.hpp"
-#include "rotinas_vmp.hpp"
+#include "modelos.h"
+#include "rotinas_nbr8800.h"
+#include "rotinas_vmp.h"
 #include <vector>
 #include <string>
 

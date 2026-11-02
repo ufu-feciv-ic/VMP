@@ -1,9 +1,10 @@
 #pragma once
-#include "modelos.hpp"
+#include "modelos.h"
 
+
+namespace nbr8800::v2008 {
 // ============================================================================
 // ROTINAS NORMATIVAS BÁSICAS (ABNT NBR 8800:2008 / NBR 6118)
-// Funções puras -> DTOs de resultados.
 // ============================================================================
 
 // ----------------------------------------------------------------------------
@@ -16,7 +17,7 @@ struct ResultadoRotinaA {
     double Qs;
     double Qa;
     double Q;
-    double lambda_0;
+    double lb0;
     double chi;
     double NRd_kN;
 };
@@ -26,8 +27,8 @@ ResultadoRotinaA calcular_rotina_a(
     const Aco& aco,
     double Lb_mm,
     double Lv_mm,
-    double Kx = 1.0,
-    double Ky = 1.0,
+    double kx,
+    double ky,
     double gamma_a1 = 1.10
 );
 
@@ -86,7 +87,7 @@ ResultadoRotinaE calcular_rotina_e_perfil_u(
     const Aco& aco,
     const Laje& laje,
     const Concreto& concreto,
-    const ConectorU& conector,
+    const ConectorCisalhamento& conector,
     double Lv_mm,
     double gamma_a1 = 1.10,
     double gamma_c = 1.40,
@@ -110,3 +111,5 @@ ResultadoRotinaF calcular_rotina_f_armadura_costura(
     double Lv_mm,
     double gamma_c = 1.40
 );
+
+};

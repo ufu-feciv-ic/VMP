@@ -2,10 +2,10 @@
 #include "imgui.h"
 #include "rlImGui.h"
 
-#include "modelos.hpp"
-#include "catalogo.hpp"
-#include "geometria.hpp"
-#include "verificador.hpp"
+#include "modelos.h"
+#include "catalogo.h"
+#include "geometria.h"
+#include "verificador.h"
 
 #include <string>
 #include <vector>

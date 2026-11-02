@@ -1,4 +1,4 @@
-#include "geometria.hpp"
+#include "geometria.h"
 #include <cmath>
 
 void calcular_propriedades_secao_i(PerfilI& p) {
@@ -11,24 +11,24 @@ void calcular_propriedades_secao_i(PerfilI& p) {
         p.d1 = p.d - 2.0 * p.tf;
     }
 
-    double h_alma = p.d - 2.0 * p.tf;
+    p.h = p.d - 2.0 * p.tf;
     double area_cantos = (p.r > 0.0) ? (4.0 - pi) * p.r * p.r : 0.0;
 
     // Área bruta
     if (p.Ag <= 0.0) {
-        p.Ag = 2.0 * p.bf * p.tf + h_alma * p.tw + area_cantos;
+        p.Ag = 2.0 * p.bf * p.tf + p.h * p.tw + area_cantos;
     }
 
     // Momento de inércia x-x
     if (p.Ix <= 0.0) {
         double Ix_mesas = 2.0 * ((p.bf * std::pow(p.tf, 3.0)) / 12.0 + (p.bf * p.tf) * std::pow((p.d - p.tf) / 2.0, 2.0));
-        double Ix_alma = (p.tw * std::pow(h_alma, 3.0)) / 12.0;
+        double Ix_alma = (p.tw * std::pow(p.h, 3.0)) / 12.0;
         p.Ix = Ix_mesas + Ix_alma;
     }
 
     // Momento de inércia y-y
     if (p.Iy <= 0.0) {
-        p.Iy = 2.0 * ((p.tf * std::pow(p.bf, 3.0)) / 12.0) + (h_alma * std::pow(p.tw, 3.0)) / 12.0;
+        p.Iy = 2.0 * ((p.tf * std::pow(p.bf, 3.0)) / 12.0) + (p.h * std::pow(p.tw, 3.0)) / 12.0;
     }
 
     // Módulos elásticos
@@ -37,19 +37,23 @@ void calcular_propriedades_secao_i(PerfilI& p) {
 
     // Módulos plásticos
     if (p.Zx <= 0.0) {
-        p.Zx = p.bf * p.tf * (p.d - p.tf) + (p.tw * std::pow(h_alma, 2.0)) / 4.0;
+        p.Zx = p.bf * p.tf * (p.d - p.tf) + (p.tw * std::pow(p.h, 2.0)) / 4.0;
     }
     if (p.Zy <= 0.0) {
-        p.Zy = 2.0 * ((p.tf * std::pow(p.bf, 2.0)) / 4.0) + (h_alma * std::pow(p.tw, 2.0)) / 4.0;
+        p.Zy = 2.0 * ((p.tf * std::pow(p.bf, 2.0)) / 4.0) + (p.h * std::pow(p.tw, 2.0)) / 4.0;
     }
 
     // Raios de giração
     if (p.rx <= 0.0 && p.Ag > 0.0) p.rx = std::sqrt(p.Ix / p.Ag);
     if (p.ry <= 0.0 && p.Ag > 0.0) p.ry = std::sqrt(p.Iy / p.Ag);
 
+    // Elbeltezes
+    if (p.lbf <= 0.0 && p.tf > 0.0) p.lbf = p.bf / (2*p.tf); // Mesa
+    if (p.lbw <= 0.0 && p.tw > 0.0) p.lbw = p.d1 / p.tw; // Alma 
+    
     // Inércia de torção e constante de empenamento
     if (p.It <= 0.0) {
-        p.It = (2.0 * p.bf * std::pow(p.tf, 3.0) + h_alma * std::pow(p.tw, 3.0)) / 3.0;
+        p.It = (2.0 * p.bf * std::pow(p.tf, 3.0) + p.h * std::pow(p.tw, 3.0)) / 3.0;
     }
     if (p.Cw <= 0.0) {
         p.Cw = (p.Iy * std::pow(p.d - p.tf, 2.0)) / 4.0;

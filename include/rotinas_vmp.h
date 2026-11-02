@@ -1,5 +1,5 @@
 #pragma once
-#include "modelos.hpp"
+#include "modelos.h"
 
 // ============================================================================
 // ROTINAS ESPECIALIZADAS DE VIGAS MISTAS PROTENDIDAS (VMP)
