@@ -1,6 +1,53 @@
 #include "test_framework.h"
 #include "modelos.h"
 #include "catalogo.h"
+#include "geometria.h"
 #include "rotinas_nbr8800.h"
 #include <cmath>
 
+TEST_CASE("Rotina A - NBR 8800:2008: Normal resistente perfil W360x57.8")
+{
+    PerfilI perfil = perfil_w360x57_8();
+    
+    // calcular_propriedades_secao_i(perfil);
+
+    Aco aco = aco_a572_gr50();
+
+    const double Lb_mm = 3000.00;
+    const double Lv_mm = 12000.00;
+    const double kx = 1.0;
+    const double ky = 1.0;
+    const double gamma_a1 = 1.10;
+
+    auto res = nbr8800::calcular_normal_resistente(perfil, aco, Lb_mm, Lv_mm, kx, ky, gamma_a1);
+
+    ASSERT_NEAR(res.Nex_kN, 2212.84, 0.01);
+    ASSERT_NEAR(res.Ney_kN, 2441.08, 0.01);
+    ASSERT_NEAR(res.Qs, 1.0, 0.01);
+    ASSERT_NEAR(res.Qa, 1.0, 0.01);
+    ASSERT_NEAR(res.Q, 1.0, 0.01);
+    ASSERT_NEAR(res.lb0, 1.06, 0.01);
+    ASSERT_NEAR(res.chi, 0.623, 0.01);
+    ASSERT_NEAR(res.NRd_kN, 1416.61, 0.2);
+}
+
+TEST_CASE("Rotina D - NBR 8800:2008: Cortante resistente perfil W360X57.8")
+{
+    PerfilI perfil = perfil_w360x57_8();
+    
+    // calcular_propriedades_secao_i(perfil);
+
+    Aco aco = aco_a572_gr50();
+
+    double dist_enrijecedor = 0.0;
+    double gamma_a1 = 1.1;
+
+    auto res = nbr8800::calcular_cortante_resistente(perfil, aco, dist_enrijecedor, gamma_a1);
+
+    ASSERT_NEAR(res.kv, 5.0, 0.01);
+    ASSERT_NEAR(res.lbw, 38.98, 0.01);
+    ASSERT_NEAR(res.lbw_p, 59.22, 0.01);
+    ASSERT_NEAR(res.lbw_r, 73.75, 0.01);
+    ASSERT_NEAR(res.Vpl_kN, 585.43, 0.01);
+    ASSERT_NEAR(res.VRd_kN, 532.21, 0.01);
+}

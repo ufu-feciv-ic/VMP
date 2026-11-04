@@ -125,7 +125,7 @@ int main() {
         }
 
         // Executa a Rotina A (NBR 8800:2008) instantaneamente
-        nbr8800::ResultadoRotinaA rotA = nbr8800::calcular_rotina_a(
+        nbr8800::ResultadoNormalResistente rotA = nbr8800::calcular_normal_resistente(
             perfil, aco, Lb_mm, Lv_mm, kx, ky, gamma_a1
         );
 

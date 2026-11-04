@@ -7,9 +7,9 @@ const double PI = std::numbers::pi;
 
 namespace nbr8800::inline v2008 {
 
-ResultadoRotinaA calcular_rotina_a(const PerfilI& perfil, const Aco& aco, double Lb_mm, double lv_mm, double kx, double ky, double gamma_a1)
+ResultadoNormalResistente calcular_normal_resistente(const PerfilI& perfil, const Aco& aco, double Lb_mm, double lv_mm, double kx, double ky, double gamma_a1)
 {
-    ResultadoRotinaA res;
+    ResultadoNormalResistente res;
 
     // Cálculo cargas críticas 
     res.Nex_kN = ((PI * PI * aco.E * perfil.Ix) / std::pow(kx * lv_mm, 2)) / 1000;
@@ -50,16 +50,16 @@ ResultadoRotinaA calcular_rotina_a(const PerfilI& perfil, const Aco& aco, double
         
         double chi = (lb0_1 <= 1.5) ? std::pow(0.658, lb0_1 * lb0_1) : (0.877 / (lb0_1 * lb0_1));
 
-        double sigma = chi * aco.fy;
+        double sigma = chi * aco.fy/10; // unidades em kN/cm²
 
-        double bef_a = 1.92 * perfil.tw * sqrt(aco.E / sigma) * 
-                        (1 - (0.34/lbw) * (sqrt(aco.E / sigma)));
+        double bef_a = 1.92 * (perfil.tw/10) * sqrt(aco.E/10 / sigma) 
+        * (1 - ((0.34/lbw) * (sqrt(aco.E/10 / sigma)))); // unidades em cm
         
-        bef_a = std::min(bef_a, perfil.d1);
+        bef_a = std::min(bef_a*10, perfil.d1);
 
-        double Aef = perfil.d1 * perfil.tw - (perfil.d1 - bef_a) * perfil.tw;
+        double Aef = perfil.d1 * (perfil.tw) - ((perfil.d1) - bef_a) * (perfil.tw); // unidades em cm
 
-        res.Qa = Aef / perfil.d1 * perfil.tw;
+        res.Qa = Aef / (perfil.d1 * perfil.tw);
     }
 
     res.Q = res.Qs * res.Qa;
@@ -72,5 +72,26 @@ ResultadoRotinaA calcular_rotina_a(const PerfilI& perfil, const Aco& aco, double
 
     return res;
 }
+
+ResultadoCortanteResistente calcular_cortante_resistente(const PerfilI& perfil, const Aco& aco, double a_enrikecedor_mm, double gamma_a1)
+{
+    ResultadoCortanteResistente res;
+
+    res.kv = (a_enrikecedor_mm <= 0.0 || (a_enrikecedor_mm / perfil.h) || ((a_enrikecedor_mm / perfil.h) > std::pow(260.0 / (perfil.h / perfil.tw), 2.0))) 
+    ? 5.0 : 5.0 + 5.0 / std::pow(a_enrikecedor_mm / perfil.h, 2.0);
+
+    res.Vpl_kN = (0.6 * perfil.d * perfil.tw * aco.fy) / 1000;
+
+    res.lbw = perfil.lbw;
+    res.lbw_p = 1.1 * sqrt(res.kv * aco.E / aco.fy);
+    res.lbw_r = 1.37 * sqrt(res.kv * aco.E / aco.fy);
+
+    if (res.lbw <= res.lbw_p) res.VRd_kN = res.Vpl_kN / gamma_a1;
+    else if (res.lbw <= res.lbw_r) res.VRd_kN = (res.lbw / res.lbw_p) * (res.Vpl_kN / gamma_a1);
+    else res.VRd_kN = 1.24 * std::pow(res.lbw_p / res.lbw_r, 2.0) * res.Vpl_kN / gamma_a1;
+
+    return res;
+}
+
 
 } // namespace nbr8800::v2008

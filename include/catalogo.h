@@ -24,7 +24,7 @@ inline PerfilI perfil_w360x57_8() {
     p.rt = 45.3;          // 4,53 cm  
     p.It = 34.45e3;       // 34.45 cm⁴
     p.lbf = 6.56;         // esbeltez mesa
-    p.lbw = 38.96;        // esbeltez alma
+    p.lbw = 38.98;        // esbeltez alma
     p.Cw = 330.394e6;     // 333,394 cm⁶
     return p;
 }

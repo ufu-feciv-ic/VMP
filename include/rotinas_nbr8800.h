@@ -11,7 +11,7 @@ inline namespace v2008 {
 // ----------------------------------------------------------------------------
 // Rotina A: Compressão Axial do Perfil de Aço (NRd)
 // ----------------------------------------------------------------------------
-struct ResultadoRotinaA {
+struct ResultadoNormalResistente {
     double Nex_kN;
     double Ney_kN;
     double Ne_kN;
@@ -23,7 +23,7 @@ struct ResultadoRotinaA {
     double NRd_kN;
 };
 
-ResultadoRotinaA calcular_rotina_a(
+ResultadoNormalResistente calcular_normal_resistente(
     const PerfilI& perfil,
     const Aco& aco,
     double Lb_mm,
@@ -56,16 +56,16 @@ ResultadoRotinaB calcular_rotina_b(
 // ----------------------------------------------------------------------------
 // Rotina D: Força Cortante Resistente do Perfil de Aço (VRd)
 // ----------------------------------------------------------------------------
-struct ResultadoRotinaD {
+struct ResultadoCortanteResistente {
     double kv;
-    double lambda_alma;
-    double lambda_p;
-    double lambda_r;
+    double lbw; // limite de esbeltez da alma
+    double lbw_p; // limite de esbeltez plástica da alma
+    double lbw_r; // limite de esbeltez elástica da alma
     double Vpl_kN;
     double VRd_kN;
 };
 
-ResultadoRotinaD calcular_rotina_d(
+ResultadoCortanteResistente calcular_cortante_resistente(
     const PerfilI& perfil,
     const Aco& aco,
     double a_enrijecedor_mm = 0.0,
