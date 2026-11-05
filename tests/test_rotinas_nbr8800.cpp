@@ -19,7 +19,7 @@ TEST_CASE("Rotina A - NBR 8800:2008: Normal resistente perfil W360x57.8")
     const double ky = 1.0;
     const double gamma_a1 = 1.10;
 
-    auto res = nbr8800::calcular_normal_resistente(perfil, aco, Lb_mm, Lv_mm, kx, ky, gamma_a1);
+    auto res = nbr8800::calcularNormalResistentePerfil(perfil, aco, Lb_mm, Lv_mm, kx, ky, gamma_a1);
 
     ASSERT_NEAR(res.Nex_kN, 2212.84, 0.01);
     ASSERT_NEAR(res.Ney_kN, 2441.08, 0.01);
@@ -42,7 +42,7 @@ TEST_CASE("Rotina D - NBR 8800:2008: Cortante resistente perfil W360X57.8")
     double dist_enrijecedor = 0.0;
     double gamma_a1 = 1.1;
 
-    auto res = nbr8800::calcular_cortante_resistente(perfil, aco, dist_enrijecedor, gamma_a1);
+    auto res = nbr8800::calcularCortanteResistentePerfil(perfil, aco, dist_enrijecedor, gamma_a1);
 
     ASSERT_NEAR(res.kv, 5.0, 0.01);
     ASSERT_NEAR(res.lbw, 38.98, 0.01);

@@ -25,9 +25,9 @@ struct RelatorioVMP {
     // Resultados intermediários ricos
     ResultadoRotinaE conectores;
     ResultadoRotinaF costura;
-    ResultadoNormalResistente compressao_aco;
-    ResultadoRotinaB flexao_aco;
-    ResultadoCortanteResistente cortante_aco;
+    ResultadoNormalResistentePerfil compressao_aco;
+    ResultadoMomentoResistentePerfil flexao_aco;
+    ResultadoCortanteResistentePerfil cortante_aco;
     ResultadoEstimativaP0 estimativa_p0;
     ResultadoSecaoTransformada secao_t0;
     ResultadoSecaoTransformada secao_t_inf;

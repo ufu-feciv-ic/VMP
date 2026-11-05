@@ -11,7 +11,7 @@ inline namespace v2008 {
 // ----------------------------------------------------------------------------
 // Rotina A: Compressão Axial do Perfil de Aço (NRd)
 // ----------------------------------------------------------------------------
-struct ResultadoNormalResistente {
+struct ResultadoNormalResistentePerfil {
     double Nex_kN;
     double Ney_kN;
     double Ne_kN;
@@ -23,7 +23,7 @@ struct ResultadoNormalResistente {
     double NRd_kN;
 };
 
-ResultadoNormalResistente calcular_normal_resistente(
+ResultadoNormalResistentePerfil calcularNormalResistentePerfil(
     const PerfilI& perfil,
     const Aco& aco,
     double Lb_mm,
@@ -36,16 +36,23 @@ ResultadoNormalResistente calcular_normal_resistente(
 // ----------------------------------------------------------------------------
 // Rotina B: Momento Fletor Resistente do Perfil de Aço (MRd)
 // ----------------------------------------------------------------------------
-struct ResultadoRotinaB {
-    double lambda;
-    double lambda_p;
-    double lambda_r;
+struct ResultadoMomentoResistentePerfil {
+    // double lb;
+    // double lb_p;
+    // double lb_r;
     double Mpl_kNm;
     double Mr_kNm;
+    double MRd_FLT_kNm;
+    double MRd_FLM_kNm;
+    double MRd_FLA_kNm;
     double MRd_kNm;
 };
 
-ResultadoRotinaB calcular_rotina_b(
+double calcularMRdFLT (const PerfilI& perfil, const Aco& aco, double lb_mm, double gamma_a1, double Cb, double Mpl, double Mr);
+double calcularMRdFLM (const PerfilI& perfil);
+double calcularMRdFLA (const PerfilI& perfil);
+
+ResultadoMomentoResistentePerfil calcularMomentoResistentePerfil(
     const PerfilI& perfil,
     const Aco& aco,
     double Lb_mm,
@@ -56,7 +63,7 @@ ResultadoRotinaB calcular_rotina_b(
 // ----------------------------------------------------------------------------
 // Rotina D: Força Cortante Resistente do Perfil de Aço (VRd)
 // ----------------------------------------------------------------------------
-struct ResultadoCortanteResistente {
+struct ResultadoCortanteResistentePerfil {
     double kv;
     double lbw; // limite de esbeltez da alma
     double lbw_p; // limite de esbeltez plástica da alma
@@ -65,7 +72,7 @@ struct ResultadoCortanteResistente {
     double VRd_kN;
 };
 
-ResultadoCortanteResistente calcular_cortante_resistente(
+ResultadoCortanteResistentePerfil calcularCortanteResistentePerfil(
     const PerfilI& perfil,
     const Aco& aco,
     double a_enrijecedor_mm = 0.0,

@@ -7,9 +7,9 @@ const double PI = std::numbers::pi;
 
 namespace nbr8800::inline v2008 {
 
-ResultadoNormalResistente calcular_normal_resistente(const PerfilI& perfil, const Aco& aco, double Lb_mm, double lv_mm, double kx, double ky, double gamma_a1)
+ResultadoNormalResistentePerfil calcularNormalResistentePerfil(const PerfilI& perfil, const Aco& aco, double Lb_mm, double lv_mm, double kx, double ky, double gamma_a1)
 {
-    ResultadoNormalResistente res;
+    ResultadoNormalResistentePerfil res;
 
     // Cálculo cargas críticas 
     res.Nex_kN = ((PI * PI * aco.E * perfil.Ix) / std::pow(kx * lv_mm, 2)) / 1000;
@@ -73,9 +73,9 @@ ResultadoNormalResistente calcular_normal_resistente(const PerfilI& perfil, cons
     return res;
 }
 
-ResultadoCortanteResistente calcular_cortante_resistente(const PerfilI& perfil, const Aco& aco, double a_enrikecedor_mm, double gamma_a1)
+ResultadoCortanteResistentePerfil calcularCortanteResistentePerfil(const PerfilI& perfil, const Aco& aco, double a_enrikecedor_mm, double gamma_a1)
 {
-    ResultadoCortanteResistente res;
+    ResultadoCortanteResistentePerfil res;
 
     res.kv = (a_enrikecedor_mm <= 0.0 || (a_enrikecedor_mm / perfil.h) || ((a_enrikecedor_mm / perfil.h) > std::pow(260.0 / (perfil.h / perfil.tw), 2.0))) 
     ? 5.0 : 5.0 + 5.0 / std::pow(a_enrikecedor_mm / perfil.h, 2.0);
@@ -87,8 +87,65 @@ ResultadoCortanteResistente calcular_cortante_resistente(const PerfilI& perfil, 
     res.lbw_r = 1.37 * sqrt(res.kv * aco.E / aco.fy);
 
     if (res.lbw <= res.lbw_p) res.VRd_kN = res.Vpl_kN / gamma_a1;
-    else if (res.lbw <= res.lbw_r) res.VRd_kN = (res.lbw / res.lbw_p) * (res.Vpl_kN / gamma_a1);
+    else if (res.lbw <= res.lbw_r) res.VRd_kN = (res.lbw_p / res.lbw) * (res.Vpl_kN / gamma_a1);
     else res.VRd_kN = 1.24 * std::pow(res.lbw_p / res.lbw_r, 2.0) * res.Vpl_kN / gamma_a1;
+
+    return res;
+}
+
+double calcularMRdFLT(const PerfilI& perfil, const Aco& aco, double Lb_mm, double gamma_a1, double Cb, double Mpl, double Mr)
+{
+    double lb = Lb_mm / perfil.ry;
+    
+    double lb_p = 1.76 * sqrt(aco.E / aco.fy);
+    
+    double beta1 = (0.7 * aco.fy * perfil.Wx) / (aco.E * perfil.It);
+
+    double lb_r = ((1.38 * sqrt(perfil.Iy * perfil.It)) / (perfil.ry * perfil.It * beta1)) 
+    * sqrt(1 + sqrt(1 + ((27 * perfil.Cw * beta1 * beta1) / perfil.Iy)));
+
+    double Mcr = (((Cb * PI * PI * aco.E * perfil.Iy)/(Lb_mm * Lb_mm)) * 
+    (sqrt((perfil.Cw / perfil.Iy)*(1 + 0.039*(perfil.It * Lb_mm * Lb_mm / perfil.Cw)))))/10E6;
+
+    double MRd_kNm = 0.0;
+
+    if (lb <= lb_p) MRd_kNm = Mpl / gamma_a1;
+    else if (lb <= lb_r) 
+    {
+        MRd_kNm = (Cb / gamma_a1) * (Mpl - (Mpl - Mr)*((lb - lb_p)/(lb_r - lb_p)));
+        MRd_kNm = std::min(MRd_kNm, Mpl/gamma_a1); 
+    }
+    else 
+    {
+        MRd_kNm = Mcr / gamma_a1;
+        MRd_kNm = std::min(MRd_kNm, Mpl/gamma_a1);
+    }
+
+    return MRd_kNm ;
+}
+
+double calcularMRdFLM(const PerfilI& perfil)
+{
+    return 0;
+}
+
+double calcularMRdFLA(const PerfilI& perfil)
+{
+    return 0;
+}
+
+ResultadoMomentoResistentePerfil calcularMomentoResistentePerfil(const PerfilI& perfil, const Aco& aco, double Lb_mm, double Cb, double gamma_a1)
+{
+    ResultadoMomentoResistentePerfil res;
+
+    res.Mpl_kNm = std::min(((perfil.Zx * aco.fy) / 10E6), ((1.5 * perfil.Wx * aco.fy) / 10E6));
+    res.Mr_kNm = (0.7 * aco.fy * perfil.Wx) / 10E6;
+
+    res.MRd_FLT_kNm = nbr8800::calcularMRdFLT(perfil, aco, Lb_mm, gamma_a1, Cb, res.Mpl_kNm, res.Mr_kNm);
+    res.MRd_FLM_kNm = 0.0;
+    res.MRd_FLA_kNm = 9.0;
+
+    res.MRd_kNm = std::min({res.MRd_FLT_kNm, res.MRd_FLM_kNm, res.MRd_FLA_kNm});
 
     return res;
 }
