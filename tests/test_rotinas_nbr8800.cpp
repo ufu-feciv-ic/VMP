@@ -31,6 +31,27 @@ TEST_CASE("Rotina A - NBR 8800:2008: Normal resistente perfil W360x57.8")
     ASSERT_NEAR(res.NRd_kN, 1416.61, 0.2);
 }
 
+TEST_CASE("Rotina B - NBR 8800:2008: Momento resistente perfil W360X57.8")
+{
+    PerfilI perfil = perfil_w360x57_8();
+
+    Aco aco = aco_a572_gr50();
+
+    double Lb = 3000; // mm
+    double Cb = 1.06; // a favor da segurança
+    double gamma_a1 = 1.10;
+
+    auto res = nbr8800::calcularMomentoResistentePerfil(perfil, aco, Lb, Cb, gamma_a1);
+
+    ASSERT_NEAR(res.Mpl_kNm, 350.106, 0.01);
+    ASSERT_NEAR(res.Mr_kNm, 217.78, 0.01);
+    ASSERT_NEAR(res.MRd_FLT_kNm, 285.98, 0.3);
+    ASSERT_NEAR(res.MRd_FLM_kNm, 318.28, 0.01);
+    ASSERT_NEAR(res.MRd_FLA_kNm, 318.28, 0.01);
+    ASSERT_NEAR(res.MRd_kNm, 285.98, 0.3);
+    ASSERT_TRUE(!res.perfil_esbelto);
+}
+
 TEST_CASE("Rotina D - NBR 8800:2008: Cortante resistente perfil W360X57.8")
 {
     PerfilI perfil = perfil_w360x57_8();

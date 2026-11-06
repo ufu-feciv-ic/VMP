@@ -1,4 +1,5 @@
 #include "rotinas_nbr8800.h"
+#include <iostream>
 #include <cmath>
 #include <algorithm>
 #include <numbers>
@@ -96,7 +97,7 @@ ResultadoCortanteResistentePerfil calcularCortanteResistentePerfil(const PerfilI
 double calcularMRdFLT(const PerfilI& perfil, const Aco& aco, double Lb_mm, double gamma_a1, double Cb, double Mpl, double Mr)
 {
     double lb = Lb_mm / perfil.ry;
-    
+
     double lb_p = 1.76 * sqrt(aco.E / aco.fy);
     
     double beta1 = (0.7 * aco.fy * perfil.Wx) / (aco.E * perfil.It);
@@ -105,7 +106,7 @@ double calcularMRdFLT(const PerfilI& perfil, const Aco& aco, double Lb_mm, doubl
     * sqrt(1 + sqrt(1 + ((27 * perfil.Cw * beta1 * beta1) / perfil.Iy)));
 
     double Mcr = (((Cb * PI * PI * aco.E * perfil.Iy)/(Lb_mm * Lb_mm)) * 
-    (sqrt((perfil.Cw / perfil.Iy)*(1 + 0.039*(perfil.It * Lb_mm * Lb_mm / perfil.Cw)))))/10E6;
+    (sqrt((perfil.Cw / perfil.Iy)*(1 + 0.039*(perfil.It * Lb_mm * Lb_mm / perfil.Cw)))))/1E6;
 
     double MRd_kNm = 0.0;
 
@@ -124,26 +125,86 @@ double calcularMRdFLT(const PerfilI& perfil, const Aco& aco, double Lb_mm, doubl
     return MRd_kNm ;
 }
 
-double calcularMRdFLM(const PerfilI& perfil)
+double calcularMRdFLM(const PerfilI& perfil, const Aco& aco, double gamma_a1, double Mpl, double Mr)
 {
-    return 0;
+    double lbf = perfil.lbf;
+    double lbf_p = 0.38 * sqrt(aco.E / aco.fy);
+    
+    double lbf_r = 0.0;
+    double kc = 0.0;
+
+    if (perfil.tipo == TipoFabricacao::LAMINADO) lbf_r = 0.83 * sqrt(aco.E / 0.7 * aco.fy);
+    else if (perfil.tipo == TipoFabricacao::SOLDADO) 
+    {
+        kc = 4 / (sqrt(perfil.h / perfil.tw));
+        kc = std::clamp(kc, 0.35, 0.76);
+
+        lbf_r = 0.85 * sqrt(aco.E / 0.7 * (aco.fy / kc));
+    }
+
+    double MRd_kNm = 0.0;
+
+    if (lbf <= lbf_p) MRd_kNm = Mpl / gamma_a1;
+    else if (lbf <= lbf_r) 
+    {
+        MRd_kNm = (1 / gamma_a1) * (Mpl - (Mpl - Mr)*((lbf - lbf_p)/(lbf_r - lbf_p)));
+        MRd_kNm = std::min(MRd_kNm, Mpl/gamma_a1);
+    }
+    else 
+    {
+        if (perfil.tipo == TipoFabricacao::LAMINADO) 
+        {
+            double Mcr = (0.69 * aco.E * perfil.Wx / (lbf * lbf)) / 1e6;
+            MRd_kNm = std::min(Mcr / gamma_a1, Mpl / gamma_a1);
+        }
+        else if (perfil.tipo == TipoFabricacao::SOLDADO)
+        {
+            double Mcr = (0.9 * kc * aco.E * perfil.Wx / (lbf * lbf)) / 1e6;
+            MRd_kNm = std::min(Mcr / gamma_a1, Mpl / gamma_a1);
+        }
+    }
+
+    return MRd_kNm;
 }
 
-double calcularMRdFLA(const PerfilI& perfil)
+double calcularMRdFLA(const PerfilI& perfil, const Aco& aco, double gamma_a1, double Mpl, double Mr)
 {
-    return 0;
+    double lbw = perfil.lbw;
+    double lbw_p = 3.76 * sqrt(aco.E / aco.fy);
+    double lbw_r = 5.7 * sqrt(aco.E / aco.fy);
+
+    double MRd_kNm = 0.0;
+
+    if (lbw <= lbw_p) MRd_kNm = Mpl / gamma_a1;
+    else if (lbw <= lbw_r) 
+    {
+        MRd_kNm = (1 / gamma_a1) * (Mpl - (Mpl - Mr)*((lbw - lbw_p)/(lbw_r - lbw_p)));
+        MRd_kNm = std::min(MRd_kNm, Mpl/gamma_a1);
+    }
+    else 
+    {
+        MRd_kNm = 0.0;
+    }
+
+    return MRd_kNm;
 }
 
 ResultadoMomentoResistentePerfil calcularMomentoResistentePerfil(const PerfilI& perfil, const Aco& aco, double Lb_mm, double Cb, double gamma_a1)
 {
     ResultadoMomentoResistentePerfil res;
 
-    res.Mpl_kNm = std::min(((perfil.Zx * aco.fy) / 10E6), ((1.5 * perfil.Wx * aco.fy) / 10E6));
-    res.Mr_kNm = (0.7 * aco.fy * perfil.Wx) / 10E6;
+    res.Mpl_kNm = std::min(((perfil.Zx * aco.fy)/1E6), ((1.5 * perfil.Wx * aco.fy)/1E6));
+    res.Mr_kNm = (0.7 * aco.fy * perfil.Wx) / 1E6;
 
     res.MRd_FLT_kNm = nbr8800::calcularMRdFLT(perfil, aco, Lb_mm, gamma_a1, Cb, res.Mpl_kNm, res.Mr_kNm);
-    res.MRd_FLM_kNm = 0.0;
-    res.MRd_FLA_kNm = 9.0;
+    res.MRd_FLM_kNm = nbr8800::calcularMRdFLM(perfil, aco, gamma_a1, res.Mpl_kNm, res.Mr_kNm);
+    res.MRd_FLA_kNm = nbr8800::calcularMRdFLA(perfil, aco, gamma_a1, res.Mpl_kNm, res.Mr_kNm);
+
+    if ((res.MRd_FLT_kNm || res.MRd_FLM_kNm || res.MRd_FLA_kNm) == 0.0) 
+    {
+        res.perfil_esbelto = true; 
+        res.MRd_kNm = 0.0;
+    }
 
     res.MRd_kNm = std::min({res.MRd_FLT_kNm, res.MRd_FLM_kNm, res.MRd_FLA_kNm});
 

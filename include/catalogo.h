@@ -22,10 +22,10 @@ inline PerfilI perfil_w360x57_8() {
     p.ry = 39.2;           // 3.92 cm    
     p.Zy = 199.8e3;       // 199,8 cm³
     p.rt = 45.3;          // 4,53 cm  
-    p.It = 34.45e3;       // 34.45 cm⁴
+    p.It = 34.45e4;       // 34.45 cm⁴
     p.lbf = 6.56;         // esbeltez mesa
     p.lbw = 38.98;        // esbeltez alma
-    p.Cw = 330.394e6;     // 333,394 cm⁶
+    p.Cw = 330395.1e6;     // 333,394 cm⁶
     return p;
 }
 

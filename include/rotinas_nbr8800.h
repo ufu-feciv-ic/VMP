@@ -46,11 +46,12 @@ struct ResultadoMomentoResistentePerfil {
     double MRd_FLM_kNm;
     double MRd_FLA_kNm;
     double MRd_kNm;
+    bool perfil_esbelto = false;
 };
 
 double calcularMRdFLT (const PerfilI& perfil, const Aco& aco, double lb_mm, double gamma_a1, double Cb, double Mpl, double Mr);
-double calcularMRdFLM (const PerfilI& perfil);
-double calcularMRdFLA (const PerfilI& perfil);
+double calcularMRdFLM (const PerfilI& perfil, const Aco& aco, double gamma_a1, double Mpl, double Mr);
+double calcularMRdFLA (const PerfilI& perfil, const Aco& aco, double gamma_a1, double Mpl, double Mr);
 
 ResultadoMomentoResistentePerfil calcularMomentoResistentePerfil(
     const PerfilI& perfil,
