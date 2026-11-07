@@ -64,9 +64,9 @@ struct PerfilI {
 // ----------------------------------------------------------------------------
 struct Aco {
     std::string nome = "Zerado";
-    double fy = 0.0;    // Tensão de escoamento (MPa)
-    double fu = 0.0;    // Tensão de ruptura (MPa)
-    double E = 0.0;  // Módulo de elasticidade (MPa)
+    double fy_MPa = 0.0;    // Tensão de escoamento (MPa)
+    double fu_MPa = 0.0;    // Tensão de ruptura (MPa)
+    double E_MPa = 0.0;  // Módulo de elasticidade (MPa)
     double nu = 0.0;      // Coeficiente de Poisson
 };
 
@@ -75,9 +75,9 @@ struct Aco {
 // ----------------------------------------------------------------------------
 struct Concreto {
     std::string classe = "Zerado";
-    double fck = 0.0;     // Resistência característica à compressão (MPa)
-    double Ecs = 0.0;  // Módulo secante do concreto (MPa)
-    double fctm = 0.0;     // Resistência média à tração (MPa)
+    double fck_MPa = 0.0;     // Resistência característica à compressão (MPa)
+    double Ecs_MPa = 0.0;  // Módulo secante do concreto (MPa)
+    double fctm_MPa = 0.0;     // Resistência média à tração (MPa)
 };
 
 // ----------------------------------------------------------------------------
@@ -85,9 +85,9 @@ struct Concreto {
 // ----------------------------------------------------------------------------
 struct Laje {
     TipoLaje tipo = LAJE_MACICA;
-    double tc = 0.0;               // Espessura total da laje (mm)
-    double largura_efetiva = 0.0; // Largura colaborante beff (mm)
-    double hF = 0.0;                 // Altura da fôrma de aço (se steel deck) (mm)
+    double tc_mm = 0.0;               // Espessura total da laje (mm)
+    double bef_mm = 0.0; // Largura colaborante beff (mm)
+    double hF_mm = 0.0;                 // Altura da fôrma de aço (se steel deck) (mm)
     bool nervura_paralela = false;   // Orientação das nervuras (se steel deck)
 };
 

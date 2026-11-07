@@ -32,17 +32,27 @@ inline PerfilI perfil_w360x57_8() {
 inline Aco aco_a572_gr50() {
     Aco a;
     a.nome = "ASTM A572 Grau 50";
-    a.fy = 345.0;     // MPa
-    a.fu = 450.0;     // MPa
-    a.E = 200000.0;   // MPa
+    a.fy_MPa = 345.0;     // MPa
+    a.fu_MPa = 450.0;     // MPa
+    a.E_MPa = 200000.0;   // MPa
     return a;
 }
 
 inline Concreto concreto_c30() {
     Concreto c;
     c.classe = "C30";
-    c.fck = 30.0;     // MPa
-    c.Ecs = 26838.0;  // MPa
-    c.fctm = 2.9;     // MPa
+    c.fck_MPa = 30.0;     // MPa
+    c.Ecs_MPa = 26838.0;  // MPa
+    c.fctm_MPa = 2.9;     // MPa
     return c;
+}
+
+inline Laje laje_macica_130() {
+    Laje l;
+    l.tipo = TipoLaje::LAJE_MACICA;
+    l.tc_mm = 130;
+    l.bef_mm = 3000;
+    l.hF_mm = 0.0;
+    l.nervura_paralela = false;
+    return l;
 }

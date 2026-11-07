@@ -212,21 +212,21 @@ int main() {
                         aco = aco_a572_gr50();
                     } else if (material_selecionado == 1) {
                         aco.nome = "ASTM A36";
-                        aco.fy = 250.0;
-                        aco.fu = 400.0;
-                        aco.E  = 200000.0;
+                        aco.fy_MPa = 250.0;
+                        aco.fu_MPa = 400.0;
+                        aco.E_MPa  = 200000.0;
                     }
                 }
 
                 ImGui::Separator();
                 if (material_selecionado == 2) {
-                    ImGui::InputDouble("Escoamento fy (MPa)", &aco.fy, 10.0, 50.0, "%.1f");
-                    ImGui::InputDouble("Ruptura fu (MPa)", &aco.fu, 10.0, 50.0, "%.1f");
-                    ImGui::InputDouble("Módulo Elasticidade E (MPa)", &aco.E, 5000.0, 10000.0, "%.0f");
+                    ImGui::InputDouble("Escoamento fy (MPa)", &aco.fy_MPa, 10.0, 50.0, "%.1f");
+                    ImGui::InputDouble("Ruptura fu (MPa)", &aco.fu_MPa, 10.0, 50.0, "%.1f");
+                    ImGui::InputDouble("Módulo Elasticidade E (MPa)", &aco.E_MPa, 5000.0, 10000.0, "%.0f");
                 } else {
-                    ImGui::BulletText("Tensão de escoamento (fy) : %.1f MPa", aco.fy);
-                    ImGui::BulletText("Tensão de ruptura (fu)    : %.1f MPa", aco.fu);
-                    ImGui::BulletText("Módulo longitudinal (E)   : %.0f MPa", aco.E);
+                    ImGui::BulletText("Tensão de escoamento (fy) : %.1f MPa", aco.fy_MPa);
+                    ImGui::BulletText("Tensão de ruptura (fu)    : %.1f MPa", aco.fu_MPa);
+                    ImGui::BulletText("Módulo longitudinal (E)   : %.0f MPa", aco.E_MPa);
                 }
 
                 ImGui::EndTabItem();

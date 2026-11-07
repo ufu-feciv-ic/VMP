@@ -6,6 +6,10 @@
 // Baseadas em Turini (2021) e Demoner (2018).
 // ============================================================================
 
+namespace nbr8800 {
+inline namespace v2008 {
+
+
 // ----------------------------------------------------------------------------
 // Rotina 1: Seção Transformada / Homogeneizada (ytr, Atr, Itr, Wtr)
 // ----------------------------------------------------------------------------
@@ -21,13 +25,14 @@ struct ResultadoSecaoTransformada {
     double ep_tr_mm;     // Excentricidade do cabo em relação à LNE transformada
 };
 
-ResultadoSecaoTransformada calcular_rotina_1_secao_transformada(
+ResultadoSecaoTransformada calcularSecaoTransformada(
     const PerfilI& perfil,
     const Laje& laje,
     const Concreto& concreto,
     const Aco& aco,
     double multiplicador_fluencia = 1.0, // 1.0 para t=0 (curta); 3.0 para t=infinito (longa)
-    double ep_perfil_inferior_mm = -50.0 // Posição do cabo em relação à face inferior
+    double ep_perfil_inferior_mm = 0.0, // Posição do cabo em relação à face inferior
+    bool tempo_imediato = true
 );
 
 // ----------------------------------------------------------------------------
@@ -137,3 +142,6 @@ ResultadoMomentoVMP calcular_rotina_3_momento_vmp(
     double gamma_a1 = 1.10,
     double gamma_c = 1.40
 );
+
+}
+}
