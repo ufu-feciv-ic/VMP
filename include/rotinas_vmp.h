@@ -41,6 +41,8 @@ ResultadoSecaoTransformada calcularSecaoTransformada(
 struct ResultadoEstimativaP0 {
     double P0_8800_kN; // Limite por flexo-compressão da viga de aço (NBR 8800)
     double P0_6118_kN; // Limite por tensões admissíveis em serviço (NBR 6118)
+    double P0_max_1;
+    double P0_max_2;
     double P0_max_kN;  // Menor entre os dois limites normativos
 };
 
@@ -51,8 +53,8 @@ ResultadoEstimativaP0 calcularEstimativaP0max(
     const CaboProtensao& cabo,
     double NRd_kN,
     double MRd_kNm,
-    double MSd_g_kN,
-    double MSd_q_kN,
+    double MSd_g_kNm,
+    double MSd_q_kNm,
     double gamma_P,
     double beta,
     double psi_1,
@@ -100,12 +102,25 @@ struct ResultadoIncrementoDP {
     double delta_P_kN;
 };
 
-ResultadoIncrementoDP calcular_rotina_6_incremento_dp(
+ResultadoIncrementoDP calcularIncrementoDpTraçadoReto(
     double q_kN_m,
+    double Eg_MPa,
+    double Ep_MPa,
     double Lv_mm,
     double ep_mm,
-    double I_mm4,
-    double A_secao_mm2,
+    double Ix_mm4,
+    double Ag_mm2,
+    double Ap_mm2
+);
+
+ResultadoIncrementoDP calcularIncrementoDpTraçadoPoligonal(
+    double q_kN_m,
+    double Eg_MPa,
+    double Ep_MPa,
+    double Lv_mm,
+    double ep_mm,
+    double Ix_mm4,
+    double Ag_mm2,
     double Ap_mm2
 );
 
