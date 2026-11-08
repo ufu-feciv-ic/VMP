@@ -59,6 +59,32 @@ TEST_CASE("Rotina 2: Força máxima protensão")
     ASSERT_PERCENT(res.P0_max_kN, 912.57, 0.05);
 }
 
+TEST_CASE("Rotina 3.1: Momento positivo VMP")
+{
+    PerfilI perfil = perfil_w360x57_8();
+    Aco aco = aco_a572_gr50();
+    Concreto concreto = concreto_c30();
+    Laje laje = laje_macica_130();
+    CaboProtensao cabo = cabo_190RB();
+
+    double Ap_mm2 = 4.2e2;
+    double sigma_pd_MPa = 92.38;
+    double gamma_a1 = 1.1;
+    double gamma_c = 1.4;
+
+    auto res = nbr8800::calcularMomentoPostivoVMP(perfil, aco, laje, concreto, cabo, 
+    Ap_mm2, sigma_pd_MPa, gamma_a1, gamma_c);
+
+    ASSERT_PERCENT(res.lbw, 38.98, 0.01);
+    ASSERT_PERCENT(res.lbw_p, 90.53, 0.01);
+    ASSERT_PERCENT(res.lbw_r, 137.23, 0.1);
+    ASSERT_PERCENT(res.Cc_max_kN, 7103.53, 0.05);
+    ASSERT_PERCENT(res.T_aco_kN, 2272.86, 0.05);
+    ASSERT_PERCENT(res.T_cabo_kN, 387.99, 0.05);
+    ASSERT_PERCENT(res.a_linha_neutra_mm, 4.87e1, 0.05);
+    ASSERT_PERCENT(res.MRd_VMP_kNm, 807.86, 0.05);
+}
+
 TEST_CASE("Rotina 6: Incremento força protensão traçado reto")
 {
     PerfilI perfil = perfil_w360x57_8();

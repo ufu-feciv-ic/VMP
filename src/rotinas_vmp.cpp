@@ -81,4 +81,93 @@ ResultadoIncrementoDP calcularIncrementoDpTraçadoReto(double q_kN_m, double Eg_
     return res;
 }
 
+ResultadoMomentoPositivoVMP calcularMomentoPostivoVMP(const PerfilI& perfil, const Aco& aco, 
+const Laje& laje, const Concreto& concreto, const CaboProtensao& cabo, double Ap_mm2, 
+double sigma_pd_MPa, double gamma_a1, double gamma_c)
+{
+    ResultadoMomentoPositivoVMP res;
+
+    res.lbw = perfil.lbw;
+    res.lbw_p = 3.76 * sqrt(aco.E_MPa / aco.fy_MPa);
+    res.lbw_r = 5.7 * sqrt(aco.E_MPa / aco.fy_MPa);
+
+    double fcd = concreto.fck_MPa / gamma_c;
+    double fyd = aco.fy_MPa / gamma_a1;
+
+    if (res.lbw <= res.lbw_p)
+    {
+        res.Cc_max_kN = (0.85 * fcd * laje.bef_mm * laje.tc_mm) * 1e-3;
+
+        res.T_aco_kN = perfil.Ag * fyd * 1e-3;
+
+        res.T_cabo_kN = Ap_mm2 * sigma_pd_MPa * 1e1 * 1e-3;
+
+        if (res.Cc_max_kN >= (res.T_aco_kN + res.T_cabo_kN))
+        {
+            res.a_linha_neutra_mm = (res.T_aco_kN * 1e3  + res.T_cabo_kN * 1e3) / ((0.85 * fcd * laje.bef_mm));
+
+            res.MRd_VMP_kNm = (res.T_aco_kN * (perfil.d / 2 + laje.hF_mm + laje.tc_mm - res.a_linha_neutra_mm / 2)
+            + res.T_cabo_kN * (perfil.d + cabo.ep + laje.hF_mm + laje.tc_mm - res.a_linha_neutra_mm / 2)) * 1e-3;
+        }
+        else 
+        {
+            res.C_aco_kN = 0.5 * ((perfil.Ag * fyd * 1e3) + res.T_cabo_kN - res.Cc_max_kN);
+
+            res.T_aco_kN = res.Cc_max_kN + res.C_aco_kN - res.T_cabo_kN;
+
+            double yp = 0.0;
+            double yc = 0.0;
+            double yt = 0.0;
+
+            if (res.C_aco_kN <= (perfil.bf * perfil.tf * fyd))
+            {
+                yp = res.C_aco_kN / (perfil.bf * fyd);
+
+                yc = yp / 2;
+
+                yt = 
+                (((perfil.bf * perfil.tf * perfil.tf) / 2) 
+                + (perfil.h * perfil.tw * (perfil.h/2 + perfil.tf)) 
+                + (perfil.bf / 2 * (perfil.tf - yp) * (3 * perfil.tf + 2 * perfil.h - yp)))
+                / (perfil.bf * perfil.tf + perfil.h * perfil.tw + perfil.bf*(perfil.tf - yp));
+            }
+            else
+            {
+                yp = perfil.tf + perfil.h * 
+                ((res.C_aco_kN - perfil.bf * perfil.tf * fyd) / (perfil.h * perfil.tw * fyd));
+
+                yc = 
+                ((perfil.bf/2 * perfil.tf * perfil.tf)
+                + ((yp - perfil.tf) * perfil.tw) * ((yp + perfil.tf) / 2))
+                / ((perfil.bf * perfil.tf) + (yp - perfil.tf) * perfil.tw);
+
+                yt = 
+                ((perfil.bf/2 * perfil.tf * perfil.tf)
+                + ((perfil.d - yp - perfil.tf) * perfil.tw) * ((perfil.d - yp + perfil.tf) / 2))
+                / ((perfil.bf * perfil.tf) + (perfil.d - yp - perfil.tf) * perfil.tw);
+            }
+
+            res.MRd_VMP_kNm = 
+            (res.Cc_max_kN * (laje.tc_mm / 2 + laje.hF_mm + yp)+ res.C_aco_kN * (yp - yc)
+            + res.T_aco_kN * (perfil.d - yp - yt)
+            + res.T_cabo_kN * (perfil.d + cabo.ep - yp)) * 1e-3;
+        }
+    }
+    else if (res.lbw <= res.lbw_r)
+    {
+        auto secao_tr = 
+        nbr8800::calcularSecaoTransformada(perfil, laje, concreto, aco, 1.0, cabo.ep, true);
+
+        res.MRd_VMP_kNm = std::min(secao_tr.Wtr_inf_mm3 * fyd, (1/secao_tr.n_relacao_modular) * secao_tr.Wtr_sup_mm3 * fcd);
+    }
+    else 
+    {
+        res.aplicavel = false;
+        res.MRd_VMP_kNm = 0.0;
+        return res;
+    }
+
+    return res;
+}
+
 }

@@ -146,22 +146,28 @@ ResultadoRotinaH calcular_rotina_h_tensao_cabo(
 // ----------------------------------------------------------------------------
 // Rotina 3: Momento Fletor Resistente de VMP (MRd,VMP+)
 // ----------------------------------------------------------------------------
-struct ResultadoMomentoVMP {
+struct ResultadoMomentoPositivoVMP {
+    bool aplicavel = false;
+    double lbw; // Esbeltez da alma
+    double lbw_p; // Esbeltez da alma no limite plastico
+    double lbw_r; // Esbeltez da alma no limite elástico
     double a_linha_neutra_mm; // Altura do bloco comprimido de concreto
+    double y_lnp_mm;
     double Cc_max_kN;         // Compressão da laje
+    double C_aco_kN;          // Compressão do perfil de aço
     double T_aco_kN;          // Tração do perfil de aço
     double T_cabo_kN;         // Tração do cabo de protensão
     double MRd_VMP_kNm;       // Momento resistente final em kN.m
 };
 
-ResultadoMomentoVMP calcular_rotina_3_momento_vmp(
+ResultadoMomentoPositivoVMP calcularMomentoPostivoVMP(
     const PerfilI& perfil,
     const Aco& aco,
     const Laje& laje,
     const Concreto& concreto,
+    const CaboProtensao& cabo, 
     double Ap_mm2,
     double sigma_pd_MPa,
-    double ep_base_perfil_mm = -50.0,
     double gamma_a1 = 1.10,
     double gamma_c = 1.40
 );

@@ -31,7 +31,7 @@ struct RelatorioVMP {
     ResultadoEstimativaP0 estimativa_p0;
     ResultadoSecaoTransformada secao_t0;
     ResultadoSecaoTransformada secao_t_inf;
-    ResultadoMomentoVMP momento_vmp;
+    ResultadoMomentoPositivoVMP momento_vmp;
 
     // Forças nas fases
     double P1_fase1_kN;
