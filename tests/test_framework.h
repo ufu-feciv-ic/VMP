@@ -125,10 +125,57 @@ namespace TestFramework {
         auto _exp = (expected); \
         auto _diff = std::abs(_act - _exp); \
         if (_diff > (tol)) { \
+            double _denom = std::abs(_exp); \
+            double _rel_pct = (_denom > 1e-12) ? ((_diff / _denom) * 100.0) : 0.0; \
             std::ostringstream _ss; \
-            _ss << "Falha em ASSERT_NEAR: |" #actual " - " #expected "| <= " #tol \
-                << " (| " << _act << " - " << _exp << " | = " << _diff << " > " << (tol) << ") em " \
-                << __FILE__ << ":" << __LINE__; \
+            _ss << "Falha em ASSERT_NEAR: |" #actual " - " #expected "| <= " #tol << "\n" \
+                << "         -> Obtido:   " << _act << "\n" \
+                << "         -> Esperado: " << _exp << "\n" \
+                << "         -> Dif. Abs: " << _diff << " > Tol: " << (tol) << "\n" \
+                << "         -> Dif. Rel: " << _rel_pct << "%\n" \
+                << "         -> Local:    " << __FILE__ << ":" << __LINE__; \
+            throw ::TestFramework::TestFailureException(_ss.str()); \
+        } \
+    } while (0)
+
+#define ASSERT_PERCENT(actual, expected, max_percent) \
+    do { \
+        auto _act = (actual); \
+        auto _exp = (expected); \
+        auto _diff = std::abs(_act - _exp); \
+        double _denom = std::abs(_exp); \
+        double _pct_tol = (max_percent); \
+        double _rel_pct = (_denom > 1e-12) ? ((_diff / _denom) * 100.0) : (_diff * 100.0); \
+        if (_rel_pct > _pct_tol) { \
+            std::ostringstream _ss; \
+            _ss << "Falha em ASSERT_PERCENT: erro relativo de " #actual " excede " << _pct_tol << "%\n" \
+                << "         -> Obtido:   " << _act << "\n" \
+                << "         -> Esperado: " << _exp << "\n" \
+                << "         -> Dif. Rel: " << _rel_pct << "% > Tol: " << _pct_tol << "%\n" \
+                << "         -> Dif. Abs: " << _diff << "\n" \
+                << "         -> Local:    " << __FILE__ << ":" << __LINE__; \
+            throw ::TestFramework::TestFailureException(_ss.str()); \
+        } \
+    } while (0)
+
+#define ASSERT_APPROX(actual, expected, rel_tol, abs_tol) \
+    do { \
+        auto _act = (actual); \
+        auto _exp = (expected); \
+        auto _diff = std::abs(_act - _exp); \
+        auto _r_tol = (rel_tol); \
+        auto _a_tol = (abs_tol); \
+        auto _allowed = std::max(_a_tol, _r_tol * std::max(std::abs(_act), std::abs(_exp))); \
+        if (_diff > _allowed) { \
+            double _denom = std::abs(_exp); \
+            double _rel_pct = (_denom > 1e-12) ? ((_diff / _denom) * 100.0) : 0.0; \
+            std::ostringstream _ss; \
+            _ss << "Falha em ASSERT_APPROX: |" #actual " - " #expected "| excede tolerancia mista\n" \
+                << "         -> Obtido:   " << _act << "\n" \
+                << "         -> Esperado: " << _exp << "\n" \
+                << "         -> Dif. Abs: " << _diff << " (permitido: " << _allowed << ")\n" \
+                << "         -> Dif. Rel: " << _rel_pct << "%\n" \
+                << "         -> Local:    " << __FILE__ << ":" << __LINE__; \
             throw ::TestFramework::TestFailureException(_ss.str()); \
         } \
     } while (0)

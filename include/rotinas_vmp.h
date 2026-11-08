@@ -44,14 +44,22 @@ struct ResultadoEstimativaP0 {
     double P0_max_kN;  // Menor entre os dois limites normativos
 };
 
-ResultadoEstimativaP0 calcular_rotina_2_estimativa_p0(
+ResultadoEstimativaP0 calcularEstimativaP0max(
     const PerfilI& perfil,
     const Aco& aco,
+    const Concreto& concreto,
+    const CaboProtensao& cabo,
     double NRd_kN,
     double MRd_kNm,
-    double ep_I_mm,
-    double M_peso_proprio_kNm,
-    double P0_6118_estimado_kN = 1431.63
+    double MSd_g_kN,
+    double MSd_q_kN,
+    double gamma_P,
+    double beta,
+    double psi_1,
+    double ytr_mm,
+    double Atr_mm,
+    double Wtr_inf_mm,
+    double Wtr_sup_mm
 );
 
 // ----------------------------------------------------------------------------

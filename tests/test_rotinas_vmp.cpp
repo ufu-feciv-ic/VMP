@@ -13,9 +13,13 @@ TEST_CASE("Rotina 1: Cálculo propriedades seção transformada tempo infinito")
 
     auto res = nbr8800::calcularSecaoTransformada(perfil, laje, concreto, aco, 3, -50, false);
 
-    ASSERT_NEAR(res.n_relacao_modular, 0.04473, 0.00001);
-    ASSERT_NEAR(res.Atr_mm2, 246.96e2, 0.01);
-    ASSERT_NEAR(res.ytr_mm, 351.3, 0.1);
-    ASSERT_NEAR(res.ay_mm, 130, 0.0);
-    ASSERT_NEAR(res.Itr_mm4, 49091.19e4, 0.01);
+    // Comparação percentual para absorver arredondamentos intermediários da dissertação (tolerância de 0.1%)
+    ASSERT_PERCENT(res.n_relacao_modular, 0.04473, 0.05);
+    ASSERT_PERCENT(res.btr_mm, 13.42e1, 0.1);
+    ASSERT_PERCENT(res.Atr_mm2, 246.96e2, 0.1);
+    ASSERT_PERCENT(res.ytr_mm, 351.3, 0.1);
+    ASSERT_NEAR(res.ay_mm, 130.0, 0.01);
+    ASSERT_PERCENT(res.Itr_mm4, 49091.19e4, 0.1);
+    ASSERT_PERCENT(res.Wtr_inf_mm3, 1397.41e3, 0.1);
+    ASSERT_PERCENT(res.Wtr_sup_mm3, 3592.87e3, 0.1);
 }
