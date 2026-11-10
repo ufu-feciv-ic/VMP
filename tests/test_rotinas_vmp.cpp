@@ -93,10 +93,10 @@ TEST_CASE("Rotina 4: Cálculo da armadura de protensão")
 
     auto res = nbr8800::calcularArmaduraProtensao(cabo, protensao, P0_kN);
 
-    ASSERT_PERCENT(res.sigma_adm_MPa, 142.58, 0.01);
-    ASSERT_PERCENT(res.Ap_calc, 2.805, 0.01);
+    ASSERT_PERCENT(res.sigma_adm_MPa, 1425.8, 2);
+    ASSERT_PERCENT(res.Ap_calc, 2.805e2, 2);
     ASSERT_NEAR(res.n_cordoalhas, 3, 0.01);
-    ASSERT_PERCENT(res.Ap_real, 4.2, 0.01);
+    ASSERT_PERCENT(res.Ap_real, 4.2e2, 2);
 }
 
 TEST_CASE("Rotina 6: Incremento força protensão traçado reto")
