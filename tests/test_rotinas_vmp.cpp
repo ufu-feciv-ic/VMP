@@ -72,7 +72,7 @@ TEST_CASE("Rotina 3.1: Momento positivo VMP")
     double gamma_a1 = 1.1;
     double gamma_c = 1.4;
 
-    auto res = nbr8800::calcularMomentoPostivoVMP(perfil, aco, laje, concreto, cabo, 
+    auto res = nbr8800::calcularMomentoPostivoVMP(perfil, aco, concreto, laje, cabo, 
     Ap_mm2, sigma_pd_MPa, gamma_a1, gamma_c);
 
     ASSERT_PERCENT(res.lbw, 38.98, 0.01);
@@ -83,6 +83,20 @@ TEST_CASE("Rotina 3.1: Momento positivo VMP")
     ASSERT_PERCENT(res.T_cabo_kN, 387.99, 0.05);
     ASSERT_PERCENT(res.a_linha_neutra_mm, 4.87e1, 0.05);
     ASSERT_PERCENT(res.MRd_VMP_kNm, 807.86, 0.05);
+}
+
+TEST_CASE("Rotina 4: Cálculo da armadura de protensão")
+{
+    const CaboProtensao cabo = cabo_190RB();
+    TipoProtensao protensao = TipoProtensao::PRE_TRACAO;
+    double P0_kN = 400;
+
+    auto res = nbr8800::calcularArmaduraProtensao(cabo, protensao, P0_kN);
+
+    ASSERT_PERCENT(res.sigma_adm_MPa, 142.58, 0.01);
+    ASSERT_PERCENT(res.Ap_calc, 2.805, 0.01);
+    ASSERT_NEAR(res.n_cordoalhas, 3, 0.01);
+    ASSERT_PERCENT(res.Ap_real, 4.2, 0.01);
 }
 
 TEST_CASE("Rotina 6: Incremento força protensão traçado reto")

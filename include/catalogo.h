@@ -60,13 +60,15 @@ inline Laje laje_macica_130() {
 inline CaboProtensao cabo_190RB() {
     CaboProtensao c;
     c.tipo = TipoProtensao::PRE_TRACAO;
-    c.tipo_aco = TipoTracado::CABO_RETO;
-    c.tipo_aco = "CP-190RB";
+    c.tracado = TipoTracado::CABO_RETO;
+    c.cabo = TipoCabo::CP_190_RB;
+    c.cordoalha = TipoCordoalha::CORDOALHA_15_2;
     c.fpk = 1900; // MPa
-    c.fpyk = 0.85*c.fpk; // MPa
+    c.fpyk = 0.90*c.fpk; // MPa
     c.Ep = 200000; // MPa
-    c.diametro = 0.0;
-    c.n_cordoalhas = 3;
+    c.diametro = 15.2; // mm²
+    c.area_unit = 140; // mm²
+    c.n_cordoalhas = 0.0;
     c.Ap = 0.0;
     c.ep = -50; //mm
     c.delta_cunha = 6; //mm

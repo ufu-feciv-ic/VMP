@@ -67,16 +67,17 @@ ResultadoEstimativaP0 calcularEstimativaP0max(
 // ----------------------------------------------------------------------------
 // Rotina 4: Armadura e Quantidade de Cabos (Ap, ncabos)
 // ----------------------------------------------------------------------------
-struct ResultadoRotina4 {
-    int n_cabos;
-    double Ap_calculada_mm2;
-    double Ap_adotada_mm2;
+struct ResultadoArmaduraProtensao {
+    double sigma_adm_MPa;
+    double Ap_calc;
+    double n_cordoalhas;
+    double Ap_real;
 };
 
-ResultadoRotina4 calcular_rotina_4_armadura_protensao(
-    double P0_kN,
-    double fpk_MPa = 1900.0,
-    double area_unitaria_cordoalha_mm2 = 140.0 // Cordoalha 15.2 mm
+ResultadoArmaduraProtensao calcularArmaduraProtensao(
+    const CaboProtensao& cabo,
+    TipoProtensao& protensao,
+    double P0_kN
 );
 
 // ----------------------------------------------------------------------------
@@ -163,13 +164,21 @@ struct ResultadoMomentoPositivoVMP {
 ResultadoMomentoPositivoVMP calcularMomentoPostivoVMP(
     const PerfilI& perfil,
     const Aco& aco,
-    const Laje& laje,
     const Concreto& concreto,
+    const Laje& laje,
     const CaboProtensao& cabo, 
     double Ap_mm2,
     double sigma_pd_MPa,
     double gamma_a1 = 1.10,
     double gamma_c = 1.40
+);
+
+struct ResultadoMomentoNegativoVMP calcularMomentoNegativoVMP(
+    const PerfilI& perfi,
+    const Aco& aco,
+    const Concreto& concreto, 
+    const Laje& laje,
+    const CaboProtensao& cabo
 );
 
 }

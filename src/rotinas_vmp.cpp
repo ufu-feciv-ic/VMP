@@ -70,6 +70,30 @@ ResultadoEstimativaP0 calcularEstimativaP0max(const PerfilI& perfil, const Aco& 
     return res;
 }
 
+ResultadoArmaduraProtensao calcularArmaduraProtensao(const CaboProtensao& cabo, TipoProtensao& protensao, double P0_kN)
+{
+    ResultadoArmaduraProtensao res;
+
+    if (protensao == TipoProtensao::PRE_TRACAO)
+    {
+        res.sigma_adm_MPa = std::min(0.77 * cabo.fpk, 0.85 * cabo.fpyk);
+        res.Ap_calc = (P0_kN * 1000) / res.sigma_adm_MPa;
+        res.n_cordoalhas = res.n_cordoalhas = static_cast<int>(std::ceil(res.Ap_calc / cabo.area_unit));
+        res.Ap_real = cabo.area_unit * res.n_cordoalhas;
+        return res;
+    }
+    else if (protensao == TipoProtensao::POS_TRACAO)
+    {
+        res.sigma_adm_MPa = std::min(0.8 * cabo.fpk, 0.88 * cabo.fpyk);
+        res.Ap_calc = (P0_kN * 1000) / res.sigma_adm_MPa;
+        res.n_cordoalhas = res.n_cordoalhas = static_cast<int>(std::ceil(res.Ap_calc / cabo.area_unit));
+        res.Ap_real = cabo.area_unit * res.n_cordoalhas;
+        return res;
+    }
+
+    return res;
+}
+
 ResultadoIncrementoDP calcularIncrementoDpTraçadoReto(double q_kN_m, double Eg_MPa, double Ep_MPa, 
     double Lv_mm, double ep_mm, double Ix_mm4, double Ag_mm2, double Ap_mm2)
 {
@@ -81,8 +105,9 @@ ResultadoIncrementoDP calcularIncrementoDpTraçadoReto(double q_kN_m, double Eg_
     return res;
 }
 
+
 ResultadoMomentoPositivoVMP calcularMomentoPostivoVMP(const PerfilI& perfil, const Aco& aco, 
-const Laje& laje, const Concreto& concreto, const CaboProtensao& cabo, double Ap_mm2, 
+const Concreto& concreto, const Laje& laje, const CaboProtensao& cabo, double Ap_mm2, 
 double sigma_pd_MPa, double gamma_a1, double gamma_c)
 {
     ResultadoMomentoPositivoVMP res;

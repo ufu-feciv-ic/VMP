@@ -21,6 +21,17 @@ enum TipoTracado {
     CABO_POLIGONAL
 };
 
+enum TipoCabo {
+    CP_190_RB, 
+    CP_210_RB,
+    CP_175_RB
+};
+
+enum TipoCordoalha {
+    CORDOALHA_15_2, // área unitária = 140 mm²
+    CORDOALHA_12_7 // área unitária = 98,7 mm²
+};
+
 enum TipoConector {
     CONECTOR_PERFIL_U = 0,
     CONECTOR_STUD_BOLT = 1
@@ -97,11 +108,13 @@ struct Laje {
 struct CaboProtensao {
     TipoProtensao tipo = PRE_TRACAO;
     TipoTracado tracado = CABO_RETO;
-    std::string tipo_aco = "CP-190 RB";
+    TipoCabo cabo = CP_190_RB;
+    TipoCordoalha cordoalha = CORDOALHA_15_2;
     double fpk = 0.0;      // Resistência característica à ruptura (MPa)
     double fpyk = 0.0;     // Tensão de escoamento (MPa)
     double Ep = 0.0;     // Módulo de elasticidade do cabo (MPa)
     double diametro = 0.0;   // Diâmetro nominal da cordoalha (mm)
+    double area_unit = 0.0;
     int n_cordoalhas = 0;     // Número de cordoalhas
     double Ap = 0.0;        // Área total de aço de protensão (mm²) (ex: 3 * 140 mm²)
     double ep = 0.0;        // Posição do cabo em relação à face inferior do perfil (mm)
