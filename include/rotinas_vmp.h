@@ -148,7 +148,7 @@ ResultadoRotinaH calcular_rotina_h_tensao_cabo(
 // Rotina 3: Momento Fletor Resistente de VMP (MRd,VMP+)
 // ----------------------------------------------------------------------------
 struct ResultadoMomentoPositivoVMP {
-    bool aplicavel = false;
+    bool aplicavel = true;
     double lbw; // Esbeltez da alma
     double lbw_p; // Esbeltez da alma no limite plastico
     double lbw_r; // Esbeltez da alma no limite elástico
@@ -173,7 +173,14 @@ ResultadoMomentoPositivoVMP calcularMomentoPostivoVMP(
     double gamma_c = 1.40
 );
 
-struct ResultadoMomentoNegativoVMP calcularMomentoNegativoVMP(
+struct ResultadoMomentoNegativoVMP {
+    bool aplicavel = true;
+    double MRd_neg_kNm;
+    double Mrd_dist_kNm;
+    double MRd_VMP_kNm;
+};
+
+ResultadoMomentoNegativoVMP calcularMomentoNegativoVMP(
     const PerfilI& perfi,
     const Aco& aco,
     const Concreto& concreto, 

@@ -195,4 +195,38 @@ double sigma_pd_MPa, double gamma_a1, double gamma_c)
     return res;
 }
 
+ResultadoMomentoNegativoVMP calcularMomentoNegativoVMP(const PerfilI& perfil, const Aco& aco, 
+    const Concreto& concreto, const Laje& laje, const CaboProtensao& cabo, const ArmacaoLaje& armacaoLaje)
+{
+    ResultadoMomentoNegativoVMP res;
+
+    double lbf = perfil.lbf;
+    double lbf_p = 0.38 * sqrt(aco.E_MPa / aco.fy_MPa);
+    
+    double lbw = perfil.lbw;
+    double lbw_p = 3.76 * sqrt(aco.E_MPa / aco.fy_MPa);
+
+    double fcd = concreto.fck_MPa / 1.4;
+
+    if (lbf <= lbf_p)
+    {
+        double Tpd = cabo.Ap * cabo.sigma_Pd;
+        double Tds = armacaoLaje.Ads * armacaoLaje.fsd;
+
+        if (Tds + Tpd >= (perfil.Ag * aco.fy_MPa))
+        {
+
+        }
+    }
+    else
+    {
+        res.aplicavel = false;
+        res.MRd_VMP_kNm = 0.0;
+    }
+
+    res.MRd_VMP_kNm = std::min(res.MRd_neg_kNm, res.Mrd_dist_kNm);
+
+    return res;
+}
+
 }

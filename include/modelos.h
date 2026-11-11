@@ -112,6 +112,7 @@ struct CaboProtensao {
     TipoCordoalha cordoalha = CORDOALHA_15_2;
     double fpk = 0.0;      // Resistência característica à ruptura (MPa)
     double fpyk = 0.0;     // Tensão de escoamento (MPa)
+    double sigma_Pd = 0.0;
     double Ep = 0.0;     // Módulo de elasticidade do cabo (MPa)
     double diametro = 0.0;   // Diâmetro nominal da cordoalha (mm)
     double area_unit = 0.0;
@@ -119,6 +120,11 @@ struct CaboProtensao {
     double Ap = 0.0;        // Área total de aço de protensão (mm²) (ex: 3 * 140 mm²)
     double ep = 0.0;        // Posição do cabo em relação à face inferior do perfil (mm)
     double delta_cunha = 0.0; // Acomodação da cunha na ancoragem (mm)
+};
+
+struct ArmacaoLaje {
+    double Ads;
+    double fsd;
 };
 
 // ----------------------------------------------------------------------------
