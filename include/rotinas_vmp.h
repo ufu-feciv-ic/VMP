@@ -185,7 +185,8 @@ ResultadoMomentoNegativoVMP calcularMomentoNegativoVMP(
     const Aco& aco,
     const Concreto& concreto, 
     const Laje& laje,
-    const CaboProtensao& cabo
+    const CaboProtensao& cabo,
+    const ArmacaoLaje& armacaoLaje
 );
 
 }

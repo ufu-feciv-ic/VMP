@@ -85,6 +85,23 @@ TEST_CASE("Rotina 3.1: Momento positivo VMP")
     ASSERT_PERCENT(res.MRd_VMP_kNm, 807.86, 0.05);
 }
 
+TEST_CASE("Rotina 3.3.1: Momento negativo VMP")
+{
+    PerfilI perfil = perfil_w360x57_8();
+    Aco aco = aco_a572_gr50();
+    Concreto concreto = concreto_c30();
+    Laje laje = laje_macica_130();
+    CaboProtensao cabo = cabo_190RB();
+    ArmacaoLaje armacaoLaje = laje_5cm_m();
+
+    cabo.Ap = 4.2e2;
+    cabo.sigma_Pd = 92.38e1;
+
+    auto res = nbr8800::calcularMomentoNegativoVMP(perfil, aco, concreto, laje, cabo, armacaoLaje);
+
+    ASSERT_PERCENT(res.MRd_neg_kNm, 354.49, 0.05);
+}
+
 TEST_CASE("Rotina 4: Cálculo da armadura de protensão")
 {
     const CaboProtensao cabo = cabo_190RB();

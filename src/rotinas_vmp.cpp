@@ -207,15 +207,121 @@ ResultadoMomentoNegativoVMP calcularMomentoNegativoVMP(const PerfilI& perfil, co
     double lbw_p = 3.76 * sqrt(aco.E_MPa / aco.fy_MPa);
 
     double fcd = concreto.fck_MPa / 1.4;
+    double fyd = aco.fy_MPa / 1.1;
+    double Tpd = cabo.Ap * cabo.sigma_Pd;
+    double Tds = armacaoLaje.Ads * armacaoLaje.fsd;
+    double Tad = 0.0;
+    double Cad = 0.0;
+    double Ccd = 0.0;
+    double yp = 0.0;
+    double yc = 0.0;
+    double yt = 0.0;
+    double d3 = 0.0;
+    double d4 = 0.0;
+    double d5 = 0.0;
+    double d6 = 0.0;
 
     if (lbf <= lbf_p)
     {
-        double Tpd = cabo.Ap * cabo.sigma_Pd;
-        double Tds = armacaoLaje.Ads * armacaoLaje.fsd;
-
-        if (Tds + Tpd >= (perfil.Ag * aco.fy_MPa))
+        if (Tds + Tpd >= (perfil.Ag * fyd))
         {
+            double ay = (Tpd + Tds - perfil.Ag * fyd) / (0.85 * laje.bef_mm * fcd);
+            ay = std::min(ay, laje.tc_mm - perfil.d1);
 
+            Ccd = Tpd + Tds - perfil.Ag * fyd;
+
+            d3 = laje.tc_mm - armacaoLaje.d_linha_mm - ay;
+
+            d4 = ay / 2;
+
+            d5 = perfil.d / 2 + laje.hF_mm + ay;
+
+            d6 = perfil.d + cabo.ep + laje.hF_mm + ay;
+
+            res.MRd_neg_kNm = Tds * d3 + Ccd * d4 + Tad * d5 + Tpd * d6;
+        }
+        else 
+        {
+            Tad = ((perfil.Ag * fyd) - Tds - Tpd) / 2;
+            double lb = 0.0;
+            double lb_p = 3.76 * sqrt(aco.E_MPa / aco.fy_MPa); 
+
+            if (Tad <= perfil.bf * perfil.tf * fyd)
+            {
+                Cad = (perfil.Ag * fyd) - Tad;
+                yp = Tad / (perfil.bf * fyd);
+                lb = (2 * perfil.d1) / perfil.tw;
+
+                if (lb <= lb_p)
+                {
+                    yc = 
+                    ((perfil.bf * perfil.tf * perfil.tf / 2)
+                    + perfil.h * perfil.tw * ((perfil.h / 2) + perfil.tf)
+                    + perfil.bf / 2 * (perfil.tf - yp) * (3 * perfil.tf + 2 * perfil.h - yp))
+                    / 
+                    ((perfil.bf * perfil.tf)
+                    + (perfil.h * perfil.tw)
+                    + perfil.bf * (perfil.tf - yp));
+
+                    yt = yp / 2;
+
+                    d3 = laje.tc_mm + laje.hF_mm + yp - armacaoLaje.d_linha_mm;
+
+                    d4 = yt;
+
+                    d5 = perfil.d - yp - yc;
+
+                    d6 = perfil.d - yp + cabo.ep;
+                    
+                    res.MRd_neg_kNm = (Tds * d3 + Tad * d4 + Cad * d5 - Tpd * d6)*1e-6;
+                }
+                else
+                {
+                    res.aplicavel = false;
+                    res.MRd_VMP_kNm = 0.0;
+                }
+            }
+            else 
+            {
+                Cad = (perfil.Ag * fyd) - Tad;
+                
+                yp = perfil.tf + perfil.h * 
+                ((Tad - (perfil.bf * perfil.tf * fyd)) / (perfil.h * perfil.tw * fyd));
+
+                lb = (2 * (perfil.h - yp + perfil.tf + perfil.r)) / (perfil.tw);
+
+                if (lb <= lb_p)
+                {
+                    yc = 
+                    ((perfil.bf * perfil.tf * perfil.tf / 2)
+                    + (perfil.d - yp - perfil.tf) * perfil.tw * ((perfil.d - yp + perfil.tf) / 2))
+                    / 
+                    ((perfil.bf * perfil.tf)
+                    + (perfil.d - yp - perfil.tf) * perfil.tw);
+
+                    yt = 
+                    ((perfil.bf * perfil.tf * perfil.tf / 2)
+                    + (yp - perfil.tf) * perfil.tw * ((yp + perfil.tf) / 2))
+                    / 
+                    ((perfil.bf * perfil.tf)
+                    + (yp - perfil.tf) * perfil.tw);
+
+                    d3 = laje.tc_mm + laje.hF_mm + yp - armacaoLaje.d_linha_mm;
+
+                    d4 = yp - yt;
+
+                    d5 = perfil.d - yp - yc;
+
+                    d6 = perfil.d - yp + cabo.ep;
+
+                    res.MRd_neg_kNm = Tds * d3 + Tad * d4 + Cad * d5 - Tpd * d6;
+                }
+                else
+                {
+                    res.aplicavel = false;
+                    res.MRd_VMP_kNm = 0.0;
+                }
+            }
         }
     }
     else

@@ -125,6 +125,7 @@ struct CaboProtensao {
 struct ArmacaoLaje {
     double Ads;
     double fsd;
+    double d_linha_mm;
 };
 
 // ----------------------------------------------------------------------------

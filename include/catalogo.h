@@ -57,6 +57,15 @@ inline Laje laje_macica_130() {
     return l;
 }
 
+inline ArmacaoLaje laje_5cm_m()
+{
+    ArmacaoLaje a;
+    a.Ads = (5e2) * 3000/1000;
+    a.fsd = 500 / 1.15;
+    a.d_linha_mm = 20;
+    return a;
+}
+
 inline CaboProtensao cabo_190RB() {
     CaboProtensao c;
     c.tipo = TipoProtensao::PRE_TRACAO;
