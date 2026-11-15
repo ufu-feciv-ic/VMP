@@ -109,7 +109,7 @@ TEST_CASE("Rotina 3.2: Momento positivo VMP semicompacta")
     ASSERT_PERCENT(res.lbw, 102.67, 0.01);
     ASSERT_PERCENT(res.lbw_p, 90.53, 0.01);
     ASSERT_PERCENT(res.lbw_r, 137.23, 0.01); 
-    ASSERT_PERCENT(res.MRd_VMP_kNm, 340.97, 0.5);
+    ASSERT_PERCENT(res.MRd_VMP_kNm, 395.01, 0.5);
 }
 
 TEST_CASE("Rotina 3.3: Momento negativo VMP")
@@ -198,4 +198,29 @@ TEST_CASE("Rotina G: Cálculo do momento de inércia de laje por metro (exemplo 
     auto I_laje = nbr8800::calcularInerciaLaje(laje, armacaoLaje, alpha_e);
 
     ASSERT_PERCENT(I_laje, 438.86e4, 0.05);
+}
+
+TEST_CASE("Rotina H: Cálculo da tensão de cálculo no cabo para ELU da VMP")
+{
+    PerfilI perfil = perfil_w360x57_8();
+    Aco aco = aco_a572_gr50();
+    Concreto concreto = concreto_c30();
+    Laje laje = laje_macica_130();
+    CaboProtensao cabo = cabo_190RB();
+
+    cabo.Ap = 4.2e2; // mm²
+
+    double P_atuante_kN = 448.84;
+    double Lv_mm = 12000;
+    
+    auto secao_tr = nbr8800::calcularSecaoTransformada(perfil, laje, concreto, 
+        aco, 1.0, cabo.ep, true);
+
+    auto res = nbr8800::calcularTensaoCaboELU(perfil, laje, cabo, concreto, 
+        P_atuante_kN, secao_tr.ytr_mm, secao_tr.Atr_mm2, secao_tr.Itr_mm4, Lv_mm);
+
+    ASSERT_PERCENT(res.epsilon_pre, 4.8e-3, 0.2);
+    ASSERT_PERCENT(res.ro_p, 9.26e-3, 0.05);
+    ASSERT_PERCENT(res.delta_sigma_MPa, 102.39, 0.05);
+    ASSERT_PERCENT(res.sigma_pd_MPa, 92.38e1, 0.2);
 }

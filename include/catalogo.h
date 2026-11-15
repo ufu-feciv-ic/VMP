@@ -86,7 +86,7 @@ inline CaboProtensao cabo_190RB() {
     c.tracado = TipoTracado::CABO_RETO;
     c.cabo = TipoCabo::CP_190_RB;
     c.cordoalha = TipoCordoalha::CORDOALHA_15_2;
-    c.fpk = 1900; // MPa
+    c.fpk = 1864.0; // MPa
     c.fpyk = 0.90*c.fpk; // MPa
     c.Ep = 200000; // MPa
     c.diametro = 15.2; // mm²

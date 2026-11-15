@@ -18,14 +18,18 @@ ResultadoSecaoTransformada calcularSecaoTransformada(const PerfilI& perfil, cons
     else res.n_relacao_modular = concreto.Ecs_MPa / (3 * aco.E_MPa);
     
     res.btr_mm = laje.bef_mm * res.n_relacao_modular;
-    res.Atr_mm2 = (res.btr_mm * laje.tc_mm) + (perfil.Ag);
 
-    res.ytr_mm = ((res.btr_mm * laje.tc_mm * (laje.tc_mm / 2 + laje.hF_mm + perfil.d)) + (perfil.Ag * perfil.d / 2)) / (res.Atr_mm2);
+    res.ytr_mm = ((res.btr_mm * laje.tc_mm * (laje.tc_mm / 2 + laje.hF_mm + perfil.d)) + 
+    (perfil.Ag * perfil.d / 2)) / (res.btr_mm * laje.tc_mm + perfil.Ag);
 
     res.ay_mm = std::min(perfil.d + laje.hF_mm + laje.tc_mm - res.ytr_mm, laje.tc_mm);
 
+    res.Atr_mm2 = (res.btr_mm * res.ay_mm) + (perfil.Ag);
+
+    double dist_cg_conc = (perfil.d + laje.hF_mm + laje.tc_mm - res.ay_mm / 2) - res.ytr_mm;
+
     res.Itr_mm4 = res.btr_mm * pow(res.ay_mm, 3) / 12
-    + res.btr_mm * res.ay_mm * pow(perfil.d + laje.hF_mm + res.ay_mm / 2 - res.ytr_mm, 2)
+    + res.btr_mm * res.ay_mm * pow(dist_cg_conc, 2)
     + perfil.Ix 
     + perfil.Ag * pow(res.ytr_mm - perfil.d / 2, 2);
 
@@ -83,7 +87,7 @@ ResultadoArmaduraProtensao calcularArmaduraProtensao(const CaboProtensao& cabo, 
     {
         res.sigma_adm_MPa = std::min(0.77 * cabo.fpk, 0.85 * cabo.fpyk);
         res.Ap_calc = (P0_kN * 1000) / res.sigma_adm_MPa;
-        res.n_cordoalhas = res.n_cordoalhas = static_cast<int>(std::ceil(res.Ap_calc / cabo.area_unit));
+        res.n_cordoalhas = static_cast<int>(std::ceil(res.Ap_calc / cabo.area_unit));
         res.Ap_real = cabo.area_unit * res.n_cordoalhas;
         return res;
     }
@@ -95,6 +99,45 @@ ResultadoArmaduraProtensao calcularArmaduraProtensao(const CaboProtensao& cabo, 
         res.Ap_real = cabo.area_unit * res.n_cordoalhas;
         return res;
     }
+
+    return res;
+}
+
+ResultadoTensaoCabo calcularTensaoCaboELU(const PerfilI& perfil, const Laje& laje, 
+    const CaboProtensao& cabo, const Concreto& concreto, double P_atuante_lN,
+    double ytr_mm, double Atr_mm2, double Itr_mm4, double Lv_mm)
+{
+    ResultadoTensaoCabo res;
+
+    if (cabo.tipo == TipoProtensao::PRE_TRACAO)
+    {
+        res.epsilon_pre = (0.9 * P_atuante_lN * 1000) / (cabo.Ep * cabo.Ap);
+        res.ro_p = cabo.Ap / Atr_mm2;
+    }
+    else if (cabo.tipo == TipoProtensao::POS_TRACAO)
+    {
+        double alpha_p = cabo.Ep / concreto.Ecs_MPa;
+
+        res.ro_p = cabo.Ap / Atr_mm2;
+
+        double eptr = ytr_mm - cabo.ep;
+
+        double eta = 1 + (eptr * eptr * Atr_mm2 / Itr_mm4);
+
+        res.epsilon_pre = ((0.9 * P_atuante_lN * 1000) / (cabo.Ep * cabo.Ap)) * 
+        (1 + alpha_p * res.ro_p * eta);
+    }
+
+    if ((Lv_mm / (perfil.d + laje.hF_mm + laje.tc_mm)) <= 35)
+    {
+        res.delta_sigma_MPa = std::min(70 + (concreto.fck_MPa / (100 * res.ro_p)), 420.0);   
+    }
+    else
+    {
+        res.delta_sigma_MPa = std::min(70 + (concreto.fck_MPa / (300 * res.ro_p)), 210.0);
+    }
+
+    res.sigma_pd_MPa = std::min((((res.epsilon_pre * cabo.Ep) + res.delta_sigma_MPa) / 1.15), cabo.fpyk / 1.15);
 
     return res;
 }
@@ -416,54 +459,55 @@ double calcularCdist(double psi)
 
 double calcularInerciaLaje(const Laje& laje, const ArmacaoLaje& armacaoLaje, double alpha_e)
 {
+    double tc_cm = laje.tc_mm / 10.0;
+    double hF_cm = laje.hF_mm / 10.0;
+    double bF_cm = laje.bF_mm / 10.0;
+    double eF_cm = laje.eF_mm / 10.0;
+    double d_linha_cm = armacaoLaje.d_linha_mm / 10.0;
+    double As_cm2 = armacaoLaje.As / 100.0; // mm² para cm²
+
     double delta = 0.0;
     double xln = 0.0;
-    double I_laje = 0.0;
+    double I_laje_cm4 = 0.0;
 
     if (laje.tipo == TipoLaje::LAJE_MACICA)
-    {
-        delta = (armacaoLaje.As * armacaoLaje.As) + 
-        ((2000 * armacaoLaje.As * (laje.tc_mm - armacaoLaje.d_linha_mm) / alpha_e));
-
-        xln = (-armacaoLaje.As + sqrt(delta)) / (1000 / alpha_e);
-
-        I_laje = ((1000 * xln * xln * xln) / (3 * alpha_e)) 
-        + armacaoLaje.As * std::pow(laje.tc_mm - armacaoLaje.d_linha_mm - xln, 2);
-    }
-    else
-    {
-        delta = (armacaoLaje.As * armacaoLaje.As) + 
-        ((2 * 1000 * laje.bF_mm * armacaoLaje.As * (laje.tc_mm + laje.hF_mm - armacaoLaje.d_linha_mm)) 
-        / (alpha_e * laje.eF_mm));
-
-        xln = ((-armacaoLaje.As + sqrt(delta)) * alpha_e * laje.eF_mm) / (laje.bF_mm / 2);
-
-        if (xln <= laje.hF_mm)
         {
-            I_laje = ((laje.bF_mm * xln * xln * xln) / (3 * alpha_e * laje.eF_mm)) 
-            + armacaoLaje.As * std::pow(laje.tc_mm +laje.hF_mm - armacaoLaje.d_linha_mm - xln, 2);
+            delta = (As_cm2 * As_cm2) + (200.0 * As_cm2 * (tc_cm - d_linha_cm) / alpha_e);
+            xln = (-As_cm2 + std::sqrt(delta)) / (100.0 / alpha_e);
+
+            I_laje_cm4 = ((100.0 * std::pow(xln, 3)) / (3.0 * alpha_e))
+                + As_cm2 * std::pow(tc_cm - d_linha_cm - xln, 2);
         }
-        else 
+        else // LAJE_STEEL_DECK
         {
-            delta = std::pow(armacaoLaje.As + ((laje.bF_mm * laje.hF_mm) / 
-            (alpha_e * laje.eF_mm)) - (1000 * laje.hF_mm / alpha_e), 2) 
-            - (2000 / alpha_e) * ((500 * laje.hF_mm * laje.hF_mm / alpha_e) - 
-            ((laje.bF_mm * laje.hF_mm * laje.hF_mm) / (2 * alpha_e * laje.eF_mm)) -
-            (armacaoLaje.As * (laje.tc_mm + laje.hF_mm - armacaoLaje.d_linha_mm)));
+            delta = (As_cm2 * As_cm2) + (2.0 * bF_cm * As_cm2 * (tc_cm + hF_cm - d_linha_cm)) / (alpha_e * eF_cm);
+            xln = ((-As_cm2 + std::sqrt(delta)) * alpha_e * eF_cm) / (bF_cm / 2.0);
 
-            xln = (-(armacaoLaje.As + ((laje.bF_mm * laje.hF_mm) / (alpha_e * laje.eF_mm)) 
-            - (1000 * laje.hF_mm / alpha_e)) + sqrt(delta)) 
-            / (1000 / alpha_e);
+            if (xln <= hF_cm)
+            {
+                I_laje_cm4 = ((bF_cm * std::pow(xln, 3)) / (3.0 * alpha_e * eF_cm))
+                    + As_cm2 * std::pow(tc_cm + hF_cm - d_linha_cm - xln, 2);
+            }
+            else 
+            {
+                double termA = As_cm2 + (bF_cm * hF_cm) / (alpha_e * eF_cm) - (100.0 * hF_cm / alpha_e);
+                double bracket = (50.0 * hF_cm * hF_cm / alpha_e)
+                    - (bF_cm * hF_cm * hF_cm / (2.0 * alpha_e * eF_cm))
+                    - (As_cm2 * (tc_cm + hF_cm - d_linha_cm));
 
-            I_laje = 
-            ((laje.bF_mm * laje.hF_mm * laje.hF_mm * laje.hF_mm) / (12 * alpha_e * laje.eF_mm)) + 
-            (((laje.bF_mm * laje.hF_mm) / (alpha_e * laje.eF_mm)) * std::pow(xln - laje.hF_mm / 2, 2)) + 
-            ((1000 * std::pow(xln - laje.hF_mm, 3)) / (3 * alpha_e)) +
-            (armacaoLaje.As * (std::pow(laje.tc_mm + laje.hF_mm - armacaoLaje.d_linha_mm - xln, 2)));
+                delta = (termA * termA) - (200.0 / alpha_e) * bracket;
+                xln = (-termA + std::sqrt(delta)) / (100.0 / alpha_e);
+
+                I_laje_cm4 =
+                    ((bF_cm * std::pow(hF_cm, 3)) / (12.0 * alpha_e * eF_cm))
+                    + (((bF_cm * hF_cm) / (alpha_e * eF_cm)) * std::pow(xln - hF_cm / 2.0, 2))
+                    + ((100.0 * std::pow(xln - hF_cm, 3)) / (3.0 * alpha_e))
+                    + (As_cm2 * std::pow(tc_cm + hF_cm - d_linha_cm - xln, 2));
+            }
         }
-    }
 
-    return I_laje;
+        // Retorna em mm⁴/m (1 cm⁴ = 10000 mm⁴)
+        return I_laje_cm4 * 1e4;
 }
 
 }

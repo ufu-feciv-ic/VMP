@@ -132,6 +132,7 @@ struct ResultadoTensaoCabo {
     double epsilon_pre;
     double delta_sigma_MPa;
     double sigma_pd_MPa;
+    double ro_p;
 };
 
 ResultadoTensaoCabo calcularTensaoCaboELU(
@@ -140,6 +141,7 @@ ResultadoTensaoCabo calcularTensaoCaboELU(
     const CaboProtensao& cabo, 
     const Concreto& concreto,
     double P_atuante_kN,
+    double ytr_mm, 
     double Atr_mm2,
     double Itr_mm4,
     double Lv_mm
