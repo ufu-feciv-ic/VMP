@@ -1,4 +1,5 @@
 #include "rotinas_nbr8800.h"
+#include "rotinas_vmp.h"
 #include <iostream>
 #include <cmath>
 #include <algorithm>
@@ -211,5 +212,258 @@ ResultadoMomentoResistentePerfil calcularMomentoResistentePerfil(const PerfilI& 
     return res;
 }
 
+ResultadoMomentoPositivoVM calcularMomentoPositivoVM(const PerfilI& perfil, const Aco& aco, 
+    const Concreto& concreto, const Laje& laje, double gamma_a1, double gamma_c)
+{
+    ResultadoMomentoPositivoVM res;
 
+    res.lbw = perfil.lbw;
+    res.lbw_p = 3.76 * sqrt(aco.E_MPa / aco.fy_MPa);
+    res.lbw_r = 5.7 * sqrt(aco.E_MPa / aco.fy_MPa);
+
+    double fcd = concreto.fck_MPa / gamma_c;
+    double fyd = aco.fy_MPa / gamma_a1;
+
+    if (res.lbw <= res.lbw_p)
+    {
+        res.Cc_max_kN = 0.85 * fcd * laje.bef_mm * laje.tc_mm * 1e-3;
+
+        res.T_aco_kN = perfil.Ag * fyd * 1e-3;
+
+        if (res.Cc_max_kN >= res.T_aco_kN)
+        {
+            res.a_linha_neutra_mm = (res.T_aco_kN * 1e3) / (0.85 * fcd * laje.bef_mm);
+
+            res.MRd_VM_kNm = res.T_aco_kN * (perfil.d / 2.0 + laje.hF_mm + 
+                laje.tc_mm - res.a_linha_neutra_mm / 2.0) * 1e-3;
+        }
+        else 
+        {
+            res.C_aco_kN = 0.5 * (perfil.Ag * fyd * 1e-3 - res.Cc_max_kN);
+
+            res.T_aco_kN = res.C_aco_kN + res.Cc_max_kN;
+
+            double yp = 0.0;
+            double yc = 0.0;
+            double yt = 0.0;
+
+            if (res.C_aco_kN <= perfil.bf * perfil.tf * fyd * 1e-3)
+            {
+                yp = (res.C_aco_kN * 1e3) / (perfil.bf * fyd);
+
+                yc = yp / 2.0;
+
+                yt = 
+                (((perfil.bf * perfil.tf * perfil.tf / 2.0)
+                + (perfil.h * perfil.tw * (perfil.h / 2.0 + perfil.tf))
+                + ((perfil.bf / 2.0) * (perfil.tf - yp) * (3.0 * perfil.tf + 2.0 * perfil.h - yp)))
+                / ((perfil.bf * perfil.tf) + (perfil.h * perfil.tw) + (perfil.bf * (perfil.tf - yp))));
+            }
+            else 
+            {
+                yp = 
+                perfil.tf + (perfil.h 
+                * (((res.C_aco_kN * 1e3) - (perfil.bf * perfil.tf * fyd))
+                / (perfil.h * perfil.tw * fyd)));
+
+                yc = 
+                (((perfil.bf * perfil.tf * perfil.tf / 2.0) 
+                + (perfil.tw * (yp - perfil.tf) * ((yp + perfil.tf) / 2.0))) 
+                / ((perfil.bf * perfil.tf)
+                + ((yp - perfil.tf) * perfil.tw)));
+
+                yt = 
+                (((perfil.bf * perfil.tf * perfil.tf / 2.0) 
+                + (perfil.tw * (perfil.d - yp - perfil.tf) * ((perfil.d - yp + perfil.tf) / 2.0))) 
+                / ((perfil.bf * perfil.tf)
+                + ((perfil.d - yp - perfil.tf) * perfil.tw)));
+            }
+
+            res.MRd_VM_kNm = (res.C_aco_kN * (perfil.d - yt - yc) 
+            + res.Cc_max_kN * (laje.tc_mm + laje.hF_mm + perfil.d - yt)) * 1e-3;
+        }
+    }
+    else if (res.lbw <= res.lbw_r)
+    {
+        auto secao_tr = nbr8800::v2008::calcularSecaoTransformada(perfil, laje, 
+            concreto, aco, 1.0, 0.0, true);
+
+        res.MRd_VM_kNm = std::min(secao_tr.Wtr_inf_mm3 * fyd, 
+            (1.0 / secao_tr.n_relacao_modular) * secao_tr.Wtr_sup_mm3 * fcd) * 1e-6;
+    }
+    else 
+    {
+        res.aplicavel = false;
+        res.MRd_VM_kNm = 0.0;
+        return res;
+    }
+    
+    return res;
+}
+
+ResultadoMomentoNegativoVM calcularMomentoNegativoVM(const PerfilI& perfil, 
+    const Aco& aco, const Concreto& concreto, const Laje& laje, 
+    const ArmacaoLaje& armacaoLaje, double MSd_neg_kNm, double MSd_pos_kNm, 
+    double Lv_mm, double a_vigas_mm, double alpha_viga, double gamma_a1, double gamma_c)
+{
+    ResultadoMomentoNegativoVM res;
+
+    double lbf = perfil.lbf;
+    double lbf_p = 0.38 * sqrt(aco.E_MPa / aco.fy_MPa);
+
+    double fcd = concreto.fck_MPa / gamma_c;
+    double fyd = aco.fy_MPa / gamma_a1;
+
+    double Tds = armacaoLaje.Ads * armacaoLaje.fsd;
+    double Tad = 0.0;
+    double Cad = 0.0;
+    double Ccd = 0.0;
+    double yp = 0.0;
+    double yc = 0.0;
+    double yt = 0.0;
+    double d3 = 0.0;
+    double d4 = 0.0;
+    double d5 = 0.0;
+
+    if (lbf <= lbf_p)
+    {
+        double lb = 0.0;
+        double lb_p = 3.76 * sqrt(aco.E_MPa / aco.fy_MPa);
+
+        if ((Tds + perfil.bf * perfil.tf * fyd) >= 
+        (perfil.h * perfil.tw + perfil.tf * perfil.bf) * fyd)
+        {
+            Tad = (perfil.Ag * fyd - Tds) / 2;
+
+            yp = Tad / (perfil.bf * fyd);
+
+            lb = 2 * perfil.d1 / perfil.tw;
+
+            if (lb <= lb_p)
+            {
+                yc = 
+                ((perfil.bf * perfil.tf * perfil.tf / 2)
+                + perfil.h * perfil.tw * ((perfil.h / 2) + perfil.tf)
+                + perfil.bf / 2 * (perfil.tf - yp) * (3 * perfil.tf + 2 * perfil.h - yp))
+                / 
+                ((perfil.bf * perfil.tf)
+                + (perfil.h * perfil.tw)
+                + perfil.bf * (perfil.tf - yp));
+
+                yt = yp / 2;
+
+                d3 = laje.tc_mm + laje.hF_mm + yp - armacaoLaje.d_linha_mm;
+
+                d4 = yt;
+
+                d5 = perfil.d - yp - yc;
+                
+                res.MRd_neg_kNm = (Tds * d3 + Tad * d4 + (perfil.Ag * fyd - Tad)  * d5)*1e-6;
+            }
+            else
+            {
+                res.aplicavel = false;
+                res.MRd_VM_kNm = 0.0;
+            }
+        }
+        else
+        {
+            Tad = (perfil.Ag * fyd - Tds) / 2;
+
+            yp = perfil.tf + perfil.h * 
+            ((Tad - (perfil.bf * perfil.tf * fyd)) / (perfil.h * perfil.tw * fyd));
+
+            lb = (2 * (perfil.h - yp + perfil.tf - perfil.r)) / (perfil.tw);
+
+            if (lb <= lb_p)
+            {
+                yc = 
+                ((perfil.bf * perfil.tf * perfil.tf / 2)
+                + (perfil.d - yp - perfil.tf) * perfil.tw * ((perfil.d - yp + perfil.tf) / 2))
+                / 
+                ((perfil.bf * perfil.tf)
+                + (perfil.d - yp - perfil.tf) * perfil.tw);
+
+                yt = 
+                ((perfil.bf * perfil.tf * perfil.tf / 2)
+                + (yp - perfil.tf) * perfil.tw * ((yp + perfil.tf) / 2))
+                / 
+                ((perfil.bf * perfil.tf)
+                + (yp - perfil.tf) * perfil.tw);
+
+                d3 = laje.tc_mm + laje.hF_mm + yp - armacaoLaje.d_linha_mm;
+
+                d4 = yp - yt;
+
+                d5 = perfil.d - yp - yc;
+
+                res.MRd_neg_kNm = (Tds * d3 + Tad * d4 + (perfil.Ag * fyd - Tad) * d5)*1e-6;
+            }
+            else
+            {
+                res.aplicavel = false;
+                res.MRd_VM_kNm = 0.0;
+            }
+        }
+    }
+    else 
+    {
+        res.aplicavel = false;
+        res.MRd_VM_kNm = 0.0;
+    }
+
+    double h0 = perfil.d - perfil.tf;
+
+    double alpha_e = aco.E_MPa / concreto.Ecs_MPa;
+
+    double I_laje = nbr8800::v2008::calcularInerciaLaje(laje, armacaoLaje, alpha_e);
+
+    double k1 = alpha_viga * aco.E_MPa * I_laje / a_vigas_mm;
+
+    double k2 = (aco.E_MPa * std::pow(perfil.tw, 3)) / (3.64 * h0);
+
+    double kr = (k1 * k2) / (k1 + k2);
+
+    yc = perfil.d / 2.0 + laje.hF_mm + laje.tc_mm / 2.0;
+
+    double A = perfil.Ag + armacaoLaje.Ads;
+
+    double e = (A * perfil.Ix) / (perfil.Ag * yc * (A - perfil.Ag));
+
+    double ytr = ((perfil.Ag * perfil.d / 2.0) 
+    + armacaoLaje.Ads * (perfil.d + laje.hF_mm + laje.tc_mm - armacaoLaje.d_linha_mm))
+    / (perfil.Ag + armacaoLaje.Ads);
+
+    double Itr = 
+    perfil.Ix 
+    + perfil.Ag * std::pow(ytr - (perfil.d / 2.0), 2)
+    + armacaoLaje.Ads * std::pow(perfil.d + laje.hF_mm + laje.tc_mm - armacaoLaje.d_linha_mm - ytr, 2);
+
+    double alpha_g = 
+    (h0 * Itr / perfil.Ix)
+    / (((std::pow(h0, 2) / 4.0) + ((perfil.Ix + perfil.Iy) / perfil.Ag)) / (e + h0));
+
+    double Iaf_y = std::pow(perfil.bf, 3) * perfil.tf / 12.0;
+
+    double psi = MSd_neg_kNm / MSd_pos_kNm;
+
+    double Cdist = nbr8800::v2008::calcularCdist(psi);
+
+    double Mcr = (alpha_g * Cdist / Lv_mm) *
+    sqrt(((aco.G_MPa * perfil.It) + (kr * Lv_mm * Lv_mm / (PI * PI))) * aco.E_MPa * Iaf_y);
+
+    double lb_dist = sqrt(MSd_neg_kNm*1e6 / Mcr);
+
+    double X_dist = 0.0;
+
+    if (lb_dist <= 0.4) X_dist = 1.0;
+    else if (lb_dist <= 1.5) X_dist = std::pow(0.658, lb_dist * lb_dist);
+    else X_dist = 0.877 / (lb_dist * lb_dist);
+
+    res.Mrd_dist_kNm = X_dist * res.MRd_neg_kNm;
+
+    res.MRd_VM_kNm = std::min(res.MRd_neg_kNm, res.Mrd_dist_kNm);
+
+    return res;
+}
 } // namespace nbr8800::v2008

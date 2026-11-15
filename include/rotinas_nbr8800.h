@@ -62,6 +62,53 @@ ResultadoMomentoResistentePerfil calcularMomentoResistentePerfil(
 );
 
 // ----------------------------------------------------------------------------
+// Rotina C: Cálculo do Momento Resistente de Cálculo da Viga Mista
+// ----------------------------------------------------------------------------
+struct ResultadoMomentoPositivoVM {
+    bool aplicavel = true;
+    double lbw;
+    double lbw_p;
+    double lbw_r;
+    double a_linha_neutra_mm;
+    double y_lnp_mm;
+    double Cc_max_kN;
+    double C_aco_kN;
+    double T_aco_kN;
+    double MRd_VM_kNm;
+};
+
+ResultadoMomentoPositivoVM calcularMomentoPositivoVM (
+    const PerfilI& perfil, 
+    const Aco& aco, 
+    const Concreto& concreto, 
+    const Laje& laje,
+    double gamma_a1 = 1.10,
+    double gamma_c = 1.40
+);
+
+struct ResultadoMomentoNegativoVM {
+    bool aplicavel = true;
+    double MRd_neg_kNm;
+    double Mrd_dist_kNm;
+    double MRd_VM_kNm;
+};
+
+ResultadoMomentoNegativoVM calcularMomentoNegativoVM (
+    const PerfilI& perfil, 
+    const Aco& aco, 
+    const Concreto& concreto, 
+    const Laje& laje,
+    const ArmacaoLaje& armacaoLaje, 
+    double MSd_neg_kNm, 
+    double Msd_pos_kNm, 
+    double Lv_mm, // comprimento vao
+    double a_vigas_mm, // espaçamento entre as vigas
+    double alpha_viga = 3.0,
+    double gamma_a1 = 1.10,
+    double gamma_c = 1.40
+);
+
+// ----------------------------------------------------------------------------
 // Rotina D: Força Cortante Resistente do Perfil de Aço (VRd)
 // ----------------------------------------------------------------------------
 struct ResultadoCortanteResistentePerfil {

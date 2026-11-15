@@ -83,38 +83,37 @@ ResultadoArmaduraProtensao calcularArmaduraProtensao(
 // ----------------------------------------------------------------------------
 // Rotina 5: Perdas de Protensão Imediatas
 // ----------------------------------------------------------------------------
-struct ResultadoPerdas {
-    double delta_P_ancoragem_kN;
-    double P_efetiva_kN;
+struct ResultadoPerdaImediataTracadoReto
+{
+    double delta_P_ancoragem_kN; // Perda da força por encunhamento
+    double P1_kN; // Força resultante pós perdas imediatas
 };
 
-ResultadoPerdas calcular_rotina_5_perdas_imediatas(
+ResultadoPerdaImediataTracadoReto calcularPerdaAncoragemTracadoReto(
+    const CaboProtensao& cabo,
     double P0_kN,
-    double delta_cunha_mm,
-    double Ep_MPa,
-    double Ap_mm2,
     double Lv_mm
+);
+
+double calcularPsi1000 (double sigma_P0_MPa, double fptk_MPa, 
+    TipoElementoProtensao elemento, TipoRelaxacao relaxacao);
+
+struct ResultadoPerdaRelaxacaoTracadoReto {
+    double psi_1000; // Coeficiente de relaxação a 1000h (em valor decimal)
+    double delta_P_relaxacao_kN; // Perda da força diferida no tempo
+    double P3_kN; // Força final de protensão
+    double sigma_P0_MPa;
+};
+
+ResultadoPerdaRelaxacaoTracadoReto calcularPerdaRelaxacaoTracadoReto (
+    const CaboProtensao& cabo, 
+    double P_atuante_kN
 );
 
 // ----------------------------------------------------------------------------
 // Rotina 6: Incremento Hiperestático da Força de Protensão (ΔP)
 // ----------------------------------------------------------------------------
-struct ResultadoIncrementoDP {
-    double delta_P_kN;
-};
-
-ResultadoIncrementoDP calcularIncrementoDpTraçadoReto(
-    double q_kN_m,
-    double Eg_MPa,
-    double Ep_MPa,
-    double Lv_mm,
-    double ep_mm,
-    double Ix_mm4,
-    double Ag_mm2,
-    double Ap_mm2
-);
-
-ResultadoIncrementoDP calcularIncrementoDpTraçadoPoligonal(
+double calcularIncrementoDpTracadoReto(
     double q_kN_m,
     double Eg_MPa,
     double Ep_MPa,
@@ -194,7 +193,9 @@ ResultadoMomentoNegativoVMP calcularMomentoNegativoVMP(
     double MSd_pos_kNm,
     double Lv_mm, // comprimento vao
     double a_vigas_mm, // espaçamento entre as vigas
-    double alpha_viga = 3.0
+    double alpha_viga = 3.0,
+    double gamma_a1 = 1.10, 
+    double gamma_c = 1.40
 );
 
 double calcularCdist(double psi);
@@ -204,6 +205,5 @@ double calcularInerciaLaje(
     const ArmacaoLaje& armacaoLaje,
     double alpha_e
 );
-
 }
 }

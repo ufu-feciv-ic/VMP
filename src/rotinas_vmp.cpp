@@ -2,6 +2,7 @@
 #include <cmath>
 #include <algorithm>
 #include <vector>
+#include <array>
 #include <utility>
 #include <numbers>
 
@@ -10,7 +11,7 @@ const double PI = std::numbers::pi;
 namespace nbr8800::inline v2008 {
 
 ResultadoSecaoTransformada calcularSecaoTransformada(const PerfilI& perfil, const Laje& laje, const Concreto& concreto, 
-    const Aco& aco, double multiplicador_fluencia, double ep_perfil_inferior_mm, bool tempo_imediato)
+    const Aco& aco, double multiplicador_fluencia, [[maybe_unused]] double ep_perfil_inferior_mm, bool tempo_imediato)
 {
     ResultadoSecaoTransformada res;
 
@@ -142,17 +143,92 @@ ResultadoTensaoCabo calcularTensaoCaboELU(const PerfilI& perfil, const Laje& laj
     return res;
 }
 
-ResultadoIncrementoDP calcularIncrementoDpTraçadoReto(double q_kN_m, double Eg_MPa, double Ep_MPa, 
-    double Lv_mm, double ep_mm, double Ix_mm4, double Ag_mm2, double Ap_mm2)
+ResultadoPerdaImediataTracadoReto calcularPerdaAncoragemTracadoReto 
+    (const CaboProtensao& cabo, double P0_kN, double Lv_mm)
 {
-    ResultadoIncrementoDP res;
+    ResultadoPerdaImediataTracadoReto res;
 
-    res.delta_P_kN = (q_kN_m * 1e-3 * ep_mm * Lv_mm * Lv_mm) / 
-    (12*((ep_mm * ep_mm) + (Ix_mm4 / Ag_mm2) + ((Eg_MPa * Ix_mm4) / (Ep_MPa * Ap_mm2))));
+    // delta_P [N] = (delta_cunha * Ep * Ap) / Lv
+    // Dividimos por 1000 para converter Newtons (N) em kilonewtons (kN)
+    if (cabo.ancoragem == TipoAncoragem::ATIVA_ATIVA)
+    {
+        res.delta_P_ancoragem_kN = (cabo.delta_cunha * cabo.Ep * cabo.Ap) / (2.0 * Lv_mm * 1000.0);
+    }
+    else 
+    {
+        res.delta_P_ancoragem_kN = (cabo.delta_cunha * cabo.Ep * cabo.Ap) / (Lv_mm * 1000.0);
+    }
 
+    res.P1_kN = P0_kN - res.delta_P_ancoragem_kN;
     return res;
 }
 
+double calcularPsi1000 (double sigma_P0_MPa, double fptk_MPa, 
+    TipoElementoProtensao elemento, TipoRelaxacao relaxacao)
+{
+    double chi = sigma_P0_MPa / fptk_MPa;
+
+    if (chi <= 0.5) return 0.0;
+
+    std::array<double, 4> y_pct;
+
+    if (elemento == TipoElementoProtensao::BARRA) 
+    {
+        y_pct = { 0.0, 1.5, 4.0, 7.0 };
+    }
+    else if (elemento == TipoElementoProtensao::CORDOALHA)
+    {
+        if (relaxacao == TipoRelaxacao::RELAXACAO_BAIXA)
+            y_pct = { 0.0, 1.3, 2.5, 3.5 }; // RB
+        else 
+            y_pct = { 0.0, 3.5, 7.0, 12.0 }; // RN
+    }
+    else 
+    {
+        if (relaxacao == TipoRelaxacao::RELAXACAO_BAIXA)
+            y_pct = { 0.0, 1.0, 2.0, 3.0 }; // Fio RB
+        else
+            y_pct = { 0.0, 2.5, 5.0, 8.5 }; // Fio RN
+    }
+
+    constexpr std::array<double, 4> x = { 0.5, 0.6, 0.7, 0.8 };
+
+    for (size_t i = 0; i < x.size() - 1; ++i)
+    {
+        if (chi <= x[i+1])
+        {
+            double psi_pct = y_pct[i] + (chi - x[i]) * (y_pct[i+1] - y_pct[i]) / (x[i+1] - x[i]);
+            return psi_pct / 100.0; // Converte de % para valor decimal
+        }
+    }
+
+    double psi_pct = y_pct[3] + (chi - x[3]) * (y_pct[3] - y_pct[2]) / (x[3] - x[2]);
+    return psi_pct / 100.0;
+}
+
+ResultadoPerdaRelaxacaoTracadoReto calcularPerdaRelaxacaoTracadoReto(const CaboProtensao& cabo, double P_atuante_kN)
+{
+    ResultadoPerdaRelaxacaoTracadoReto res;
+    
+    res.sigma_P0_MPa = (P_atuante_kN * 1000) / cabo.Ap;
+
+    res.psi_1000 = calcularPsi1000(res.sigma_P0_MPa, cabo.fpk, cabo.elemento, cabo.relaxacao);
+
+    res.delta_P_relaxacao_kN = 2.5 * res.psi_1000 * P_atuante_kN;
+    
+    res.P3_kN = P_atuante_kN - res.delta_P_relaxacao_kN;
+
+    return res;
+};
+
+double calcularIncrementoDpTracadoReto(double q_kN_m, double Eg_MPa, double Ep_MPa, 
+    double Lv_mm, double ep_mm, double Ix_mm4, double Ag_mm2, double Ap_mm2)
+{
+    double delta_P_kN = (q_kN_m * 1e-3 * ep_mm * Lv_mm * Lv_mm) / 
+    (12*((ep_mm * ep_mm) + (Ix_mm4 / Ag_mm2) + ((Eg_MPa * Ix_mm4) / (Ep_MPa * Ap_mm2))));
+
+    return delta_P_kN;
+}
 
 ResultadoMomentoPositivoVMP calcularMomentoPostivoVMP(const PerfilI& perfil, const Aco& aco, 
 const Concreto& concreto, const Laje& laje, const CaboProtensao& cabo, double Ap_mm2, 
@@ -229,9 +305,10 @@ double sigma_pd_MPa, double gamma_a1, double gamma_c)
     else if (res.lbw <= res.lbw_r)
     {
         auto secao_tr = 
-        nbr8800::calcularSecaoTransformada(perfil, laje, concreto, aco, 1.0, cabo.ep, true);
+        nbr8800::v2008::calcularSecaoTransformada(perfil, laje, concreto, aco, 1.0, 0.0, true);
 
-        res.MRd_VMP_kNm = std::min(secao_tr.Wtr_inf_mm3 * fyd, (1/secao_tr.n_relacao_modular) * secao_tr.Wtr_sup_mm3 * fcd) * 1e-6;
+        res.MRd_VMP_kNm = std::min(secao_tr.Wtr_inf_mm3 * fyd, 
+            (1/secao_tr.n_relacao_modular) * secao_tr.Wtr_sup_mm3 * fcd) * 1e-6;
     }
     else 
     {
@@ -246,18 +323,16 @@ double sigma_pd_MPa, double gamma_a1, double gamma_c)
 ResultadoMomentoNegativoVMP calcularMomentoNegativoVMP(const PerfilI& perfil, const Aco& aco, 
     const Concreto& concreto, const Laje& laje, const CaboProtensao& cabo, 
     const ArmacaoLaje& armacaoLaje, double MSd_neg_kNm, double MSd_pos_kNm, 
-    double Lv_mm, double a_vigas_mm, double alpha_viga)
+    double Lv_mm, double a_vigas_mm, double alpha_viga, double gamma_a1, double gamma_c)
 {
     ResultadoMomentoNegativoVMP res;
 
     double lbf = perfil.lbf;
     double lbf_p = 0.38 * sqrt(aco.E_MPa / aco.fy_MPa);
-    
-    double lbw = perfil.lbw;
-    double lbw_p = 3.76 * sqrt(aco.E_MPa / aco.fy_MPa);
 
-    double fcd = concreto.fck_MPa / 1.4;
-    double fyd = aco.fy_MPa / 1.1;
+    double fcd = concreto.fck_MPa / gamma_c;
+    double fyd = aco.fy_MPa / gamma_a1;
+
     double Tpd = cabo.Ap * cabo.sigma_Pd;
     double Tds = armacaoLaje.Ads * armacaoLaje.fsd;
     double Tad = 0.0;
@@ -364,7 +439,7 @@ ResultadoMomentoNegativoVMP calcularMomentoNegativoVMP(const PerfilI& perfil, co
 
                     d6 = perfil.d - yp + cabo.ep;
 
-                    res.MRd_neg_kNm = Tds * d3 + Tad * d4 + Cad * d5 - Tpd * d6;
+                    res.MRd_neg_kNm = (Tds * d3 + Tad * d4 + Cad * d5 - Tpd * d6)*1e-6;
                 }
                 else
                 {
@@ -388,37 +463,37 @@ ResultadoMomentoNegativoVMP calcularMomentoNegativoVMP(const PerfilI& perfil, co
 
     double k1 = alpha_viga * aco.E_MPa * I_laje / a_vigas_mm;
 
-    double k2 = aco.E_MPa * std::pow(perfil.tw, 3) / 3.64 * h0;
+    double k2 = (aco.E_MPa * std::pow(perfil.tw, 3)) / (3.64 * h0);
 
     double kr = (k1 * k2) / (k1 + k2);
 
-    yc = perfil.d / 2 + laje.hF_mm + laje.tc_mm / 2;
+    yc = perfil.d / 2.0 + laje.hF_mm + laje.tc_mm / 2.0;
 
     double A = perfil.Ag + armacaoLaje.Ads;
 
     double e = (A * perfil.Ix) / (perfil.Ag * yc * (A - perfil.Ag));
 
-    double ytr = ((perfil.Ag * perfil.d / 2) 
+    double ytr = ((perfil.Ag * perfil.d / 2.0) 
     + armacaoLaje.Ads * (perfil.d + laje.hF_mm + laje.tc_mm - armacaoLaje.d_linha_mm))
     / (perfil.Ag + armacaoLaje.Ads);
 
     double Itr = 
     perfil.Ix 
-    + perfil.Ag * std::pow(ytr - (perfil.d / 2), 2)
+    + perfil.Ag * std::pow(ytr - (perfil.d / 2.0), 2)
     + armacaoLaje.Ads * std::pow(perfil.d + laje.hF_mm + laje.tc_mm - armacaoLaje.d_linha_mm - ytr, 2);
 
     double alpha_g = 
     (h0 * Itr / perfil.Ix)
-    / ((((h0 * h0 / 4) + ((perfil.Ix + perfil.Iy) / perfil.Ag)) / e) + h0);
+    / (((std::pow(h0, 2) / 4.0) + ((perfil.Ix + perfil.Iy) / perfil.Ag)) / (e + h0));
 
-    double Iaf_y = std::pow(perfil.bf, 3) * perfil.tf / 12;
+    double Iaf_y = std::pow(perfil.bf, 3) * perfil.tf / 12.0;
 
     double psi = MSd_neg_kNm / MSd_pos_kNm;
 
     double Cdist = calcularCdist(psi);
 
-    double Mcr = alpha_g * Cdist / Lv_mm *
-    sqrt(((aco.G_MPa * perfil.It) + (kr * Lv_mm * Lv_mm / PI * PI)) * aco.E_MPa * Iaf_y);
+    double Mcr = (alpha_g * Cdist / Lv_mm) *
+    sqrt(((aco.G_MPa * perfil.It) + (kr * Lv_mm * Lv_mm / (PI * PI))) * aco.E_MPa * Iaf_y);
 
     double lb_dist = sqrt(MSd_neg_kNm*1e6 / Mcr);
 

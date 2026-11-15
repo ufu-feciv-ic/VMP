@@ -21,6 +21,22 @@ enum TipoTracado {
     CABO_POLIGONAL
 };
 
+enum TipoElementoProtensao {
+    CORDOALHA,
+    FIO,
+    BARRA
+};
+
+enum TipoRelaxacao {
+    RELAXACAO_BAIXA, // RB
+    RELAXACAO_NORMA // RN
+};
+
+enum TipoAncoragem {
+    ATIVA_PASSIVA, 
+    ATIVA_ATIVA
+};
+
 enum TipoCabo {
     CP_190_RB, 
     CP_210_RB,
@@ -111,6 +127,9 @@ struct Laje {
 struct CaboProtensao {
     TipoProtensao tipo = PRE_TRACAO;
     TipoTracado tracado = CABO_RETO;
+    TipoAncoragem ancoragem = ATIVA_PASSIVA;
+    TipoElementoProtensao elemento = CORDOALHA;
+    TipoRelaxacao relaxacao = RELAXACAO_BAIXA;
     TipoCabo cabo = CP_190_RB;
     TipoCordoalha cordoalha = CORDOALHA_15_2;
     double fpk = 0.0;      // Resistência característica à ruptura (MPa)

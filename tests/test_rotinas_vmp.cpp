@@ -12,7 +12,7 @@ TEST_CASE("Rotina 1: Cálculo propriedades seção transformada tempo infinito")
     Concreto concreto = concreto_c30();
     Laje laje = laje_macica_130();
 
-    auto res = nbr8800::calcularSecaoTransformada(perfil, laje, concreto, aco, 3, -50, false);
+    auto res = nbr8800::v2008::calcularSecaoTransformada(perfil, laje, concreto, aco, 3, -50, false);
 
     // Comparação percentual para absorver arredondamentos intermediários da dissertação (tolerância de 0.1%)
     ASSERT_PERCENT(res.n_relacao_modular, 0.04473, 0.05);
@@ -45,11 +45,11 @@ TEST_CASE("Rotina 2: Força máxima protensão")
     double MSd_g_kNm = 293.58;
     double MSd_q_kNm = 270.00;
 
-    auto resNRdPerfil = nbr8800::calcularNormalResistentePerfil(perfil, aco, Lb_mm, Lv_mm, kx, ky, gamma_a1);
-    auto resMRdPerfil = nbr8800::calcularMomentoResistentePerfil(perfil, aco, Lb_mm, Cb, gamma_a1);
-    auto resSecaoTransformada = nbr8800::calcularSecaoTransformada(perfil, laje, concreto, aco, 1.0, cabo.ep, false);
+    auto resNRdPerfil = nbr8800::v2008::calcularNormalResistentePerfil(perfil, aco, Lb_mm, Lv_mm, kx, ky, gamma_a1);
+    auto resMRdPerfil = nbr8800::v2008::calcularMomentoResistentePerfil(perfil, aco, Lb_mm, Cb, gamma_a1);
+    auto resSecaoTransformada = nbr8800::v2008::calcularSecaoTransformada(perfil, laje, concreto, aco, 1.0, cabo.ep, false);
 
-    auto res = nbr8800::calcularEstimativaP0max(perfil, aco, concreto, cabo, 
+    auto res = nbr8800::v2008::calcularEstimativaP0max(perfil, aco, concreto, cabo, 
         resNRdPerfil.NRd_kN, resMRdPerfil.MRd_kNm, MSd_g_kNm, MSd_q_kNm, gamma_p, 
         beta, psi_1, resSecaoTransformada.ytr_mm, resSecaoTransformada.Atr_mm2, 
         resSecaoTransformada.Wtr_inf_mm3, resSecaoTransformada.Wtr_sup_mm3);
@@ -72,7 +72,7 @@ TEST_CASE("Rotina 3.1: Momento positivo VMP")
     double gamma_a1 = 1.1;
     double gamma_c = 1.4;
 
-    auto res = nbr8800::calcularMomentoPostivoVMP(perfil, aco, concreto, laje, cabo, 
+    auto res = nbr8800::v2008::calcularMomentoPostivoVMP(perfil, aco, concreto, laje, cabo, 
     Ap_mm2, sigma_pd_MPa, gamma_a1, gamma_c);
 
     ASSERT_PERCENT(res.lbw, 38.98, 0.01);
@@ -103,7 +103,7 @@ TEST_CASE("Rotina 3.2: Momento positivo VMP semicompacta")
     double gamma_a1 = 1.1;
     double gamma_c = 1.4;
 
-    auto res = nbr8800::calcularMomentoPostivoVMP(perfil, aco, concreto, laje, cabo, 
+    auto res = nbr8800::v2008::calcularMomentoPostivoVMP(perfil, aco, concreto, laje, cabo, 
     Ap_mm2, sigma_pd_MPa, gamma_a1, gamma_c);
 
     ASSERT_PERCENT(res.lbw, 102.67, 0.01);
@@ -130,7 +130,7 @@ TEST_CASE("Rotina 3.3: Momento negativo VMP")
     double MSd_neg = 138.68;
     double MSd_pos = 798.01;
 
-    auto res = nbr8800::calcularMomentoNegativoVMP(perfil, aco, concreto, laje, cabo, 
+    auto res = nbr8800::v2008::calcularMomentoNegativoVMP(perfil, aco, concreto, laje, cabo, 
         armacaoLaje, MSd_neg, MSd_pos, L_mm, a_vigas_mm, alpha_viga);
 
     ASSERT_PERCENT(res.MRd_neg_kNm, 354.49, 0.05);
@@ -144,12 +144,45 @@ TEST_CASE("Rotina 4: Cálculo da armadura de protensão")
     TipoProtensao protensao = TipoProtensao::PRE_TRACAO;
     double P0_kN = 400;
 
-    auto res = nbr8800::calcularArmaduraProtensao(cabo, protensao, P0_kN);
+    auto res = nbr8800::v2008::calcularArmaduraProtensao(cabo, protensao, P0_kN);
 
     ASSERT_PERCENT(res.sigma_adm_MPa, 1425.8, 2);
     ASSERT_PERCENT(res.Ap_calc, 2.805e2, 2);
     ASSERT_NEAR(res.n_cordoalhas, 3, 0.01);
     ASSERT_PERCENT(res.Ap_real, 4.2e2, 2);
+}
+
+TEST_CASE("Rotina 5: Perda imediata por acomodação de ancoragem (Exemplo 1, t = 0)")
+{
+    CaboProtensao cabo = cabo_190RB();
+    cabo.Ap = 4.2e2;
+
+    double P0_kN = 400;
+    double Lv_mm = 12000;
+
+    auto res = nbr8800::v2008::calcularPerdaAncoragemTracadoReto(cabo, P0_kN, Lv_mm);
+
+    ASSERT_PERCENT(res.delta_P_ancoragem_kN, 42.0, 0.01);                                                                                                     
+    ASSERT_PERCENT(res.P1_kN, 358.0, 0.01);
+}
+
+TEST_CASE("Rotina 5: Perda progressiva por relaxação do aço (Exemplo 1, t = infinito)")                                                                          
+{                                                                                                                                                                
+    CaboProtensao cabo = cabo_190RB();
+    cabo.Ap = 4.2e2;
+    
+    // No Exemplo 1 (pág. 209), a força atuante ao final da fase 2 é P2 = 448.42 kN                                                                              
+    double P2_kN = 448.42;                                                                                                                                    
+    
+    auto res = nbr8800::v2008::calcularPerdaRelaxacaoTracadoReto(cabo, P2_kN);
+
+    // Na dissertação (pág. 209):
+    // sigma_p0 = 106.76 kN/cm² (1067.6 MPa)
+    // psi_1000 = 0.00946 (0.946%)
+    // P3 = 448.42 * (1 - 2.5 * 0.00946) = 437.81 kN
+    ASSERT_PERCENT(res.sigma_P0_MPa, 1067.6, 0.1);                                                                                                            
+    ASSERT_PERCENT(res.psi_1000, 0.00946, 0.2);                                                                                                                  
+    ASSERT_PERCENT(res.P3_kN, 437.81, 0.05);                                                                                                                     
 }
 
 TEST_CASE("Rotina 6: Incremento força protensão traçado reto")
@@ -166,10 +199,10 @@ TEST_CASE("Rotina 6: Incremento força protensão traçado reto")
     double Ag_mm2 = 72.5e2;
     double Ap_mm2 = 4.2e2;
 
-    auto res = nbr8800::calcularIncrementoDpTraçadoReto(q_kN_m, Eg_MPa, Ep_MPa, 
+    double delta_P_kN = nbr8800::v2008::calcularIncrementoDpTracadoReto(q_kN_m, Eg_MPa, Ep_MPa, 
         Lv_mm, epCG_mm, Ix_mm4, Ag_mm2, Ap_mm2);
 
-    ASSERT_PERCENT(res.delta_P_kN, 35.65, 0.05);
+    ASSERT_PERCENT(delta_P_kN, 35.65, 0.05);
 }
 
 TEST_CASE("Rotina G: Cálculo do momento de inércia de laje por metro (exemplo 1)")
@@ -181,7 +214,7 @@ TEST_CASE("Rotina G: Cálculo do momento de inércia de laje por metro (exemplo 
 
     double alpha_e = aco.E_MPa / concreto.Ecs_MPa;
 
-    double I_laje = nbr8800::calcularInerciaLaje(laje, armacaoLaje, alpha_e);
+    double I_laje = nbr8800::v2008::calcularInerciaLaje(laje, armacaoLaje, alpha_e);
 
     ASSERT_PERCENT(I_laje, 431.15e4, 0.05);
 }
@@ -195,7 +228,7 @@ TEST_CASE("Rotina G: Cálculo do momento de inércia de laje por metro (exemplo 
 
     double alpha_e = aco.E_MPa / concreto.Ecs_MPa;
 
-    auto I_laje = nbr8800::calcularInerciaLaje(laje, armacaoLaje, alpha_e);
+    auto I_laje = nbr8800::v2008::calcularInerciaLaje(laje, armacaoLaje, alpha_e);
 
     ASSERT_PERCENT(I_laje, 438.86e4, 0.05);
 }
@@ -213,10 +246,10 @@ TEST_CASE("Rotina H: Cálculo da tensão de cálculo no cabo para ELU da VMP")
     double P_atuante_kN = 448.84;
     double Lv_mm = 12000;
     
-    auto secao_tr = nbr8800::calcularSecaoTransformada(perfil, laje, concreto, 
+    auto secao_tr = nbr8800::v2008::calcularSecaoTransformada(perfil, laje, concreto, 
         aco, 1.0, cabo.ep, true);
 
-    auto res = nbr8800::calcularTensaoCaboELU(perfil, laje, cabo, concreto, 
+    auto res = nbr8800::v2008::calcularTensaoCaboELU(perfil, laje, cabo, concreto, 
         P_atuante_kN, secao_tr.ytr_mm, secao_tr.Atr_mm2, secao_tr.Itr_mm4, Lv_mm);
 
     ASSERT_PERCENT(res.epsilon_pre, 4.8e-3, 0.2);
