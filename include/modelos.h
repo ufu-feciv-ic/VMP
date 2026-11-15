@@ -78,6 +78,7 @@ struct Aco {
     double fy_MPa = 0.0;    // Tensão de escoamento (MPa)
     double fu_MPa = 0.0;    // Tensão de ruptura (MPa)
     double E_MPa = 0.0;  // Módulo de elasticidade (MPa)
+    double G_MPa = 0.0;
     double nu = 0.0;      // Coeficiente de Poisson
 };
 
@@ -99,6 +100,8 @@ struct Laje {
     double tc_mm = 0.0;               // Espessura total da laje (mm)
     double bef_mm = 0.0; // Largura colaborante beff (mm)
     double hF_mm = 0.0;                 // Altura da fôrma de aço (se steel deck) (mm)
+    double bF_mm = 0.0; // largura da nervura de concreto preenchida no vale da forma
+    double eF_mm = 0.0; // passo entre nervuras da chapa
     bool nervura_paralela = false;   // Orientação das nervuras (se steel deck)
 };
 
@@ -123,6 +126,7 @@ struct CaboProtensao {
 };
 
 struct ArmacaoLaje {
+    double As;
     double Ads;
     double fsd;
     double d_linha_mm;

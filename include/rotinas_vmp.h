@@ -128,20 +128,21 @@ ResultadoIncrementoDP calcularIncrementoDpTraçadoPoligonal(
 // ----------------------------------------------------------------------------
 // Rotina H: Tensão de Cálculo no Cabo em ELU (sigma_pd)
 // ----------------------------------------------------------------------------
-struct ResultadoRotinaH {
+struct ResultadoTensaoCabo {
     double epsilon_pre;
     double delta_sigma_MPa;
     double sigma_pd_MPa;
 };
 
-ResultadoRotinaH calcular_rotina_h_tensao_cabo(
+ResultadoTensaoCabo calcularTensaoCaboELU(
+    const PerfilI& perfil,
+    const Laje& laje, 
+    const CaboProtensao& cabo, 
+    const Concreto& concreto,
     double P_atuante_kN,
-    double Ap_mm2,
-    double Ep_MPa,
-    double fpyk_MPa,
     double Atr_mm2,
-    double Lv_mm,
-    double d_total_mm
+    double Itr_mm4,
+    double Lv_mm
 );
 
 // ----------------------------------------------------------------------------
@@ -186,7 +187,20 @@ ResultadoMomentoNegativoVMP calcularMomentoNegativoVMP(
     const Concreto& concreto, 
     const Laje& laje,
     const CaboProtensao& cabo,
-    const ArmacaoLaje& armacaoLaje
+    const ArmacaoLaje& armacaoLaje,
+    double MSd_neg_kNm,
+    double MSd_pos_kNm,
+    double Lv_mm, // comprimento vao
+    double a_vigas_mm, // espaçamento entre as vigas
+    double alpha_viga = 3.0
+);
+
+double calcularCdist(double psi);
+
+double calcularInerciaLaje(
+    const Laje& laje,
+    const ArmacaoLaje& armacaoLaje,
+    double alpha_e
 );
 
 }

@@ -35,6 +35,7 @@ inline Aco aco_a572_gr50() {
     a.fy_MPa = 345.0;     // MPa
     a.fu_MPa = 450.0;     // MPa
     a.E_MPa = 200000.0;   // MPa
+    a.G_MPa = 7700.0;     // MPa
     return a;
 }
 
@@ -57,9 +58,22 @@ inline Laje laje_macica_130() {
     return l;
 }
 
+inline Laje laje_mista_130() {
+    Laje l;
+    l.tipo = TipoLaje::LAJE_STEEL_DECK;
+    l.tc_mm = 130;
+    l.bef_mm = 3000;
+    l.eF_mm = 305;
+    l.bF_mm = 130;
+    l.hF_mm = 50;
+    l.nervura_paralela = true;
+    return l;
+}
+
 inline ArmacaoLaje laje_5cm_m()
 {
     ArmacaoLaje a;
+    a.As = 5e2;
     a.Ads = (5e2) * 3000/1000;
     a.fsd = 500 / 1.15;
     a.d_linha_mm = 20;

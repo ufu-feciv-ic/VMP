@@ -85,7 +85,34 @@ TEST_CASE("Rotina 3.1: Momento positivo VMP")
     ASSERT_PERCENT(res.MRd_VMP_kNm, 807.86, 0.05);
 }
 
-TEST_CASE("Rotina 3.3.1: Momento negativo VMP")
+TEST_CASE("Rotina 3.2: Momento positivo VMP semicompacta")
+{
+    PerfilI perfil = perfil_w360x57_8();
+    perfil.tw = 3.0;                                                                                                                                             
+    perfil.lbw = 102.67;     // > 90.53 e <= 137.24                                                                                                              
+    perfil.Ag = 5501.8;      // Área atualizada com tw = 3.0 mm                                                                                                  
+    perfil.Ix = 14321.2e4;   // Inércia atualizada com tw = 3.0 mm 
+
+    Aco aco = aco_a572_gr50();
+    Concreto concreto = concreto_c30();
+    Laje laje = laje_macica_130();
+    CaboProtensao cabo = cabo_190RB();
+
+    double Ap_mm2 = 4.2e2;
+    double sigma_pd_MPa = 92.38;
+    double gamma_a1 = 1.1;
+    double gamma_c = 1.4;
+
+    auto res = nbr8800::calcularMomentoPostivoVMP(perfil, aco, concreto, laje, cabo, 
+    Ap_mm2, sigma_pd_MPa, gamma_a1, gamma_c);
+
+    ASSERT_PERCENT(res.lbw, 102.67, 0.01);
+    ASSERT_PERCENT(res.lbw_p, 90.53, 0.01);
+    ASSERT_PERCENT(res.lbw_r, 137.23, 0.01); 
+    ASSERT_PERCENT(res.MRd_VMP_kNm, 340.97, 0.5);
+}
+
+TEST_CASE("Rotina 3.3: Momento negativo VMP")
 {
     PerfilI perfil = perfil_w360x57_8();
     Aco aco = aco_a572_gr50();
@@ -96,10 +123,19 @@ TEST_CASE("Rotina 3.3.1: Momento negativo VMP")
 
     cabo.Ap = 4.2e2;
     cabo.sigma_Pd = 92.38e1;
+    double L_mm = 3000;
+    double a_vigas_mm = 3000;
+    double alpha_viga = 3.0;
 
-    auto res = nbr8800::calcularMomentoNegativoVMP(perfil, aco, concreto, laje, cabo, armacaoLaje);
+    double MSd_neg = 138.68;
+    double MSd_pos = 798.01;
+
+    auto res = nbr8800::calcularMomentoNegativoVMP(perfil, aco, concreto, laje, cabo, 
+        armacaoLaje, MSd_neg, MSd_pos, L_mm, a_vigas_mm, alpha_viga);
 
     ASSERT_PERCENT(res.MRd_neg_kNm, 354.49, 0.05);
+    ASSERT_PERCENT(res.Mrd_dist_kNm, 354.49, 0.05);
+    ASSERT_PERCENT(res.MRd_VMP_kNm, 354.49, 0.05);
 }
 
 TEST_CASE("Rotina 4: Cálculo da armadura de protensão")
@@ -134,4 +170,32 @@ TEST_CASE("Rotina 6: Incremento força protensão traçado reto")
         Lv_mm, epCG_mm, Ix_mm4, Ag_mm2, Ap_mm2);
 
     ASSERT_PERCENT(res.delta_P_kN, 35.65, 0.05);
+}
+
+TEST_CASE("Rotina G: Cálculo do momento de inércia de laje por metro (exemplo 1)")
+{
+    Laje laje = laje_macica_130();
+    ArmacaoLaje armacaoLaje = laje_5cm_m();
+    Concreto concreto = concreto_c30();
+    Aco aco = aco_a572_gr50();
+
+    double alpha_e = aco.E_MPa / concreto.Ecs_MPa;
+
+    double I_laje = nbr8800::calcularInerciaLaje(laje, armacaoLaje, alpha_e);
+
+    ASSERT_PERCENT(I_laje, 431.15e4, 0.05);
+}
+
+TEST_CASE("Rotina G: Cálculo do momento de inércia de laje por metro (exemplo 2)")
+{
+    Laje laje = laje_mista_130();
+    ArmacaoLaje armacaoLaje = laje_5cm_m();
+    Concreto concreto = concreto_c30();
+    Aco aco = aco_a572_gr50();
+
+    double alpha_e = aco.E_MPa / concreto.Ecs_MPa;
+
+    auto I_laje = nbr8800::calcularInerciaLaje(laje, armacaoLaje, alpha_e);
+
+    ASSERT_PERCENT(I_laje, 438.86e4, 0.05);
 }

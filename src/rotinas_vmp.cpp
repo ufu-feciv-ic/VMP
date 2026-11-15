@@ -1,6 +1,11 @@
 #include "rotinas_vmp.h"
 #include <cmath>
 #include <algorithm>
+#include <vector>
+#include <utility>
+#include <numbers>
+
+const double PI = std::numbers::pi;
 
 namespace nbr8800::inline v2008 {
 
@@ -183,7 +188,7 @@ double sigma_pd_MPa, double gamma_a1, double gamma_c)
         auto secao_tr = 
         nbr8800::calcularSecaoTransformada(perfil, laje, concreto, aco, 1.0, cabo.ep, true);
 
-        res.MRd_VMP_kNm = std::min(secao_tr.Wtr_inf_mm3 * fyd, (1/secao_tr.n_relacao_modular) * secao_tr.Wtr_sup_mm3 * fcd);
+        res.MRd_VMP_kNm = std::min(secao_tr.Wtr_inf_mm3 * fyd, (1/secao_tr.n_relacao_modular) * secao_tr.Wtr_sup_mm3 * fcd) * 1e-6;
     }
     else 
     {
@@ -196,7 +201,9 @@ double sigma_pd_MPa, double gamma_a1, double gamma_c)
 }
 
 ResultadoMomentoNegativoVMP calcularMomentoNegativoVMP(const PerfilI& perfil, const Aco& aco, 
-    const Concreto& concreto, const Laje& laje, const CaboProtensao& cabo, const ArmacaoLaje& armacaoLaje)
+    const Concreto& concreto, const Laje& laje, const CaboProtensao& cabo, 
+    const ArmacaoLaje& armacaoLaje, double MSd_neg_kNm, double MSd_pos_kNm, 
+    double Lv_mm, double a_vigas_mm, double alpha_viga)
 {
     ResultadoMomentoNegativoVMP res;
 
@@ -330,9 +337,133 @@ ResultadoMomentoNegativoVMP calcularMomentoNegativoVMP(const PerfilI& perfil, co
         res.MRd_VMP_kNm = 0.0;
     }
 
+    double h0 = perfil.d - perfil.tf;
+
+    double alpha_e = aco.E_MPa / concreto.Ecs_MPa;
+
+    double I_laje = calcularInerciaLaje(laje, armacaoLaje, alpha_e);
+
+    double k1 = alpha_viga * aco.E_MPa * I_laje / a_vigas_mm;
+
+    double k2 = aco.E_MPa * std::pow(perfil.tw, 3) / 3.64 * h0;
+
+    double kr = (k1 * k2) / (k1 + k2);
+
+    yc = perfil.d / 2 + laje.hF_mm + laje.tc_mm / 2;
+
+    double A = perfil.Ag + armacaoLaje.Ads;
+
+    double e = (A * perfil.Ix) / (perfil.Ag * yc * (A - perfil.Ag));
+
+    double ytr = ((perfil.Ag * perfil.d / 2) 
+    + armacaoLaje.Ads * (perfil.d + laje.hF_mm + laje.tc_mm - armacaoLaje.d_linha_mm))
+    / (perfil.Ag + armacaoLaje.Ads);
+
+    double Itr = 
+    perfil.Ix 
+    + perfil.Ag * std::pow(ytr - (perfil.d / 2), 2)
+    + armacaoLaje.Ads * std::pow(perfil.d + laje.hF_mm + laje.tc_mm - armacaoLaje.d_linha_mm - ytr, 2);
+
+    double alpha_g = 
+    (h0 * Itr / perfil.Ix)
+    / ((((h0 * h0 / 4) + ((perfil.Ix + perfil.Iy) / perfil.Ag)) / e) + h0);
+
+    double Iaf_y = std::pow(perfil.bf, 3) * perfil.tf / 12;
+
+    double psi = MSd_neg_kNm / MSd_pos_kNm;
+
+    double Cdist = calcularCdist(psi);
+
+    double Mcr = alpha_g * Cdist / Lv_mm *
+    sqrt(((aco.G_MPa * perfil.It) + (kr * Lv_mm * Lv_mm / PI * PI)) * aco.E_MPa * Iaf_y);
+
+    double lb_dist = sqrt(MSd_neg_kNm*1e6 / Mcr);
+
+    double X_dist = 0.0;
+
+    if (lb_dist <= 0.4) X_dist = 1.0;
+    else if (lb_dist <= 1.5) X_dist = std::pow(0.658, lb_dist * lb_dist);
+    else X_dist = 0.877 / (lb_dist * lb_dist);
+
+    res.Mrd_dist_kNm = X_dist * res.MRd_neg_kNm;
+
     res.MRd_VMP_kNm = std::min(res.MRd_neg_kNm, res.Mrd_dist_kNm);
 
     return res;
+}
+
+double calcularCdist(double psi)
+{
+    static const std::vector<std::pair<double, double>> tabela = {
+        {0.50, 21.9}, {0.75, 13.9}, {1.00, 11.0},
+        {1.25, 9.6}, {1.50, 8.8}, {1.75, 8.3},
+        {2.00, 8.0}, {2.25, 7.8}, {2.50, 7.6} 
+    };
+
+    if (psi <= 0.50) return 21.9;
+    if (psi >= 2.50) return 7.6;
+
+    for (size_t i = 0; i < tabela.size() - 1; ++i) {
+        if (psi >= tabela[i].first && psi <= tabela[i+1].first) {
+            double x0 = tabela[i].first, y0 = tabela[i].second;
+            double x1 = tabela[i+1].first, y1 = tabela[i+1].second;
+            return y0 + (psi - x0) * (y1 - y0) / (x1 - x0);
+        }
+    }
+
+    return 21.9;
+}
+
+double calcularInerciaLaje(const Laje& laje, const ArmacaoLaje& armacaoLaje, double alpha_e)
+{
+    double delta = 0.0;
+    double xln = 0.0;
+    double I_laje = 0.0;
+
+    if (laje.tipo == TipoLaje::LAJE_MACICA)
+    {
+        delta = (armacaoLaje.As * armacaoLaje.As) + 
+        ((2000 * armacaoLaje.As * (laje.tc_mm - armacaoLaje.d_linha_mm) / alpha_e));
+
+        xln = (-armacaoLaje.As + sqrt(delta)) / (1000 / alpha_e);
+
+        I_laje = ((1000 * xln * xln * xln) / (3 * alpha_e)) 
+        + armacaoLaje.As * std::pow(laje.tc_mm - armacaoLaje.d_linha_mm - xln, 2);
+    }
+    else
+    {
+        delta = (armacaoLaje.As * armacaoLaje.As) + 
+        ((2 * 1000 * laje.bF_mm * armacaoLaje.As * (laje.tc_mm + laje.hF_mm - armacaoLaje.d_linha_mm)) 
+        / (alpha_e * laje.eF_mm));
+
+        xln = ((-armacaoLaje.As + sqrt(delta)) * alpha_e * laje.eF_mm) / (laje.bF_mm / 2);
+
+        if (xln <= laje.hF_mm)
+        {
+            I_laje = ((laje.bF_mm * xln * xln * xln) / (3 * alpha_e * laje.eF_mm)) 
+            + armacaoLaje.As * std::pow(laje.tc_mm +laje.hF_mm - armacaoLaje.d_linha_mm - xln, 2);
+        }
+        else 
+        {
+            delta = std::pow(armacaoLaje.As + ((laje.bF_mm * laje.hF_mm) / 
+            (alpha_e * laje.eF_mm)) - (1000 * laje.hF_mm / alpha_e), 2) 
+            - (2000 / alpha_e) * ((500 * laje.hF_mm * laje.hF_mm / alpha_e) - 
+            ((laje.bF_mm * laje.hF_mm * laje.hF_mm) / (2 * alpha_e * laje.eF_mm)) -
+            (armacaoLaje.As * (laje.tc_mm + laje.hF_mm - armacaoLaje.d_linha_mm)));
+
+            xln = (-(armacaoLaje.As + ((laje.bF_mm * laje.hF_mm) / (alpha_e * laje.eF_mm)) 
+            - (1000 * laje.hF_mm / alpha_e)) + sqrt(delta)) 
+            / (1000 / alpha_e);
+
+            I_laje = 
+            ((laje.bF_mm * laje.hF_mm * laje.hF_mm * laje.hF_mm) / (12 * alpha_e * laje.eF_mm)) + 
+            (((laje.bF_mm * laje.hF_mm) / (alpha_e * laje.eF_mm)) * std::pow(xln - laje.hF_mm / 2, 2)) + 
+            ((1000 * std::pow(xln - laje.hF_mm, 3)) / (3 * alpha_e)) +
+            (armacaoLaje.As * (std::pow(laje.tc_mm + laje.hF_mm - armacaoLaje.d_linha_mm - xln, 2)));
+        }
+    }
+
+    return I_laje;
 }
 
 }
