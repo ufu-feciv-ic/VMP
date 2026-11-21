@@ -38,6 +38,8 @@ ResultadoSecaoTransformada calcularSecaoTransformada(const PerfilI& perfil, cons
 
     res.Wtr_sup_mm3 = res.Itr_mm4 / (perfil.d + laje.hF_mm + laje.tc_mm - res.ytr_mm);
 
+    res.ep_tr_mm = res.ytr_mm + ep_perfil_inferior_mm;
+
     return res;
 }
 
@@ -163,6 +165,16 @@ ResultadoPerdaImediataTracadoReto calcularPerdaAncoragemTracadoReto
     return res;
 }
 
+ForcasProtensaoTrechos calcularPerdaImediataTracadoPoligonal(
+    const CaboProtensao& cabo, double P0_kN, double Lv_mm,
+    [[maybe_unused]] double ep_i_mm, [[maybe_unused]] double ep_f_mm)
+{
+    // [STAND-BY]: Rotina 5.1 para traçado poligonal.
+    // Enquanto em stand-by, utiliza a perda de ancoragem do traçado reto como fallback.
+    auto reto = calcularPerdaAncoragemTracadoReto(cabo, P0_kN, Lv_mm);
+    return { reto.P1_kN, reto.P1_kN, reto.P1_kN };
+}
+
 double calcularPsi1000 (double sigma_P0_MPa, double fptk_MPa, 
     TipoElementoProtensao elemento, TipoRelaxacao relaxacao)
 {
@@ -230,6 +242,17 @@ double calcularIncrementoDpTracadoReto(double q_kN_m, double Eg_MPa, double Ep_M
     return delta_P_kN;
 }
 
+double calcularIncrementoDpTracadoPoligonal(
+    double q_kN_m, double Eg_MPa, double Ep_MPa,
+    double Lv_mm, [[maybe_unused]] double X_ep_mm,
+    [[maybe_unused]] double ep_i_mm, double ep_f_mm,
+    double Ix_mm4, double Ag_mm2, double Ap_mm2)
+{
+    // [STAND-BY]: Rotina 6.2 para traçado poligonal.
+    // Enquanto em stand-by, utiliza o incremento do traçado reto com ep_f_mm como fallback.
+    return calcularIncrementoDpTracadoReto(q_kN_m, Eg_MPa, Ep_MPa, Lv_mm, ep_f_mm, Ix_mm4, Ag_mm2, Ap_mm2);
+}
+
 ResultadoMomentoPositivoVMP calcularMomentoPostivoVMP(const PerfilI& perfil, const Aco& aco, 
 const Concreto& concreto, const Laje& laje, const CaboProtensao& cabo, double Ap_mm2, 
 double sigma_pd_MPa, double gamma_a1, double gamma_c)
@@ -246,9 +269,7 @@ double sigma_pd_MPa, double gamma_a1, double gamma_c)
     if (res.lbw <= res.lbw_p)
     {
         res.Cc_max_kN = (0.85 * fcd * laje.bef_mm * laje.tc_mm) * 1e-3;
-
         res.T_aco_kN = perfil.Ag * fyd * 1e-3;
-
         res.T_cabo_kN = Ap_mm2 * sigma_pd_MPa * 1e1 * 1e-3;
 
         if (res.Cc_max_kN >= (res.T_aco_kN + res.T_cabo_kN))
@@ -260,7 +281,7 @@ double sigma_pd_MPa, double gamma_a1, double gamma_c)
         }
         else 
         {
-            res.C_aco_kN = 0.5 * ((perfil.Ag * fyd * 1e3) + res.T_cabo_kN - res.Cc_max_kN);
+            res.C_aco_kN = 0.5 * ((perfil.Ag * fyd * 1e-3) + res.T_cabo_kN - res.Cc_max_kN);
 
             res.T_aco_kN = res.Cc_max_kN + res.C_aco_kN - res.T_cabo_kN;
 
@@ -268,9 +289,9 @@ double sigma_pd_MPa, double gamma_a1, double gamma_c)
             double yc = 0.0;
             double yt = 0.0;
 
-            if (res.C_aco_kN <= (perfil.bf * perfil.tf * fyd))
+            if (res.C_aco_kN <= (perfil.bf * perfil.tf * fyd * 1e-3))
             {
-                yp = res.C_aco_kN / (perfil.bf * fyd);
+                yp = (res.C_aco_kN * 1e3) / (perfil.bf * fyd);
 
                 yc = yp / 2;
 
@@ -283,7 +304,7 @@ double sigma_pd_MPa, double gamma_a1, double gamma_c)
             else
             {
                 yp = perfil.tf + perfil.h * 
-                ((res.C_aco_kN - perfil.bf * perfil.tf * fyd) / (perfil.h * perfil.tw * fyd));
+                (((res.C_aco_kN * 1e3) - perfil.bf * perfil.tf * fyd) / (perfil.h * perfil.tw * fyd));
 
                 yc = 
                 ((perfil.bf/2 * perfil.tf * perfil.tf)
@@ -297,7 +318,7 @@ double sigma_pd_MPa, double gamma_a1, double gamma_c)
             }
 
             res.MRd_VMP_kNm = 
-            (res.Cc_max_kN * (laje.tc_mm / 2 + laje.hF_mm + yp)+ res.C_aco_kN * (yp - yc)
+            (res.Cc_max_kN * (laje.tc_mm/2 + laje.hF_mm + yp) + res.C_aco_kN * (yp - yc)
             + res.T_aco_kN * (perfil.d - yp - yt)
             + res.T_cabo_kN * (perfil.d + cabo.ep - yp)) * 1e-3;
         }
@@ -305,7 +326,7 @@ double sigma_pd_MPa, double gamma_a1, double gamma_c)
     else if (res.lbw <= res.lbw_r)
     {
         auto secao_tr = 
-        nbr8800::v2008::calcularSecaoTransformada(perfil, laje, concreto, aco, 1.0, 0.0, true);
+        calcularSecaoTransformada(perfil, laje, concreto, aco, 1.0, 0.0, true);
 
         res.MRd_VMP_kNm = std::min(secao_tr.Wtr_inf_mm3 * fyd, 
             (1/secao_tr.n_relacao_modular) * secao_tr.Wtr_sup_mm3 * fcd) * 1e-6;
@@ -488,14 +509,14 @@ ResultadoMomentoNegativoVMP calcularMomentoNegativoVMP(const PerfilI& perfil, co
 
     double Iaf_y = std::pow(perfil.bf, 3) * perfil.tf / 12.0;
 
-    double psi = MSd_neg_kNm / MSd_pos_kNm;
+    double psi = (MSd_pos_kNm > 0.0) ? (std::abs(MSd_neg_kNm) / MSd_pos_kNm) : 0.0;
 
     double Cdist = calcularCdist(psi);
 
     double Mcr = (alpha_g * Cdist / Lv_mm) *
     sqrt(((aco.G_MPa * perfil.It) + (kr * Lv_mm * Lv_mm / (PI * PI))) * aco.E_MPa * Iaf_y);
 
-    double lb_dist = sqrt(MSd_neg_kNm*1e6 / Mcr);
+    double lb_dist = (Mcr > 0.0) ? sqrt(std::abs(MSd_neg_kNm)*1e6 / Mcr) : 0.0;
 
     double X_dist = 0.0;
 
@@ -585,4 +606,192 @@ double calcularInerciaLaje(const Laje& laje, const ArmacaoLaje& armacaoLaje, dou
         return I_laje_cm4 * 1e4;
 }
 
+} // inline namespace v2008
+
+namespace nbr8800::v2024 {
+
+double calcularCdist(double psi)
+{
+    // ABNT NBR 8800:2024 — Tabela L.1 (p. 214): Coeficiente C_dist para momentos
+    // de extremidade Psi * M0 e carga uniformemente distribuída
+    static const std::vector<std::pair<double, double>> tabela = {
+        {0.50, 1.92}, {0.75, 1.67}, {1.00, 1.53},
+        {1.25, 1.44}, {1.50, 1.38}, {1.75, 1.33},
+        {2.00, 1.30}, {2.25, 1.27}, {2.50, 1.24}
+    };
+
+    if (psi <= 0.50) return 1.92;
+    if (psi >= 2.50) return 1.24;
+
+    for (size_t i = 0; i < tabela.size() - 1; ++i) {
+        if (psi >= tabela[i].first && psi <= tabela[i + 1].first) {
+            double x0 = tabela[i].first, y0 = tabela[i].second;
+            double x1 = tabela[i + 1].first, y1 = tabela[i + 1].second;
+            return y0 + (psi - x0) * (y1 - y0) / (x1 - x0);
+        }
+    }
+
+    return 1.92;
 }
+
+ResultadoMomentoPositivoVMP calcularMomentoPostivoVMP(
+    const PerfilI& perfil,
+    const Aco& aco,
+    const Concreto& concreto,
+    const Laje& laje,
+    const CaboProtensao& cabo,
+    double Ap_mm2,
+    double sigma_pd_MPa,
+    double gamma_a1,
+    double gamma_c
+) {
+    ResultadoMomentoPositivoVMP res{};
+
+    // 1. Fator de fragilidade do concreto eta_c = (40/fck)^(1/3) <= 1.0 (NBR 8800:2024 Item L.5.3.4 / L.6.3.1.1.1, p. 197 e 202)
+    double eta_c = (concreto.fck_MPa > 40.0)
+        ? std::min(1.0, std::cbrt(40.0 / concreto.fck_MPa))
+        : 1.0;
+
+    res.lbw = perfil.lbw;
+    res.lbw_p = 3.76 * std::sqrt(aco.E_MPa / aco.fy_MPa);
+    res.lbw_r = 5.70 * std::sqrt(aco.E_MPa / aco.fy_MPa);
+
+    double fcd = concreto.fck_MPa / gamma_c;
+    double fyd = aco.fy_MPa / gamma_a1;
+
+    if (res.lbw <= res.lbw_p) {
+        // Interação completa pressuposta para VMP (ABNT NBR 8800:2024, Item L.6.3.1.1.1, pp. 202-203)
+        res.Cc_max_kN = (0.85 * eta_c * fcd * laje.bef_mm * laje.tc_mm) * 1e-3;
+        res.T_aco_kN = perfil.Ag * fyd * 1e-3;
+        res.T_cabo_kN = Ap_mm2 * sigma_pd_MPa * 1e1 * 1e-3;
+
+        if (res.Cc_max_kN >= (res.T_aco_kN + res.T_cabo_kN)) {
+            // Item L.6.3.1.1.1-a (p. 202): Interação completa com LNP na laje de concreto
+            res.a_linha_neutra_mm = (res.T_aco_kN * 1e3 + res.T_cabo_kN * 1e3) / (0.85 * eta_c * fcd * laje.bef_mm);
+
+            res.MRd_VMP_kNm = (res.T_aco_kN * (perfil.d / 2.0 + laje.hF_mm + laje.tc_mm - res.a_linha_neutra_mm / 2.0)
+                + res.T_cabo_kN * (perfil.d + cabo.ep + laje.hF_mm + laje.tc_mm - res.a_linha_neutra_mm / 2.0)) * 1e-3;
+        } else {
+            // Item L.6.3.1.1.1-b (p. 203): Interação completa com LNP no perfil de aço
+            res.C_aco_kN = 0.5 * ((perfil.Ag * fyd * 1e-3) + res.T_cabo_kN - res.Cc_max_kN);
+            res.T_aco_kN = res.Cc_max_kN + res.C_aco_kN - res.T_cabo_kN;
+
+            double yp = 0.0;
+            double yc = 0.0;
+            double yt = 0.0;
+
+            if (res.C_aco_kN <= (perfil.bf * perfil.tf * fyd * 1e-3)) {
+                yp = (res.C_aco_kN * 1e3) / (perfil.bf * fyd);
+                yc = yp / 2.0;
+                yt = (((perfil.bf * perfil.tf * perfil.tf) / 2.0)
+                    + (perfil.h * perfil.tw * (perfil.h / 2.0 + perfil.tf))
+                    + (perfil.bf / 2.0 * (perfil.tf - yp) * (3.0 * perfil.tf + 2.0 * perfil.h - yp)))
+                    / (perfil.bf * perfil.tf + perfil.h * perfil.tw + perfil.bf * (perfil.tf - yp));
+            } else {
+                yp = perfil.tf + perfil.h * (((res.C_aco_kN * 1e3) - perfil.bf * perfil.tf * fyd) / (perfil.h * perfil.tw * fyd));
+                yc = ((perfil.bf / 2.0 * perfil.tf * perfil.tf)
+                    + ((yp - perfil.tf) * perfil.tw) * ((yp + perfil.tf) / 2.0))
+                    / ((perfil.bf * perfil.tf) + (yp - perfil.tf) * perfil.tw);
+                yt = ((perfil.bf / 2.0 * perfil.tf * perfil.tf)
+                    + ((perfil.d - yp - perfil.tf) * perfil.tw) * ((perfil.d - yp + perfil.tf) / 2.0))
+                    / ((perfil.bf * perfil.tf) + (perfil.d - yp - perfil.tf) * perfil.tw);
+            }
+
+            res.y_lnp_mm = yp;
+
+            // Na ABNT NBR 8800:2024 (Item L.6.3.1.1.1-b, p. 203), sob interação completa com LNP no perfil de aço,
+            // a parcela resistida pelo binário interno inclui o somatório dos conectores sum_QRd (= Ccd):
+            // MRd = [ sum_QRd * (d - yt - yc) + Ccd * (tc/2 + hF + d - yt) + Tpd * (ep + yt) ]
+            double soma_QRd_kN = res.Cc_max_kN;
+            res.MRd_VMP_kNm = (soma_QRd_kN * (perfil.d - yt - yc)
+                + res.Cc_max_kN * (laje.tc_mm / 2.0 + laje.hF_mm + perfil.d - yt)
+                + res.T_cabo_kN * (cabo.ep + yt)) * 1e-3;
+        }
+    } else if (res.lbw <= res.lbw_r) {
+        // Item L.6.3.1.2-a (p. 207 da NBR 8800:2024): Seção semicompacta sob interação completa
+        // Tensão limite de compressão no concreto reduzida de 1.00 * fcd (2008) para 0.85 * fcd (2024)
+        auto secao_tr = nbr8800::v2008::calcularSecaoTransformada(perfil, laje, concreto, aco, 1.0, 0.0, true);
+        res.MRd_VMP_kNm = std::min(secao_tr.Wtr_inf_mm3 * fyd,
+            (1.0 / secao_tr.n_relacao_modular) * secao_tr.Wtr_sup_mm3 * (0.85 * fcd)) * 1e-6;
+    } else {
+        res.aplicavel = false;
+        res.MRd_VMP_kNm = 0.0;
+    }
+
+    return res;
+}
+
+ResultadoMomentoNegativoVMP calcularMomentoNegativoVMP(
+    const PerfilI& perfil,
+    const Aco& aco,
+    const Concreto& concreto,
+    const Laje& laje,
+    const CaboProtensao& cabo,
+    const ArmacaoLaje& armacaoLaje,
+    double MSd_neg_kNm,
+    double MSd_pos_kNm,
+    double Lv_mm,
+    double a_vigas_mm,
+    double alpha_viga,
+    double gamma_a1,
+    double gamma_c
+) {
+    // 1. Capacidade resistente plástica da seção mista protendida sob momento negativo
+    ResultadoMomentoNegativoVMP res = nbr8800::v2008::calcularMomentoNegativoVMP(
+        perfil, aco, concreto, laje, cabo, armacaoLaje,
+        MSd_neg_kNm, MSd_pos_kNm, Lv_mm, a_vigas_mm, alpha_viga, gamma_a1, gamma_c
+    );
+
+    // 2. Nova formulação de Flambagem Lateral com Distorção (FLD) da ABNT NBR 8800:2024 (Item L.6.5.5 e L.6.5.6, pp. 212-215)
+    double h0 = perfil.d - perfil.tf;
+    double alpha_e = aco.E_MPa / concreto.Ecs_MPa;
+    double I_laje = nbr8800::v2008::calcularInerciaLaje(laje, armacaoLaje, alpha_e);
+    double k1 = alpha_viga * aco.E_MPa * I_laje / a_vigas_mm;
+    double k2 = (aco.E_MPa * std::pow(perfil.tw, 3.0)) / (3.64 * h0);
+    double kr = (k1 * k2) / (k1 + k2);
+
+    double ytr = ((perfil.Ag * perfil.d / 2.0)
+        + armacaoLaje.Ads * (perfil.d + laje.hF_mm + laje.tc_mm - armacaoLaje.d_linha_mm))
+        / (perfil.Ag + armacaoLaje.Ads);
+
+    double Itr = perfil.Ix
+        + perfil.Ag * std::pow(ytr - (perfil.d / 2.0), 2.0)
+        + armacaoLaje.Ads * std::pow(perfil.d + laje.hF_mm + laje.tc_mm - armacaoLaje.d_linha_mm - ytr, 2.0);
+
+    // Distância y_barra entre o centroide da seção mista e o centroide do perfil de aço (Item L.6.5.5, p. 213 e Figura L.9, p. 211)
+    double y_barra = std::abs(ytr - (perfil.d / 2.0));
+    double kappa_g = (0.31 + 0.69 * std::pow(0.05, y_barra / h0)) * (Itr / perfil.Ix);
+
+    double Iaf_y = std::pow(perfil.bf, 3.0) * perfil.tf / 12.0;
+
+    // Parâmetro de rigidez rotacional eta_b e número de semiondas n (Item L.6.5.5 e L.6.5.6, p. 213)
+    double eta_b = std::sqrt((kr * std::pow(Lv_mm, 4.0)) / (aco.E_MPa * Iaf_y * h0 * h0));
+    double n_id = std::sqrt(eta_b) / PI;
+    int n1 = std::max(1, static_cast<int>(std::floor(n_id)));
+    int n2 = std::max(1, static_cast<int>(std::ceil(n_id)));
+    int n_ondas = (n_id <= std::sqrt(static_cast<double>(n1) * static_cast<double>(n2))) ? n1 : n2;
+
+    double n_pi = static_cast<double>(n_ondas) * PI;
+    double termo_ondas = (n_pi * n_pi) + std::pow(eta_b / n_pi, 2.0);
+
+    double psi = (MSd_pos_kNm > 0.0) ? (std::abs(MSd_neg_kNm) / MSd_pos_kNm) : 0.0;
+    double Cdist = nbr8800::v2024::calcularCdist(psi);
+
+    double Mcr = Cdist * (kappa_g / h0) * (
+        (aco.G_MPa * perfil.It) + ((aco.E_MPa * Iaf_y * h0 * h0) / (Lv_mm * Lv_mm)) * termo_ondas
+    );
+
+    double lb_dist = (Mcr > 0.0) ? std::sqrt(std::abs(MSd_neg_kNm) * 1e6 / Mcr) : 0.0;
+
+    double X_dist = 0.0;
+    if (lb_dist <= 0.4) X_dist = 1.0;
+    else if (lb_dist <= 1.5) X_dist = std::pow(0.658, lb_dist * lb_dist);
+    else X_dist = 0.877 / (lb_dist * lb_dist);
+
+    res.Mrd_dist_kNm = X_dist * res.MRd_neg_kNm;
+    res.MRd_VMP_kNm = std::min(res.MRd_neg_kNm, res.Mrd_dist_kNm);
+
+    return res;
+}
+
+} // namespace nbr8800::v2024

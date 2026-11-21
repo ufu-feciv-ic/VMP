@@ -81,8 +81,14 @@ ResultadoArmaduraProtensao calcularArmaduraProtensao(
 );
 
 // ----------------------------------------------------------------------------
-// Rotina 5: Perdas de Protensão Imediatas
+// Rotina 5: Perdas de Protensão Imediatas e Progressivas
 // ----------------------------------------------------------------------------
+struct ForcasProtensaoTrechos {
+    double P_ativa_kN = 0.0;   // Trecho [0, X_ep] (P_n,1)
+    double P_meio_kN = 0.0;    // Trecho central [X_ep, L - X_ep] (P_n,2)
+    double P_passiva_kN = 0.0; // Trecho [L - X_ep, L] (P_n,3)
+};
+
 struct ResultadoPerdaImediataTracadoReto
 {
     double delta_P_ancoragem_kN; // Perda da força por encunhamento
@@ -93,6 +99,15 @@ ResultadoPerdaImediataTracadoReto calcularPerdaAncoragemTracadoReto(
     const CaboProtensao& cabo,
     double P0_kN,
     double Lv_mm
+);
+
+// [Em Stand-by] Rotina 5.1: Perda imediata (atrito + ancoragem) para traçado poligonal
+ForcasProtensaoTrechos calcularPerdaImediataTracadoPoligonal(
+    const CaboProtensao& cabo,
+    double P0_kN,
+    double Lv_mm,
+    double ep_i_mm,
+    double ep_f_mm
 );
 
 double calcularPsi1000 (double sigma_P0_MPa, double fptk_MPa, 
@@ -119,6 +134,20 @@ double calcularIncrementoDpTracadoReto(
     double Ep_MPa,
     double Lv_mm,
     double ep_mm,
+    double Ix_mm4,
+    double Ag_mm2,
+    double Ap_mm2
+);
+
+// [Em Stand-by] Rotina 6.2: Incremento hiperestático ΔP para traçado poligonal
+double calcularIncrementoDpTracadoPoligonal(
+    double q_kN_m,
+    double Eg_MPa,
+    double Ep_MPa,
+    double Lv_mm,
+    double X_ep_mm,
+    double ep_i_mm,
+    double ep_f_mm,
     double Ix_mm4,
     double Ag_mm2,
     double Ap_mm2
@@ -205,5 +234,39 @@ double calcularInerciaLaje(
     const ArmacaoLaje& armacaoLaje,
     double alpha_e
 );
-}
-}
+} // inline namespace v2008
+
+namespace v2024 {
+
+ResultadoMomentoPositivoVMP calcularMomentoPostivoVMP(
+    const PerfilI& perfil,
+    const Aco& aco,
+    const Concreto& concreto,
+    const Laje& laje,
+    const CaboProtensao& cabo,
+    double Ap_mm2,
+    double sigma_pd_MPa,
+    double gamma_a1 = 1.10,
+    double gamma_c = 1.40
+);
+
+ResultadoMomentoNegativoVMP calcularMomentoNegativoVMP(
+    const PerfilI& perfil,
+    const Aco& aco,
+    const Concreto& concreto,
+    const Laje& laje,
+    const CaboProtensao& cabo,
+    const ArmacaoLaje& armacaoLaje,
+    double MSd_neg_kNm,
+    double MSd_pos_kNm,
+    double Lv_mm,
+    double a_vigas_mm,
+    double alpha_viga = 3.0,
+    double gamma_a1 = 1.10,
+    double gamma_c = 1.40
+);
+
+double calcularCdist(double psi);
+
+} // namespace v2024
+} // namespace nbr8800

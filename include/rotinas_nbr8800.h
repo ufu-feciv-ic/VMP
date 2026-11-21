@@ -169,4 +169,60 @@ ResultadoRotinaF calcular_rotina_f_armadura_costura(
 );
 
 } // namespace v2008
+
+// ============================================================================
+// MÓDULO ATUALIZADO: ABNT NBR 8800:2024
+// ============================================================================
+namespace v2024 {
+
+ResultadoNormalResistentePerfil calcularNormalResistentePerfil(
+    const PerfilI& perfil,
+    const Aco& aco,
+    double Lb_mm,
+    double Lv_mm,
+    double kx,
+    double ky,
+    double gamma_a1 = 1.10
+);
+
+ResultadoMomentoResistentePerfil calcularMomentoResistentePerfil(
+    const PerfilI& perfil,
+    const Aco& aco,
+    double Lb_mm,
+    double Cb = 1.0,
+    double gamma_a1 = 1.10
+);
+
+ResultadoMomentoPositivoVM calcularMomentoPositivoVM(
+    const PerfilI& perfil,
+    const Aco& aco,
+    const Concreto& concreto,
+    const Laje& laje,
+    double gamma_a1 = 1.10,
+    double gamma_c = 1.40
+);
+
+ResultadoMomentoNegativoVM calcularMomentoNegativoVM(
+    const PerfilI& perfil,
+    const Aco& aco,
+    const Concreto& concreto,
+    const Laje& laje,
+    const ArmacaoLaje& armacaoLaje,
+    double MSd_neg_kNm,
+    double Msd_pos_kNm,
+    double Lv_mm,
+    double a_vigas_mm,
+    double alpha_viga = 3.0,
+    double gamma_a1 = 1.10,
+    double gamma_c = 1.40
+);
+
+ResultadoCortanteResistentePerfil calcularCortanteResistentePerfil(
+    const PerfilI& perfil,
+    const Aco& aco,
+    double a_enrijecedor_mm = 0.0,
+    double gamma_a1 = 1.10
+);
+
+} // namespace v2024
 } // namespace nbr8800

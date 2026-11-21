@@ -18,7 +18,8 @@ enum TipoProtensao {
 
 enum TipoTracado {
     CABO_RETO,
-    CABO_POLIGONAL
+    CABO_POLIGONAL,
+    CABO_PARABOLICO
 };
 
 enum TipoElementoProtensao {
@@ -51,6 +52,11 @@ enum TipoCordoalha {
 enum TipoConector {
     CONECTOR_PERFIL_U = 0,
     CONECTOR_STUD_BOLT = 1
+};
+
+enum EdicaoNBR8800 {
+    NBR8800_2008 = 0,
+    NBR8800_2024 = 1
 };
 
 // ----------------------------------------------------------------------------
@@ -140,15 +146,17 @@ struct CaboProtensao {
     double area_unit = 0.0;
     int n_cordoalhas = 0;     // Número de cordoalhas
     double Ap = 0.0;        // Área total de aço de protensão (mm²) (ex: 3 * 140 mm²)
-    double ep = 0.0;        // Posição do cabo em relação à face inferior do perfil (mm)
+    double ep = 0.0;        // Posição do cabo em relação à face inferior do perfil no meio do vão (mm)
     double delta_cunha = 0.0; // Acomodação da cunha na ancoragem (mm)
+    double X_ep_mm = 0.0;   // Distância do apoio ao desviador para traçado poligonal (mm)
+    double mu_atrito = 0.05; // Coeficiente de atrito nos desviadores (rad^-1)
 };
 
 struct ArmacaoLaje {
-    double As;
-    double Ads;
-    double fsd;
-    double d_linha_mm;
+    double As = 0.0;
+    double Ads = 0.0;
+    double fsd = 0.0;
+    double d_linha_mm = 0.0;
 };
 
 // ----------------------------------------------------------------------------
@@ -194,11 +202,17 @@ struct VigaVMP {
     Aco aco;
     Concreto concreto;
     Laje laje;
+    ArmacaoLaje armacao_laje;
     CaboProtensao cabo;
     ConectorCisalhamento conector;
     CargasVMP cargas;
 
-    double L = 0.0;        // Vão teórico da viga (mm)
-    double Lb = 0.0;        // Comprimento destravado à flexotorção (mm)
-    double P0_adotado = 0.0; // Força inicial de protensão adotada (kN)
+    double L = 0.0;            // Vão teórico da viga (mm)
+    double Lb = 0.0;           // Comprimento destravado à flexotorção (mm)
+    double a_vigas_mm = 3000.0; // Espaçamento entre vigas paralelas (mm)
+    double alpha_viga = 3.0;   // Coeficiente de posição da viga (3.0 = interna, 2.0 = borda)
+    double Cb_fase1 = 1.06;    // Fator de modificação para momento não-uniforme na construção
+    double P0_adotado = 0.0;   // Força inicial de protensão adotada (kN) (se <= 0, usa P0_max)
+    int num_secoes = 5;        // Número de seções X ao longo da viga para verificação
+    EdicaoNBR8800 norma = NBR8800_2008; // Edição normativa da ABNT NBR 8800 (2008 ou 2024)
 };
