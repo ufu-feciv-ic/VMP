@@ -381,11 +381,143 @@ A exatidão da modelagem foi validada confrontando-se os resultados numéricos g
 
 ---
 
-## 5.2 Estudo Comparativo da Matriz de Vigas (2008 vs. 2024)
+## 5.2 Definição e Características dos Modelos Analisados (Inputs de Projeto)
 
-Para analisar de forma ampla os efeitos das atualizações da ABNT NBR 8800:2024, aplicou-se o modelo comparativo sobre cinco vigas representativas, cujos resultados estão organizados na Tabela 5.2.
+Para investigar a sensibilidade dos resultados frente às alterações normativas da ABNT NBR 8800:2024 em comparação à ABNT NBR 8800:2008, estruturou-se uma matriz com cinco vigas mistas protendidas representativas da prática da engenharia de estruturas. A seguir, detalham-se os dados de entrada (*inputs*) completos referentes a geometria, materiais do perfil metálico, características da laje de concreto, sistema de protensão e carregamentos de serviço e construção.
 
-**Tabela 5.2 — Matriz comparativa de resultados analíticos: ABNT NBR 8800:2008 vs. ABNT NBR 8800:2024**
+### 5.2.1 Viga A — Caso Base de Referência Compacto (Turini, 2021 — Exemplo 1)
+- **Geometria e Condições de Apoio**: Vão teórico biapoiado $L = 12{,}0\text{ m}$; contenção lateral na montagem a cada $L_b = 3{,}0\text{ m}$; espaçamento transversal entre vigas $a_{vigas} = 3{,}0\text{ m}$.
+- **Perfil Metálico**:
+  - Perfil laminado **W 360 x 57,8** em aço ASTM A572 Grau 50 ($f_y = 345\text{ MPa}$, $f_u = 450\text{ MPa}$, $E_a = 200.000\text{ MPa}$);
+  - Dimensões nominais: $d = 358{,}0\text{ mm}$, $b_f = 172{,}0\text{ mm}$, $t_w = 7{,}9\text{ mm}$, $t_f = 13{,}1\text{ mm}$, $h = 332\text{ mm}$, $d_1 = 308\text{ mm}$;
+  - Propriedades geométricas: $A_g = 72{,}5\text{ cm}^2$ ($7250\text{ mm}^2$), $I_x = 16.143\text{ cm}^4$, $W_x = 901{,}8\text{ cm}^3$, $Z_x = 1014{,}8\text{ cm}^3$, $I_y = 1113\text{ cm}^4$;
+  - Parâmetros de esbeltez: alma $\lambda_w = 38{,}98 \le \lambda_p = 90{,}53$ (alma compacta); mesa $\lambda_f = 6{,}56 \le \lambda_p = 9{,}15$ (mesa compacta).
+- **Laje de Concreto**:
+  - Laje maciça moldada *in loco*, espessura $t_c = 130\text{ mm}$ ($13\text{ cm}$); largura colaborante de cálculo $b_{ef} = 3000\text{ mm}$;
+  - Concreto **C30**: $f_{ck} = 30\text{ MPa}$, $E_{cs} = 26.838\text{ MPa}$, $f_{ctm} = 2{,}9\text{ MPa}$;
+  - Armadura passiva longitudinal: tela soldada com $A_s = 5{,}0\text{ cm}^2/\text{m}$ (Aço CA-50, $f_{yd} = 434{,}8\text{ MPa}$), cobrimento $d' = 20\text{ mm}$.
+- **Cabos de Protensão**:
+  - Sistema de **Pré-tração** com traçado **reto** e ancoragem ativa-passiva;
+  - Cordoalhas de relaxação baixa **CP 190 RB** ($\varnothing 15{,}2\text{ mm}$, $A_{p,unit} = 140\text{ mm}^2$, $f_{pk} = 1864\text{ MPa}$, $f_{pyk} = 1677{,}6\text{ MPa}$);
+  - Quantidade: 3 cordoalhas, totalizando área de aço de protensão $A_p = 420\text{ mm}^2$ ($4{,}2\text{ cm}^2$);
+  - Excentricidade do cabo em relação à face inferior da mesa inferior: $e_p = -50\text{ mm}$ (cabo posicionado externamente $50\text{ mm}$ abaixo do bordo inferior do perfil);
+  - Força inicial adotada no macaco: $P_0 = 400\text{ kN}$ ($P_{0,máx} = 912{,}30\text{ kN}$);
+  - Forças resultantes: na montagem (Fase 1) $P_1 = 404{,}63\text{ kN}$; em longa duração (Fase 3) $P_3 = 437{,}81\text{ kN}$.
+- **Ações e Carregamentos**:
+  - $q_1$ (peso próprio do perfil): $0{,}56\text{ kN/m}$;
+  - $q_2$ (peso próprio do concreto fresco): $9{,}75\text{ kN/m}$ ($3{,}0\text{ m} \times 0{,}13\text{ m} \times 25\text{ kN/m}^3$);
+  - $q_s$ (sobrecarga de montagem/construção): $3{,}00\text{ kN/m}$ ($1{,}0\text{ kN/m}^2 \times 3{,}0\text{ m}$);
+  - $q_3$ (revestimento e sobrecargas permanentes de acabamento): $6{,}00\text{ kN/m}$ ($2{,}0\text{ kN/m}^2 \times 3{,}0\text{ m}$);
+  - $q_4$ (sobrecarga acidental de utilização): $15{,}00\text{ kN/m}$ ($5{,}0\text{ kN/m}^2 \times 3{,}0\text{ m}$);
+  - Coeficientes de ponderação e serviço: $\gamma_a = 1{,}10$, $\gamma_c = 1{,}40$, $\psi_1 = 0{,}6$, $\psi_2 = 0{,}4$.
+
+### 5.2.2 Viga B — Perfil Soldado com Alma Esbelta
+- **Geometria e Condições de Apoio**: $L = 12{,}0\text{ m}$, $L_b = 3{,}0\text{ m}$, $a_{vigas} = 3{,}0\text{ m}$.
+- **Perfil Metálico**:
+  - Perfil soldado em aço ASTM A572 Grau 50 ($f_y = 345\text{ MPa}$, $f_u = 450\text{ MPa}$);
+  - Altura total $d = 358{,}0\text{ mm}$, mesas com $b_f = 172{,}0\text{ mm}$ e $t_f = 13{,}1\text{ mm}$;
+  - **Alma esbelta**: espessura reduzida para $t_w = 3{,}0\text{ mm}$ ($h/t_w = 308/3{,}0 = 102{,}67 > \lambda_p = 90{,}53$);
+  - Propriedades geométricas: $A_g = 55{,}02\text{ cm}^2$ ($5501{,}8\text{ mm}^2$), $I_x = 14.321\text{ cm}^4$;
+  - Objetivo: Avaliar o ganho de capacidade em compressão pelo método de Winter ($A_{ef}$) e em esforço cortante por $k_v = 5{,}34$.
+- **Laje de Concreto**: Idêntica à Viga A (laje maciça $t_c = 130\text{ mm}$, $b_{ef} = 3000\text{ mm}$, concreto C30, armadura $A_s = 5{,}0\text{ cm}^2/\text{m}$).
+- **Cabos de Protensão**: Idêntico à Viga A (Pré-tração, 3 cordoalhas CP 190 RB $\varnothing 15{,}2\text{ mm}$, $A_p = 420\text{ mm}^2$, $e_p = -50\text{ mm}$, $P_0 = 400\text{ kN}$).
+- **Ações e Carregamentos**: $q_1 = 0{,}43\text{ kN/m}$ (reduzido pela espessura da alma); $q_2 = 9{,}75\text{ kN/m}$; $q_s = 3{,}00\text{ kN/m}$; $q_3 = 6{,}00\text{ kN/m}$; $q_4 = 15{,}00\text{ kN/m}$; $\psi_1 = 0{,}6$.
+
+### 5.2.3 Viga C — Caso Pós-Tracionado com *Steel Deck* (Turini, 2021 — Exemplo 2)
+- **Geometria e Condições de Apoio**: Grande vão livre biapoiado $L = 15{,}0\text{ m}$; travamento lateral $L_b = 3{,}0\text{ m}$; intereixo entre vigas $a_{vigas} = 2{,}0\text{ m}$.
+- **Perfil Metálico**:
+  - Perfil laminado **W 460 x 89** em aço ASTM A572 Grau 50 ($f_y = 345\text{ MPa}$, $f_u = 450\text{ MPa}$, $E_a = 200.000\text{ MPa}$);
+  - Dimensões nominais: $d = 463{,}0\text{ mm}$, $b_f = 192{,}0\text{ mm}$, $t_w = 10{,}5\text{ mm}$, $t_f = 17{,}7\text{ mm}$, $h = 428{,}0\text{ mm}$;
+  - Propriedades geométricas: $A_g = 114{,}1\text{ cm}^2$ ($11410\text{ mm}^2$), $I_x = 41.105\text{ cm}^4$, $W_x = 1775{,}6\text{ cm}^3$, $Z_x = 2019{,}4\text{ cm}^3$, $I_y = 2093\text{ cm}^4$, $r_y = 42{,}8\text{ mm}$;
+  - Esbeltez: $\lambda_w = 44{,}10 \le \lambda_p$ (alma compacta); $\lambda_f = 5{,}42 \le \lambda_p$ (mesa compacta).
+- **Laje de Concreto**:
+  - Laje mista com fôrma de aço incorporada (**Steel Deck**), nervuras perpendiculares à viga metálica;
+  - Geometria da fôrma: altura das nervuras $h_F = 50\text{ mm}$, passo $e_F = 305\text{ mm}$, largura média da nervura $b_F = 130\text{ mm}$;
+  - Espessura da capa superior de concreto: $t_c = 80\text{ mm}$ (espessura total de concreto $h_t = 130\text{ mm}$);
+  - Largura colaborante: $b_{ef} = 2000\text{ mm}$; concreto **C30** ($f_{ck} = 30\text{ MPa}$, $E_{cs} = 26.838\text{ MPa}$);
+  - Armadura passiva negativa sobre a viga: $A_s = 5{,}0\text{ cm}^2/\text{m}$ ($A_{ds} = 10{,}0\text{ cm}^2$ em $2{,}0\text{ m}$).
+- **Cabos de Protensão**:
+  - Sistema de **Pós-tração** externa (tensionamento executado na Fase 2, após cura completa da laje);
+  - Cordoalhas CP 190 RB ($\varnothing 15{,}2\text{ mm}$): 2 cabos de 3 cordoalhas $\to 6$ cordoalhas no total ($A_p = 840\text{ mm}^2$);
+  - Excentricidade no meio do vão: $e_p = -50\text{ mm}$ (abaixo do perfil);
+  - Força máxima teórica de protensão: $P_0 = P_{0,máx} = 1165{,}31\text{ kN}$ (governada pelo estado de fissuração e tensões limites no concreto conforme Turini, 2021).
+- **Ações e Carregamentos**:
+  - $q_1$ (peso próprio do perfil): $0{,}88\text{ kN/m}$;
+  - $q_2$ (peso da laje sobre steel deck): $6{,}81\text{ kN/m}$ ($[0{,}13\text{ m} + 0{,}0063\text{ m}] \times 2{,}0\text{ m} \times 25\text{ kN/m}^3$);
+  - $q_s$ (sobrecarga de construção): $2{,}00\text{ kN/m}$ ($1{,}0\text{ kN/m}^2 \times 2{,}0\text{ m}$);
+  - $q_3$ (revestimento permanente): $4{,}00\text{ kN/m}$ ($2{,}0\text{ kN/m}^2 \times 2{,}0\text{ m}$);
+  - $q_4$ (sobrecarga de uso): $10{,}00\text{ kN/m}$ ($5{,}0\text{ kN/m}^2 \times 2{,}0\text{ m}$); $\psi_1 = 0{,}6$, $\psi_2 = 0{,}4$.
+
+### 5.2.4 Viga D — Perfil Semicompacto sob Pós-Tração
+- **Geometria e Condições de Apoio**: $L = 14{,}0\text{ m}$, $L_b = 3{,}5\text{ m}$, $a_{vigas} = 2{,}5\text{ m}$.
+- **Perfil Metálico**:
+  - Perfil soldado derivado de perfil I com alma semicompacta ($\lambda_p < \lambda_w \le \lambda_r$);
+  - Dimensões nominais: $d = 400{,}0\text{ mm}$, $b_f = 180{,}0\text{ mm}$, $t_f = 14{,}0\text{ mm}$, $t_w = 3{,}8\text{ mm}$;
+  - Esbeltez da alma: $\lambda_w = h/t_w = 95{,}0$ (seção semicompacta); aço ASTM A572 Grau 50 ($f_y = 345\text{ MPa}$);
+  - Objetivo: Analisar a influência da redução da tensão de cálculo do concreto de $1{,}00 f_{cd}$ (2008) para $0{,}85 f_{cd}$ (2024) no momento resistente elasto-plástico da seção mista.
+- **Laje de Concreto**: Laje maciça $t_c = 130\text{ mm}$, $b_{ef} = 2500\text{ mm}$, concreto C30 ($f_{ck} = 30\text{ MPa}$, $E_{cs} = 26.838\text{ MPa}$), armadura $A_s = 5{,}0\text{ cm}^2/\text{m}$.
+- **Cabos de Protensão**: Sistema de Pós-tração, 4 cordoalhas CP 190 RB $\varnothing 15{,}2\text{ mm}$ ($A_p = 560\text{ mm}^2$), $e_p = -50\text{ mm}$, $P_0 = 600{,}0\text{ kN}$.
+- **Ações e Carregamentos**: $q_1 = 0{,}62\text{ kN/m}$; $q_2 = 8{,}13\text{ kN/m}$; $q_s = 2{,}50\text{ kN/m}$; $q_3 = 5{,}00\text{ kN/m}$; $q_4 = 12{,}50\text{ kN/m}$; $\psi_1 = 0{,}6$.
+
+### 5.2.5 Viga E — Concreto de Alta Resistência (Classe C50)
+- **Geometria e Condições de Apoio**: $L = 12{,}0\text{ m}$, $L_b = 3{,}0\text{ m}$, $a_{vigas} = 3{,}0\text{ m}$ (mesma geometria da Viga A).
+- **Perfil Metálico**: Idêntico à Viga A (laminado W 360 x 57,8 compacto, $A_g = 72{,}5\text{ cm}^2$, $f_y = 345\text{ MPa}$).
+- **Laje de Concreto (Variável Chave de Investigação)**:
+  - Laje maciça de $t_c = 130\text{ mm}$ e $b_{ef} = 3000\text{ mm}$;
+  - **Concreto de Alta Resistência C50**: resistência característica $f_{ck} = 50\text{ MPa}$;
+  - Módulos de deformação: $E_{ci} = 43.600\text{ MPa}$ e $E_{cs} = 34.650\text{ MPa}$;
+  - **Fator de Fragilidade da ABNT NBR 8800:2024**:
+    $$\eta_c = \left(\frac{40}{f_{ck}}\right)^{1/3} = \left(\frac{40}{50}\right)^{1/3} = 0{,}9283 < 1{,}00$$
+    *(Na ABNT NBR 8800:2008, inexistia redução por fragilidade, utilizando-se $\eta_c = 1{,}00$).*
+- **Cabos de Protensão**: Idêntico à Viga A (Pré-tração, 3 cordoalhas CP 190 RB $\varnothing 15{,}2\text{ mm}$, $A_p = 420\text{ mm}^2$, $e_p = -50\text{ mm}$, $P_0 = 400\text{ kN}$).
+- **Ações e Carregamentos**: Idênticas à Viga A ($q_1 = 0{,}56\text{ kN/m}$, $q_2 = 9{,}75\text{ kN/m}$, $q_s = 3{,}00\text{ kN/m}$, $q_3 = 6{,}00\text{ kN/m}$, $q_4 = 15{,}00\text{ kN/m}$, $\psi_1 = 0{,}6$).
+
+---
+
+### 5.2.6 Síntese Comparativa dos Parâmetros de Entrada (*Inputs*)
+
+A Tabela 5.2 sintetiza todos os dados de entrada atribuídos aos cinco modelos para subsidiar as análises das edições de 2008 e de 2024 da ABNT NBR 8800.
+
+**Tabela 5.2 — Matriz consolidada de dados de entrada (*inputs*) das vigas investigadas**
+
+| Grupo de Parâmetros | Parâmetro de Entrada | Unidade | Viga A (Compacta) | Viga B (Alma Esbelta) | Viga C (Steel Deck) | Viga D (Semicompacta) | Viga E (Concreto C50) |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Geometria Geral** | Vão teórico da viga ($L$) | $\text{m}$ | $12{,}0$ | $12{,}0$ | $15{,}0$ | $14{,}0$ | $12{,}0$ |
+| | Travamento na montagem ($L_b$) | $\text{m}$ | $3{,}0$ | $3{,}0$ | $3{,}0$ | $3{,}5$ | $3{,}0$ |
+| | Intereixo de vigas ($a_{vigas}$) | $\text{m}$ | $3{,}0$ | $3{,}0$ | $2{,}0$ | $2{,}5$ | $3{,}0$ |
+| **Perfil Metálico** | Designação comercial | — | W 360 x 57,8 | Soldado $t_w=3$ | W 460 x 89 | Soldado adaptado | W 360 x 57,8 |
+| | Aço estrutural ($f_y / f_u$) | $\text{MPa}$ | $345 / 450$ | $345 / 450$ | $345 / 450$ | $345 / 450$ | $345 / 450$ |
+| | Altura total ($d$) / Largura ($b_f$) | $\text{mm}$ | $358 / 172$ | $358 / 172$ | $463 / 192$ | $400 / 180$ | $358 / 172$ |
+| | Espessura alma ($t_w$) / mesa ($t_f$) | $\text{mm}$ | $7{,}9 / 13{,}1$ | $3{,}0 / 13{,}1$ | $10{,}5 / 17{,}7$ | $3{,}8 / 14{,}0$ | $7{,}9 / 13{,}1$ |
+| | Área bruta ($A_g$) | $\text{cm}^2$ | $72{,}5$ | $55{,}0$ | $114{,}1$ | $74{,}4$ | $72{,}5$ |
+| | Momento de inércia ($I_x$) | $\text{cm}^4$ | $16143$ | $14321$ | $41105$ | $21500$ | $16143$ |
+| | Esbeltez da alma ($\lambda_w = h/t_w$) | — | $38{,}98$ (Comp.) | $102{,}67$ (Esbel.) | $44{,}10$ (Comp.) | $95{,}00$ (Semic.) | $38{,}98$ (Comp.) |
+| **Laje de Concreto** | Tipo de laje | — | Maciça | Maciça | *Steel Deck* | Maciça | Maciça |
+| | Espessura total ($h_t$) / capa ($t_c$) | $\text{mm}$ | $130 / 130$ | $130 / 130$ | $130 / 80$ | $130 / 130$ | $130 / 130$ |
+| | Largura colaborante ($b_{ef}$) | $\text{mm}$ | $3000$ | $3000$ | $2000$ | $2500$ | $3000$ |
+| | Classe / Resistência ($f_{ck}$) | $\text{MPa}$ | C30 ($30$) | C30 ($30$) | C30 ($30$) | C30 ($30$) | C50 ($50$) |
+| | Módulo secante do concreto ($E_{cs}$) | $\text{MPa}$ | $26838$ | $26838$ | $26838$ | $26838$ | $34650$ |
+| | Armadura passiva da laje ($A_s$) | $\text{cm}^2/\text{m}$ | $5{,}0$ | $5{,}0$ | $5{,}0$ | $5{,}0$ | $5{,}0$ |
+| **Cabos de Protensão**| Processo executivo | — | Pré-tração | Pré-tração | Pós-tração | Pós-tração | Pré-tração |
+| | Tipo de cordoalha / cabo | — | CP 190 RB $\varnothing 15{,}2$ | CP 190 RB $\varnothing 15{,}2$ | CP 190 RB $\varnothing 15{,}2$ | CP 190 RB $\varnothing 15{,}2$ | CP 190 RB $\varnothing 15{,}2$ |
+| | Número de cordoalhas | un. | $3$ | $3$ | $6$ | $4$ | $3$ |
+| | Área total de protensão ($A_p$) | $\text{mm}^2$ | $420$ | $420$ | $840$ | $560$ | $420$ |
+| | Excentricidade no meio do vão ($e_p$) | $\text{mm}$ | $-50$ | $-50$ | $-50$ | $-50$ | $-50$ |
+| | Força inicial aplicada ($P_0$) | $\text{kN}$ | $400{,}0$ | $400{,}0$ | $1165{,}3$ | $600{,}0$ | $400{,}0$ |
+| **Ações / Cargas** | Peso perfil ($q_1$) | $\text{kN/m}$ | $0{,}56$ | $0{,}43$ | $0{,}88$ | $0{,}62$ | $0{,}56$ |
+| | Peso concreto ($q_2$) | $\text{kN/m}$ | $9{,}75$ | $9{,}75$ | $6{,}81$ | $8{,}13$ | $9{,}75$ |
+| | Sobrecarga de montagem ($q_s$) | $\text{kN/m}$ | $3{,}00$ | $3{,}00$ | $2{,}00$ | $2{,}50$ | $3{,}00$ |
+| | Revestimento permanente ($q_3$) | $\text{kN/m}$ | $6{,}00$ | $6{,}00$ | $4{,}00$ | $5{,}00$ | $6{,}00$ |
+| | Sobrecarga acidental de uso ($q_4$) | $\text{kN/m}$ | $15{,}00$ | $15{,}00$ | $10{,}00$ | $12{,}50$ | $15{,}00$ |
+| | Coeficientes de serviço ($\psi_1 / \psi_2$) | — | $0{,}6 / 0{,}4$ | $0{,}6 / 0{,}4$ | $0{,}6 / 0{,}4$ | $0{,}6 / 0{,}4$ | $0{,}6 / 0{,}4$ |
+
+---
+
+## 5.3 Estudo Comparativo da Matriz de Vigas (2008 vs. 2024)
+
+Aplicando-se o motor de cálculo do software `VMP` com os parâmetros de entrada estabelecidos na Tabela 5.2, obtiveram-se os esforços resistentes e verificações de serviço sintetizados na Tabela 5.3.
+
+**Tabela 5.3 — Matriz comparativa de resultados analíticos: ABNT NBR 8800:2008 vs. ABNT NBR 8800:2024**
 
 | Parâmetro Estrutural de Projeto | Unid. | Viga A (Compacta) | Viga B (Alma Esbelta) | Viga C (Steel Deck) | Viga D (Semicompacta) | Viga E (Concreto C50) |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
@@ -415,9 +547,9 @@ Para analisar de forma ampla os efeitos das atualizações da ABNT NBR 8800:2024
 
 ---
 
-## 5.3 Discussão Crítica dos Resultados Comparativos
+## 5.4 Discussão Crítica dos Resultados Comparativos
 
-A interpretação da Tabela 5.2 revela comportamentos mecânicos de extrema relevância:
+A interpretação da Tabela 5.3 revela comportamentos mecânicos de extrema relevância:
 
 1. **Equivalência Estrita em Perfis Laminados Compactos (Viga A)**:
    Em perfis laminados que atendem aos limites de compacidade ($\lambda_w \le \lambda_p$), as capacidades resistentes axiais ($N_{Rd,I}$), de flexão ($M_{Rd,I}$, $M_{Rd,VMP}^+$, $M_{Rd,VMP}^-$) e de esforço cortante ($V_{Rd}$) resultam rigorosamente idênticas entre as edições de 2008 e de 2024 da ABNT NBR 8800. Isso comprova que a ampla base de projetos existentes de VMP com perfis comerciais da Série W mantém integralmente seus níveis de confiabilidade estrutural sob a nova norma;
