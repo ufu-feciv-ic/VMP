@@ -3,6 +3,7 @@
 #include "catalogo.h"
 #include "geometria.h"
 #include "rotinas_nbr8800.h"
+#include "rotinas_vmp.h"
 #include <cmath>
 
 TEST_CASE("Rotina A - NBR 8800:2008: Normal resistente perfil W360x57.8")
@@ -288,4 +289,123 @@ TEST_CASE("Rotina D - NBR 8800:2024: Cortante resistente perfil W360X57.8 (kv = 
     ASSERT_PERCENT(res.lbw_r, 76.22, 0.1);
     ASSERT_PERCENT(res.Vpl_kN, 585.43, 0.1);
     ASSERT_PERCENT(res.VRd_kN, 532.21, 0.1);
+}
+
+TEST_CASE("Comparativo Viga Mista Pura: Escorada vs Nao-Escorada, Interacao Completa vs Parcial")
+{
+    // 1. Dados da Seção e Materiais
+    PerfilI perfil = perfil_w360x57_8();
+    Aco aco = aco_a572_gr50();
+    Concreto concreto = concreto_c30();
+    Laje laje = laje_macica_130();
+    laje.bef_mm = 2500.0; // 2,50 m de largura colaborante
+
+    const double L_mm = 10000.0; // Vão de 10 metros
+    const double gamma_a1 = 1.10;
+    const double gamma_c = 1.40;
+    const double fyd = aco.fy_MPa / gamma_a1;
+    const double fcd = concreto.fck_MPa / gamma_c;
+
+    // Forças plásticas fundamentais
+    const double Tad = perfil.Ag * fyd * 1e-3; // ~2273.86 kN
+    const double Ccd_max = 0.85 * fcd * laje.bef_mm * laje.tc_mm * 1e-3; // ~5919.64 kN
+    const double Fhd = std::min(Tad, Ccd_max); // Fhd = Tad = 2273.86 kN (LNP na laje em interação completa)
+
+    // ========================================================================
+    // CASO 1: INTERAÇÃO COMPLETA (alpha = 1.00)
+    // ========================================================================
+    // Conectores fornecem sum_QRd >= Fhd
+    const double a_comp = (Tad * 1e3) / (0.85 * fcd * laje.bef_mm); // ~49.93 mm <= tc (130 mm)
+    const double MRd_comp_2008 = Tad * (perfil.d / 2.0 + laje.hF_mm + laje.tc_mm - a_comp / 2.0) * 1e-3;
+    const double MRd_comp_2024 = 1.0 * Tad * (perfil.d / 2.0 + laje.hF_mm + laje.tc_mm - a_comp / 2.0) * 1e-3;
+
+    ASSERT_NEAR(MRd_comp_2008, MRd_comp_2024, 0.01);
+    ASSERT_PERCENT(MRd_comp_2024, 645.85, 0.2);
+
+    // ========================================================================
+    // CASO 2: INTERAÇÃO INCOMPLETA / PARCIAL (alpha = 0.60)
+    // ========================================================================
+    // Adotam-se conectores com capacidade sum_QRd = 0.60 * Fhd = 1364.32 kN
+    const double alpha = 0.60;
+    const double sum_QRd_parcial = alpha * Fhd; // 1364.32 kN (< Tad)
+    
+    // Na interação parcial, a compressão na laje é limitada pela conexão: Ccd_parcial = sum_QRd
+    const double Ccd_parcial = sum_QRd_parcial;
+    const double a_parcial = (Ccd_parcial * 1e3) / (0.85 * fcd * laje.bef_mm); // ~29.96 mm
+
+    // Pelo equilíbrio axial no perfil: Tad_parcial - Cad_parcial = Ccd_parcial
+    // Com Tad_parcial + Cad_parcial = Tad:
+    const double Cad_parcial = 0.5 * (Tad - Ccd_parcial); // ~454.77 kN
+    const double yp_parcial = (Cad_parcial * 1e3) / (perfil.bf * fyd); // ~8.43 mm <= tf (13.1 mm)
+    const double yc_parcial = yp_parcial / 2.0;
+
+    // Centroide da região tracionada yt:
+    double yt_parcial = (((perfil.bf * perfil.tf * perfil.tf / 2.0)
+        + (perfil.h * perfil.tw * (perfil.h / 2.0 + perfil.tf))
+        + ((perfil.bf / 2.0) * (perfil.tf - yp_parcial) * (3.0 * perfil.tf + 2.0 * perfil.h - yp_parcial)))
+        / ((perfil.bf * perfil.tf) + (perfil.h * perfil.tw) + (perfil.bf * (perfil.tf - yp_parcial))));
+
+    // Momento resistente sob interação parcial (Item L.6.3.1.1.1-c):
+    double MRd_parcial = (Cad_parcial * (perfil.d - yt_parcial - yc_parcial)
+        + sum_QRd_parcial * (laje.tc_mm - a_parcial / 2.0 + laje.hF_mm + perfil.d - yt_parcial)) * 1e-3;
+
+    // A interação parcial com 60% dos conectores preserva ~87% do momento resistente da interação completa:
+    ASSERT_TRUE(MRd_parcial < MRd_comp_2024);
+    ASSERT_PERCENT(MRd_parcial, 561.67, 0.2);
+    ASSERT_TRUE(MRd_parcial > 285.98); // Muito superior ao perfil isolado (285.98 kNm)
+
+    // ========================================================================
+    // CASOS 3 E 4: ELS DE DEFORMAÇÃO (ESCORADA VS NÃO-ESCORADA)
+    // ========================================================================
+    auto secao_tr_tinf = nbr8800::v2008::calcularSecaoTransformada(perfil, laje, concreto, aco, 3.0, 0.0, false);
+
+    const double Ix = perfil.Ix; // mm4 (16143 cm4 = 16143e4 mm4)
+    const double Itr_inf = secao_tr_tinf.Itr_mm4; // Longa duração (3n) in mm4
+    
+    // Inércia efetiva sob interação parcial (fórmula de Johnson / NBR 8800 / AISC 360):
+    // Ief = Ix + sqrt(alpha) * (Itr - Ix)
+    const double Ief_inf = Ix + std::sqrt(alpha) * (Itr_inf - Ix);
+
+    // Cargas de serviço (kN/m = N/mm):
+    const double q_conc = 8.125 + 0.57;      // Concreto + peso perfil = 8.695 N/mm
+    const double q_serv = 3.75 + 0.6 * 7.50; // Sobrecargas quase permanentes = 8.25 N/mm
+    const double E = aco.E_MPa;              // 200000 MPa
+
+    // --- CONSTRUÇÃO NÃO-ESCORADA (Interação Completa) ---
+    // Concreto atua no perfil de aço isolado (Ix):
+    double delta_conc_nao_esc = (5.0 / 384.0) * (q_conc * std::pow(L_mm, 4)) / (E * Ix);
+    // Sobrecargas atuam na seção mista (Itr_inf):
+    double delta_serv_comp = (5.0 / 384.0) * (q_serv * std::pow(L_mm, 4)) / (E * Itr_inf);
+    double delta_total_nao_esc_comp = delta_conc_nao_esc + delta_serv_comp;
+
+    // --- CONSTRUÇÃO ESCORADA (Interação Completa) ---
+    // Concreto e sobrecargas atuam ambos na seção mista (Itr_inf):
+    double delta_conc_esc = (5.0 / 384.0) * (q_conc * std::pow(L_mm, 4)) / (E * Itr_inf);
+    double delta_total_esc_comp = delta_conc_esc + delta_serv_comp;
+
+    // --- CONSTRUÇÃO NÃO-ESCORADA (Interação Parcial, alpha = 0.60) ---
+    double delta_serv_parcial = (5.0 / 384.0) * (q_serv * std::pow(L_mm, 4)) / (E * Ief_inf);
+    double delta_total_nao_esc_parcial = delta_conc_nao_esc + delta_serv_parcial;
+
+    // --- CONSTRUÇÃO ESCORADA (Interação Parcial, alpha = 0.60) ---
+    double delta_total_esc_parcial = ((5.0 / 384.0) * ((q_conc + q_serv) * std::pow(L_mm, 4))) / (E * Ief_inf);
+
+    // Verificações conceituais e de ordem de grandeza:
+    // 1. Escoramento reduz drasticamente a flecha total de serviço (em ~50%):
+    ASSERT_TRUE(delta_total_esc_comp < delta_total_nao_esc_comp);
+    ASSERT_NEAR(delta_total_esc_comp / delta_total_nao_esc_comp, 0.505, 0.02);
+
+    // 2. Interação parcial apresenta maior flecha elástica do que interação completa:
+    ASSERT_TRUE(delta_total_nao_esc_parcial > delta_total_nao_esc_comp);
+    ASSERT_TRUE(delta_total_esc_parcial > delta_total_esc_comp);
+
+    // 3. Limite de flecha L/350 = 28.57 mm
+    const double delta_lim = L_mm / 350.0;
+    ASSERT_NEAR(delta_lim, 28.57, 0.05);
+
+    // Na construção não escorada, delta_total (~46.5 mm) supera o limite L/350 (28.57 mm),
+    // enquanto na construção escorada (~23.5 mm) passa com grande folga!
+    ASSERT_TRUE(delta_total_nao_esc_comp > delta_lim);
+    ASSERT_TRUE(delta_total_esc_comp < delta_lim);
+    ASSERT_TRUE(delta_total_esc_parcial < delta_lim);
 }

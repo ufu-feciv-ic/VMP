@@ -273,14 +273,46 @@ $$V_{Rd} \propto k_v \implies \frac{V_{Rd}^{2024}}{V_{Rd}^{2008}} = \frac{5{,}34
 
 ---
 
-## 3.4 Flexão Positiva da Seção Mista e Fator de Fragilidade $\eta_c$
+## 3.4 Flexão Positiva da Seção Mista e Identificação de Incoerência Tipográfica no Item L.6.3.1.1.1-b
 
-1. **Equilíbrio com LNP no Perfil Metálico sob Interação Completa**:
-   O Item L.6.3.1.1.1-b da ABNT NBR 8800:2024 aprimorou a formulação de momento resistente quando a LNP penetra no perfil metálico sob interação mecânica completa, substituindo a parcela $C_{ad}(d - y_t - y_c)$ pela resultante exata dos conectores $\sum Q_{Rd}(d - y_t - y_c) = C_{cd}(d - y_t - y_c)$;
-2. **Fator de Fragilidade do Concreto ($\eta_c$)**:
-   Na edição de 2024, a capacidade resistente de compressão da laje passa a incorporar o fator de ductilidade:
-   $$\eta_c = \min\left(1{,}0, \; \left[\frac{40}{f_{ck}}\right]^{1/3}\right)$$
-   Para concretos usuais ($f_{ck} \le 40\text{ MPa}$), $\eta_c = 1{,}00$. Para concretos de alta resistência ($f_{ck} > 40\text{ MPa}$), $\eta_c < 1{,}00$, compensando a menor capacidade de deformação última do material.
+### 3.4.1 Dedução Mecânica do Momento Positivo com LNP no Perfil Metálico
+Quando a capacidade máxima de compressão plástica da laje de concreto é inferior à capacidade total de tração do perfil metálico e dos cabos de protensão ($C_{cd} < T_{ad} + T_{pd}$), a Linha Neutra Plástica (LNP) penetra no perfil metálico ($y_p > 0$), cortando a mesa superior ou a alma.
+
+Pelo equilíbrio estático da seção transversal, atuam três resultantes plásticas:
+1. **$C_{cd} = 0{,}85 \eta_c f_{cd} b_{ef} t_c$**: Força de compressão na laje de concreto, com centroide localizado a uma distância $(d + h_F + t_c/2)$ da face inferior da viga;
+2. **$C_{ad} = 0{,}5(A_a f_{yd} - C_{cd})$**: Força de compressão na porção superior do perfil de aço situada acima da LNP, com centroide distando $y_c$ do topo do perfil (cota $d - y_c$ em relação à base);
+3. **$T_{ad} = C_{cd} + C_{ad} = 0{,}5(A_a f_{yd} + C_{cd})$**: Força de tração na porção inferior do perfil de aço situada abaixo da LNP, com centroide à cota $y_t$ em relação à base.
+
+Tomando o momento estático das forças internas em torno do centroide da região tracionada do perfil de aço ($y_t$):
+- O braço de alavanca da compressão do aço $C_{ad}$ é a distância entre os centroides comprimido e tracionado do próprio perfil:
+  $$z_{aço} = (d - y_c) - y_t = d - y_t - y_c$$
+- O braço de alavanca da compressão do concreto $C_{cd}$ é a distância entre o centroide da laje e o centroide tracionado do aço:
+  $$z_{conc} = \left(d + h_F + \frac{t_c}{2}\right) - y_t = \frac{t_c}{2} + h_F + d - y_t$$
+- O braço do cabo de protensão externo sob tração $T_{pd} = A_p \sigma_{pd}$ (com excentricidade $e_p$ abaixo da face inferior) é:
+  $$z_{cabo} = e_p + y_t$$
+
+Dessa forma, o equilíbrio de momentos fletores exige rigorosamente:
+$$M_{Rd,VMP}^+ = \beta_{vm} \left[ \mathbf{C_{ad}} (d - y_t - y_c) + \mathbf{C_{cd}} \left(\frac{t_c}{2} + h_F + d - y_t\right) + T_{pd} (e_p + y_t) \right]$$
+
+### 3.4.2 Análise Crítica da Redação Oficial da ABNT NBR 8800:2024
+Ao confrontar o **Item L.6.3.1.1.1-b** com o **Item L.6.3.1.1.1-c** (ambos impressos na página 203 da ABNT NBR 8800:2024), identifica-se uma notória **inconsistência tipográfica** na formulação da norma:
+1. No **Item L.6.3.1.1.1-c (Interação Parcial, p. 203)**, a norma transcreve o equilíbrio físico correto:
+   $$M_{Rd} = \beta_{vm} \left[ \mathbf{C_{ad}} (d - y_t - y_c) + C_{cd} \left(t_c - \frac{a}{2} + h_F + d - y_t\right) \right]$$
+2. No **Item L.6.3.1.1.1-b (Interação Completa, p. 203)**, a norma imprimiu por equívoco:
+   $$M_{Rd} = \beta_{vm} \left[ \mathbf{\sum Q_{Rd}} (d - y_t - y_c) + C_{cd} \left(\frac{t_c}{2} + h_F + d - y_t\right) \right]$$
+
+### 3.4.3 O Risco da Duplicação da Compressão do Concreto
+Como sob interação completa a conexão ao cisalhamento precisa transferir integralmente a capacidade da laje ($\sum Q_{Rd} \ge C_{cd}$), caso o calculista adote $\sum Q_{Rd} = C_{cd}$ na equação do Item b:
+* A força da laje $C_{cd}$ passa a ser multiplicada pelo braço do perfil de aço $(d - y_t - y_c)$, gerando uma primeira parcela de concreto;
+* A parcela seguinte $C_{cd}(t_c/2 + h_F + d - y_t)$ soma novamente a compressão da laje com seu próprio braço;
+* A compressão real do perfil de aço ($C_{ad}$) é suprimida do cálculo.
+
+Isso produz uma **duplicação indevida da compressão do concreto**, hipertrofiando a capacidade resistente plástica em até 58% (conforme verificado no Estudo de Caso 2). Conclui-se que o termo $\sum Q_{Rd}$ constante no Item b deve ser interpretado como $C_{ad}$ sob interação completa, restabelecendo a exatidão física do equilíbrio estático.
+
+### 3.4.4 Fator de Fragilidade do Concreto de Alta Resistência ($\eta_c$)
+Em contrapartida, a introdução do fator $\eta_c$ no Item L.5.3.4 da ABNT NBR 8800:2024 constitui um avanço consistente e fisicamente respaldado:
+$$\eta_c = \begin{cases} 1{,}0, & \text{para } f_{ck} \le 40\text{ MPa} \\[6pt] \left(\dfrac{40}{f_{ck}}\right)^{1/3} \le 1{,}0, & \text{para } f_{ck} > 40\text{ MPa} \end{cases}$$
+O fator $\eta_c$ corrige a perda de ductilidade e a menor capacidade de deformação última dos concretos das classes C50 a C90, em perfeita harmonia com o modelo de Rüsch da ABNT NBR 6118:2023 e do Eurocode 2.
 
 ---
 
@@ -307,7 +339,7 @@ A verificação comparativa confirma que os critérios de deslocamento vertical 
 | :--- | :--- | :--- | :---: | :--- |
 | **Flambagem Local sob Compressão Axial** | Fator $Q = Q_s Q_a$; $\lambda_0 = \sqrt{Q A_g f_y / N_e}$. | Largura efetiva $A_{ef}$; $\lambda_0 = \sqrt{A_g f_y / N_e}$; $f_n = \chi f_y$. | Nova metodologia de Winter | Identidade em perfis laminados compactos; ganho de capacidade para perfis soldados esbeltos na montagem (Fase 1). |
 | **Coeficiente de Cisalhamento da Alma ($k_v$)** | $k_v = 5{,}00$ constante. | $k_v = 5{,}34$ exato. | $+6{,}80\%$ em $k_v$ | Limites $\lambda_{p,v}$ e $\lambda_{r,v}$ aumentam $+3{,}34\%$; ganho de até $+6{,}80\%$ na resistência elástica ao cortante. |
-| **LNP no Perfil Metálico sob Interação Completa** | Parcela $C_{ad}(d - y_t - y_c)$. | Parcela $\sum Q_{Rd}(d - y_t - y_c) = C_{cd}$. | Reformulação conceitual | Maior consistência de equilíbrio quando $C_{cd} < T_{ad} + T_{pd}$. |
+| **LNP no Perfil Metálico ($M_{Rd}^+$)** | Parcela $C_{ad}(d - y_t - y_c)$ exata. | Impressa com $\sum Q_{Rd}(d - y_t - y_c)$. | Gralha tipográfica no Item b | Risco de duplicação da compressão da laje caso $\sum Q_{Rd} = C_{cd}$ seja adotado; deve-se manter $C_{ad}$. |
 | **Fator de Fragilidade do Concreto** | Inexistente ($\eta_c = 1{,}00$). | $\eta_c = (40/f_{ck})^{1/3} \le 1{,}00$. | Redução para $f_{ck} > 40\text{ MPa}$ | Redução sutil de $C_{c,máx}$ e $M_{Rd}^+$ para concretos de alta resistência. |
 | **Tensão no Concreto em Semicompactas** | Limite de $1{,}00 f_{cd}$. | Limite de $0{,}85 f_{cd}$. | $-15{,}0\%$ na tensão limite | Redução da resistência à flexão positiva em seções semicompactas governadas pelo concreto. |
 | **Tabela de Coeficientes $C_{dist}$ (FLD)** | Coeficientes históricos simplificados. | Coeficientes refinados Tabela L.1. | Ajuste fino analítico | Pequenas variações no momento crítico de distorção $M_{cr,dist}$ sob momentos de extremidade. |
@@ -560,7 +592,9 @@ A interpretação da Tabela 5.3 revela comportamentos mecânicos de extrema rele
 4. **Influência do Fator de Fragilidade $\eta_c$ (Viga E)**:
    Para o concreto C50 ($f_{ck} = 50\text{ MPa}$), o fator $\eta_c = (40/50)^{1/3} = 0{,}9283$ reduziu sutilmente a força de compressão máxima da laje de concreto, provocando um decréscimo de $-0{,}67\%$ no momento resistente positivo $M_{Rd,VMP}^+$, ajustando a segurança estrutural à menor ductilidade de concretos de alta resistência;
 5. **Divergência Crítica entre ELS de Flecha e ELS de Vibração**:
-   Todas as vigas analisadas atenderam com ampla folga ao ELS de deformação excessiva (Fase 4), graças à contraflecha executiva. Todavia, as vigas pré-tracionadas com laje maciça de $12\text{ m}$ (Vigas A, B e E) foram reprovadas no ELS de vibração de piso (Fase 5, $\delta_{total,vib} \approx 3{,}34\text{ cm} > 2{,}00\text{ cm}$), enquanto a viga com laje sobre *steel deck* (Viga C) obteve aprovação folgada ($\delta_{total,vib} = -1{,}05\text{ cm}$). Isso evidencia que a rigidez dinâmica adicional proporcionada pela fôrma de aço (+35% no $E_{cs}$) é essencial para o conforto humano em grandes vãos.
+   Todas as vigas analisadas atenderam com ampla folga ao ELS de deformação excessiva (Fase 4), graças à contraflecha executiva. Todavia, as vigas pré-tracionadas com laje maciça de $12\text{ m}$ (Vigas A, B e E) foram reprovadas no ELS de vibração de piso (Fase 5, $\delta_{total,vib} \approx 3{,}34\text{ cm} > 2{,}00\text{ cm}$), enquanto a viga com laje sobre *steel deck* (Viga C) obteve aprovação folgada ($\delta_{total,vib} = -1{,}05\text{ cm}$). Isso evidencia que a rigidez dinâmica adicional proporcionada pela fôrma de aço (+35% no $E_{cs}$) é essencial para o conforto humano em grandes vãos;
+6. **Alerta Analítico sobre a Gralha do Item L.6.3.1.1.1-b da NBR 8800:2024**:
+   A investigação teórica do equilíbrio plástico revelou que a substituição literal do termo $C_{ad}$ por $\sum Q_{Rd}$ na equação de momento positivo para LNP no perfil de aço induz a uma falsa duplicação da compressão do concreto (uma vez no braço do perfil e outra no braço da laje), inflacionando o momento resistente de forma não conservadora. A comparação com o Item L.6.3.1.1.1-c da própria norma comprova que a parcela deve permanecer expressa por $C_{ad}(d - y_t - y_c)$, assegurando a coerência estática com a edição de 2008 e com o AISC 360.
 
 ---
 
@@ -574,7 +608,8 @@ Este Trabalho de Conclusão de Curso apresentou um estudo comparativo pioneiro e
 2. **Validade e Continuidade de Projetos com Perfis Laminados Compactos**: Para perfis laminados de compacidade usual (Série W), as capacidades resistentes no ELU e as verificações de serviço no ELS obtidas pela ABNT NBR 8800:2024 coincidem perfeitamente com as da edição de 2008 ($0{,}00\%$ de desvio), confirmando que a nova norma preserva integralmente a segurança de soluções padronizadas;
 3. **Benefícios Técnicos da ABNT NBR 8800:2024 em Perfis Soldados Esbeltos**: A introdução da teoria de largura efetiva de Winter ($A_{ef}$) na compressão e do coeficiente exato $k_v = 5{,}34$ no cisalhamento gerou aumentos de capacidade resistente de $+2{,}88\%$ na compressão axial e de $+6{,}80\%$ no esforço cortante para almas esbeltas ($\lambda_w \approx 102{,}7$), incentivando o uso de vigas soldadas mais leves;
 4. **Modos Críticos de Ruptura na Pré-Tração e Pós-Tração**: Confirmou-se que na pré-tração o dimensionamento inicial é governado pela flexo-compressão do perfil metálico isolado na montagem, enquanto na pós-tração o limite governante é a Flambagem Lateral com Distorção (FLD) sob momento negativo na seção mista;
-5. **Comportamento em Serviço (ELS)**: A contraflecha executiva mostrou-se indispensável para aprovação da flecha estática em grandes vãos. No entanto, a análise dinâmica de vibração revelou que lajes maciças pré-tracionadas tendem a apresentar desconforto dinâmico sob caminhadas, ao passo que lajes sobre *steel deck* garantem excelente rigidez dinâmica e amortecimento, cumprindo os limites do Anexo L com margem de segurança.
+5. **Comportamento em Serviço (ELS)**: A contraflecha executiva mostrou-se indispensável para aprovação da flecha estática em grandes vãos. No entanto, a análise dinâmica de vibração revelou que lajes maciças pré-tracionadas tendem a apresentar desconforto dinâmico sob caminhadas, ao passo que lajes sobre *steel deck* garantem excelente rigidez dinâmica e amortecimento, cumprindo os limites do Anexo L com margem de segurança;
+6. **Esclarecimento Teórico sobre a Formulação de $M_{Rd}^+$ na ABNT NBR 8800:2024**: Identificou-se que a impressão de $\sum Q_{Rd}$ em vez de $C_{ad}$ no Item L.6.3.1.1.1-b da nova norma constitui equívoco tipográfico que, se aplicado literalmente, duplicaria a compressão do concreto. O trabalho demonstrou que a manutenção da parcela $C_{ad}(d - y_t - y_c)$ restabelece o equilíbrio estático exato sem inflacionar a segurança.
 
 ## 6.2 Diretrizes Práticas para Projetistas Estruturais
 

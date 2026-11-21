@@ -131,30 +131,43 @@ $$C_{c,\max,2024} = 0{,}85 \cdot \eta_c \cdot f_{cd} \cdot b_{ef} \cdot t_c, \qq
 
 - **Impacto prático no código**: Para os Estudos de Caso 1 e 2 com concreto C30 ($f_{ck} = 30\text{ MPa} \le 40\text{ MPa}$), tem-se $\eta_c = 1{,}0$, mantendo $C_{c,\max}$ e $M_{Rd}^+$ idênticos aos de 2008 quando a Linha Neutra Plástica (LNP) situa-se na laje. Contudo, para concretos de maior resistência (por exemplo, C50 com $f_{ck} = 50\text{ MPa}$, validado no teste comparativo em `tests/test_rotinas_vmp.cpp`, `linhas 531-541`), obtém-se $\eta_c = (40/50)^{1/3} \approx 0{,}9283$, reduzindo $C_{c,\max}$ em $7{,}17\%$ e aumentando a profundidade da linha neutra $a$, o que reduz de forma a favor da segurança o momento resistente positivo $M_{Rd,VMP}^+$.
 
-## 4.2 Equação do Momento Positivo quando a LNP Corta o Perfil de Aço (`Item L.6.3.1.1.1-b`)
+## 4.2 Equação do Momento Positivo quando a LNP Corta o Perfil de Aço (`Item L.6.3.1.1.1-b`): Análise Crítica e Identificação de Incoerência Tipográfica
 
-Quando a força máxima de compressão que a laje de concreto pode oferecer é inferior à força plástica de tração total do perfil e do cabo ($C_{c,\max} < T_{aço} + T_{cabo}$), a Linha Neutra Plástica (LNP) desce para o interior do perfil metálico ($y_p > 0$, cortando a mesa superior ou a alma).
+Quando a força máxima de compressão da laje de concreto é inferior à capacidade total de tração plástica do perfil metálico e dos cabos de protensão ($C_{cd} < T_{ad} + T_{pd}$), a Linha Neutra Plástica (LNP) penetra no perfil metálico ($y_p > 0$, cortando a mesa superior ou a alma).
 
-1. **Formulação em `nbr8800::v2008`**:
-   - Na **Rotina C.1 (Viga Mista sem protensão, `src/rotinas_nbr8800.cpp`, `linhas 280-281`)**, o momento resistente era tomado em torno do centroide da região tracionada do perfil ($y_t$ medido a partir da face inferior), mas com a força do aço comprimido $C_{aço} = 0{,}5(A_g f_{yd} - C_{c,\max})$ e o braço da laje sem subtrair metade da espessura $t_c$:
+### 4.2.1 A Dedução Mecânica Rigorosa pelo Equilíbrio da Seção
+A seção transversal apresenta três resultantes plásticas fundamentais:
+1. $C_{cd} = 0{,}85 \eta_c f_{cd} b_{ef} t_c$, atuando no centroide da laje comprimida a uma distância $(d + h_F + t_c/2)$ da face inferior do perfil;
+2. $C_{ad} = 0{,}5(A_a f_{yd} - C_{cd})$, força de compressão plástica na região do perfil metálico acima da LNP, cujo centroide dista $y_c$ do topo do perfil (isto é, a uma cota $d - y_c$ da base);
+3. $T_{ad} = C_{cd} + C_{ad} = 0{,}5(A_a f_{yd} + C_{cd})$, força de tração plástica na região inferior do perfil, cujo centroide situa-se à cota $y_t$ da face inferior.
 
-$$M_{Rd,VM,2008}^+ = C_{aço} (d - y_t - y_c) + C_{c,\max} (t_c + h_F + d - y_t)$$
+Tomando o momento estático em relação ao centroide da região tracionada do perfil ($y_t$):
+- O braço de alavanca da compressão do aço $C_{ad}$ é:
+  $$z_{aço} = (d - y_c) - y_t = d - y_t - y_c$$
+- O braço de alavanca da compressão do concreto $C_{cd}$ é:
+  $$z_{conc} = \left(d + h_F + \frac{t_c}{2}\right) - y_t = \frac{t_c}{2} + h_F + d - y_t$$
 
-   - Na **Rotina 3.1 (VMP com protensão, `src/rotinas_vmp.cpp`, `linhas 320-323`)**, o momento resistente era calculado tomando os momentos de todas as quatro resultantes plásticas em torno da própria Linha Neutra Plástica ($y_p$):
+Dessa forma, o momento fletor plástico resistente **obrigatoriamente obedece à equação**:
+$$M_{Rd}^+ = \beta_{vm} \left[ \mathbf{C_{ad}} (d - y_t - y_c) + \mathbf{C_{cd}} \left(\frac{t_c}{2} + h_F + d - y_t\right) \right]$$
 
-$$M_{Rd,VMP,2008}^+ = C_{c,\max} \left(\frac{t_c}{2} + h_F + y_p\right) + C_{aço} (y_p - y_c) + T_{aço} (d - y_p - y_t) + T_{cabo} (d + e_p - y_p)$$
+### 4.2.2 A Inconsistência Tipográfica Impressa na ABNT NBR 8800:2024
+Ao confrontar o **Item L.6.3.1.1.1-b** (p. 203 da norma) com o **Item L.6.3.1.1.1-c** (na mesma página 203), constata-se uma evidente gralha tipográfica cometida na redação oficial da norma de 2024:
 
-2. **Formulação em `nbr8800::v2024` (Item L.6.3.1.1.1-b, p. 203 da ABNT NBR 8800:2024)**:
-   Na edição de 2024, a expressão normativa unificada para interação completa com LNP no perfil de aço toma os momentos em relação ao centroide da região tracionada do perfil ($y_t$), utilizando a resistência dos conectores de cisalhamento no trecho de momento positivo ($\sum Q_{Rd}$, que sob interação completa e LNP no aço iguala a capacidade da laje $\sum Q_{Rd} = C_{c,\max} = 0{,}85 \eta_c f_{cd} b_{ef} t_c$):
-   - Em **`nbr8800::v2024::calcularMomentoPositivoVM`** (`src/rotinas_nbr8800.cpp`, `linhas 638-640`):
+1. **No Item L.6.3.1.1.1-c (Interação Parcial, p. 203)**, a norma grafou a formulação fisicamente correta:
+   $$M_{Rd} = \beta_{vm} \left[ \mathbf{C_{ad}} (d - y_t - y_c) + C_{cd} \left(t_c - \frac{a}{2} + h_F + d - y_t\right) \right]$$
+2. **No Item L.6.3.1.1.1-b (Interação Completa, p. 203)**, a norma imprimiu:
+   $$M_{Rd} = \beta_{vm} \left[ \mathbf{\sum Q_{Rd}} (d - y_t - y_c) + C_{cd} \left(\frac{t_c}{2} + h_F + d - y_t\right) \right]$$
 
-$$M_{Rd,VM,2024}^+ = \sum Q_{Rd} (d - y_t - y_c) + C_{c,\max} \left(\frac{t_c}{2} + h_F + d - y_t\right)$$
+### 4.2.3 Por que a Aplicação Literal de $\sum Q_{Rd}$ Duplica a Compressão do Concreto?
+Sob interação completa, a conexão de cisalhamento transfere integralmente a compressão da laje, de modo que $\sum Q_{Rd} \ge C_{cd}$. Se o calculista adotar literalmente $\sum Q_{Rd} = C_{cd}$ na equação do Item b:
+1. O termo $\sum Q_{Rd} (d - y_t - y_c)$ passa a ser $C_{cd} (d - y_t - y_c)$, aplicando a força de compressão da laje multiplicada pelo braço do perfil de aço;
+2. A parcela $C_{cd} (t_c/2 + h_F + d - y_t)$ soma novamente a compressão da laje com o braço da laje;
+3. A verdadeira compressão do perfil de aço ($C_{ad}$) é completamente omitida.
 
-   - Em **`nbr8800::v2024::calcularMomentoPostivoVMP`** (`src/rotinas_vmp.cpp`, `linhas 705-708`):
+O resultado é a **duplicação indevida do efeito da laje de concreto**, gerando momentos resistentes hipertrofiados e fictícios (como no Estudo de Caso 2, onde $M_{Rd}^+$ saltaria artificialmente de $1878\text{ kN}\cdot\text{m}$ para $2975\text{ kN}\cdot\text{m}$).
 
-$$M_{Rd,VMP,2024}^+ = \sum Q_{Rd} (d - y_t - y_c) + C_{c,\max} \left(\frac{t_c}{2} + h_F + d - y_t\right) + T_{cabo} (e_p + y_t)$$
-
-   Essa diferença explica exatamente o comportamento observado no **Estudo de Caso 2** (perfil W460x89 com laje *steel deck* $b_{ef} = 2000\text{ mm}$, onde a soma $T_{aço} + T_{cabo}$ na Fase 2 supera $C_{c,\max}$, levando a LNP para o perfil de aço): enquanto em `v2008` o momento por equilíbrio em torno de $y_p$ resulta em $1878{,}49\text{ kN}\cdot\text{m}$, a expressão de `v2024` com $\sum Q_{Rd} = C_{c,\max}$ resulta em $2975{,}23\text{ kN}\cdot\text{m}$.
+### 4.2.4 Tratamento Adotado no Código `VMP`
+No software `VMP`, para preservar o rigor da estática das estruturas e a segurança estrutural, o binário interno é fundamentado em $C_{ad}$ (ou em $\sum Q_{Rd}$ exclusivamente quando este representa a força rasante real transferida na interface em interação parcial), alertando o projetista para a inconsistência da redação do Item b frente ao Item c da ABNT NBR 8800:2024.
 
 ## 4.3 Redução da Tensão Limite no Concreto em Seções Semicompactas ($1{,}00 f_{cd} \to 0{,}85 f_{cd}$)
 
