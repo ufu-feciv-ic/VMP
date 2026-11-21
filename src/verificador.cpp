@@ -313,6 +313,7 @@ RelatorioVMP verificar_viga_vmp(const VigaVMP& viga) {
 
             if (!res_sec.aprovado) {
                 rel.fase1_elu.aprovado_fase = false;
+                rel.aprovado_elu = false;
                 rel.aprovado_global = false;
             }
             rel.fase1_elu.secoes.push_back(res_sec);
@@ -357,6 +358,7 @@ RelatorioVMP verificar_viga_vmp(const VigaVMP& viga) {
 
             if (!res_sec.aprovado) {
                 rel.fase1_elu.aprovado_fase = false;
+                rel.aprovado_elu = false;
                 rel.aprovado_global = false;
             }
             rel.fase1_elu.secoes.push_back(res_sec);
@@ -529,6 +531,7 @@ RelatorioVMP verificar_viga_vmp(const VigaVMP& viga) {
 
         if (!res_sec.aprovado) {
             rel.fase2_elu.aprovado_fase = false;
+            rel.aprovado_elu = false;
             rel.aprovado_global = false;
         }
         rel.fase2_elu.secoes.push_back(res_sec);
@@ -653,6 +656,7 @@ RelatorioVMP verificar_viga_vmp(const VigaVMP& viga) {
 
         if (!res_sec.aprovado) {
             rel.fase3_elu.aprovado_fase = false;
+            rel.aprovado_elu = false;
             rel.aprovado_global = false;
         }
         rel.fase3_elu.secoes.push_back(res_sec);
@@ -676,6 +680,49 @@ RelatorioVMP verificar_viga_vmp(const VigaVMP& viga) {
             VSd_max_fase2, rel.cortante_aco.VRd_kN, "kN",
             VSd_max_fase2 <= rel.cortante_aco.VRd_kN
         });
+    }
+
+    // ========================================================================
+    // 6. FASE 4 (ELS) — DEFORMAÇÃO EXCESSIVA (FLECHA) - Turini (2021)
+    // ========================================================================
+    rel.els_deformacao = nbr8800::calcularELSDeformacao(
+        viga, perfil, rel.secao_t0, rel.secao_t_inf,
+        rel.P1_fase1_kN, rel.P3_fase3_kN
+    );
+
+    rel.verificacoes.push_back({
+        "ELS 1 - Regime Elástico", "Tensão na fibra inferior do aço em serviço",
+        rel.els_deformacao.sigma_inf_MPa, rel.els_deformacao.fy_MPa, "MPa",
+        rel.els_deformacao.regime_elastico
+    });
+
+    rel.verificacoes.push_back({
+        "ELS 2 - Deformação Excessiva", "Flecha vertical total com contraflecha (L/350)",
+        rel.els_deformacao.delta_total_cm, rel.els_deformacao.delta_lim_cm, "cm",
+        rel.els_deformacao.aprovado
+    });
+
+    if (!rel.els_deformacao.aprovado) {
+        rel.aprovado_els = false;
+        rel.aprovado_global = false;
+    }
+
+    // ========================================================================
+    // 7. FASE 5 (ELS) — VIBRAÇÃO NO PISO - Turini (2021) / NBR 8800 Anexo L
+    // ========================================================================
+    rel.els_vibracao = nbr8800::calcularELSVibracao(
+        viga, perfil, rel.P2_fase2_kN
+    );
+
+    rel.verificacoes.push_back({
+        "ELS 3 - Vibração no Piso", "Deslocamento vertical dinâmico em serviço (limite 20 mm)",
+        rel.els_vibracao.delta_total_cm, rel.els_vibracao.delta_lim_cm, "cm",
+        rel.els_vibracao.aprovado
+    });
+
+    if (!rel.els_vibracao.aprovado) {
+        rel.aprovado_els = false;
+        rel.aprovado_global = false;
     }
 
     return rel;

@@ -21,6 +21,8 @@ LATEX_SYMBOLS = {
     r"\Longleftrightarrow": "⟺",
     r"\Leftrightarrow": "⇔",
     r"\Delta": "Δ",
+    r"\delta": "δ",
+    r"\eta": "η",
     r"\lambda": "λ",
     r"\sigma": "σ",
     r"\varepsilon": "ε",
@@ -542,7 +544,8 @@ def convert_md_to_docx(md_path: str, docx_path: str):
     print(f"Arquivo Word com equacoes nativas OMML gerado com sucesso: {docx_path}")
 
 if __name__ == "__main__":
+    import sys
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    md_file = os.path.join(base_dir, "tcc_completo_base.md")
-    docx_file = os.path.join(base_dir, "TCC_Vigas_Mistas_Protendidas_NBR8800_2024.docx")
+    md_file = sys.argv[1] if len(sys.argv) > 1 else os.path.join(base_dir, "tcc_completo_base.md")
+    docx_file = sys.argv[2] if len(sys.argv) > 2 else os.path.join(base_dir, "TCC_Vigas_Mistas_Protendidas_NBR8800_2024.docx")
     convert_md_to_docx(md_file, docx_file)

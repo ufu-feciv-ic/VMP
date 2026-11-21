@@ -606,6 +606,177 @@ double calcularInerciaLaje(const Laje& laje, const ArmacaoLaje& armacaoLaje, dou
         return I_laje_cm4 * 1e4;
 }
 
+// ----------------------------------------------------------------------------
+// Fase 4: ELS Deformação Excessiva (Flechas) - Turini (2021)
+// ----------------------------------------------------------------------------
+ResultadoELSDeformacao calcularELSDeformacao(
+    const VigaVMP& viga,
+    const PerfilI& perfil,
+    const ResultadoSecaoTransformada& secao_t0,
+    const ResultadoSecaoTransformada& secao_t_inf,
+    double P1_kN,
+    double P3_kN
+) {
+    ResultadoELSDeformacao res;
+    double L_m = viga.L / 1000.0;
+    double L_mm = viga.L;
+    double E_a = viga.aco.E_MPa;
+    double fy_MPa = viga.aco.fy_MPa;
+    res.fy_MPa = fy_MPa;
+
+    // Excentricidades dos cabos
+    // e_p,I: excentricidade em relação ao centro de gravidade do perfil de aço isolado
+    double ep_I_mm = (perfil.d / 2.0) - std::abs(viga.cabo.ep);
+    // e_p,tr,inf: excentricidade em relação à LNE da seção transformada em t=infinito
+    double ep_tr_inf_mm = secao_t_inf.ytr_mm - std::abs(viga.cabo.ep);
+
+    // 1. Verificação de regime elástico
+    // Momento atuante no perfil isolado (M_Ga,Sd)
+    double q_Ga = viga.cargas.q1_perfil;
+    if (!viga.cargas.escorada) {
+        q_Ga += viga.cargas.q2_concreto;
+    }
+    double M_Ga_kNm = (q_Ga * L_m * L_m) / 8.0;
+    if (viga.cabo.tipo == PRE_TRACAO) {
+        M_Ga_kNm -= (ep_I_mm / 1000.0) * P1_kN;
+    }
+    res.M_Ga_Sd_kNm = M_Ga_kNm;
+
+    // Momento atuante na seção mista (M_L,Sd)
+    double q_L = viga.cargas.q3_revestimento + viga.cargas.q4_uso;
+    if (viga.cargas.escorada) {
+        q_L += viga.cargas.q2_concreto;
+    }
+    double M_L_kNm = (q_L * L_m * L_m) / 8.0 - (ep_tr_inf_mm / 1000.0) * P3_kN;
+    res.M_L_Sd_kNm = M_L_kNm;
+
+    // Módulos resistentes elásticos
+    double W_a_mm3 = perfil.Wx; // mm³
+    double W_ef_mm3 = secao_t_inf.Wtr_inf_mm3; // mm³
+
+    // Tensão na fibra inferior do perfil de aço (MPa)
+    double sigma_Ga_MPa = (W_a_mm3 > 0.0) ? (M_Ga_kNm * 1e6 / W_a_mm3) : 0.0;
+    double sigma_L_MPa  = (W_ef_mm3 > 0.0) ? (M_L_kNm * 1e6 / W_ef_mm3) : 0.0;
+    res.sigma_inf_MPa = sigma_Ga_MPa + sigma_L_MPa;
+    res.regime_elastico = (res.sigma_inf_MPa <= fy_MPa);
+
+    // 2. Cálculo das parcelas de flecha (em cm)
+    auto flecha_q_cm = [](double q_kNm, double L_mm, double E_MPa, double I_mm4) -> double {
+        if (E_MPa <= 0.0 || I_mm4 <= 0.0) return 0.0;
+        double delta_mm = (5.0 / 384.0) * (q_kNm * std::pow(L_mm, 4.0)) / (E_MPa * I_mm4);
+        return delta_mm / 10.0;
+    };
+
+    auto flecha_prot_cm = [](double P_kN, double ep_mm, double L_mm, double E_MPa, double I_mm4) -> double {
+        if (E_MPa <= 0.0 || I_mm4 <= 0.0) return 0.0;
+        double delta_mm = -0.125 * (P_kN * 1000.0 * ep_mm * L_mm * L_mm) / (E_MPa * I_mm4);
+        return delta_mm / 10.0;
+    };
+
+    res.delta_PP_cm = flecha_q_cm(viga.cargas.q1_perfil, L_mm, E_a, perfil.Ix);
+
+    if (!viga.cargas.escorada) {
+        res.delta_conc_cm = flecha_q_cm(viga.cargas.q2_concreto, L_mm, E_a, perfil.Ix);
+    } else {
+        res.delta_conc_cm = flecha_q_cm(viga.cargas.q2_concreto, L_mm, E_a, secao_t_inf.Itr_mm4);
+    }
+
+    res.delta_CPN_cm = flecha_q_cm(viga.cargas.q3_revestimento, L_mm, E_a, secao_t_inf.Itr_mm4);
+
+    double q4_curta = (1.0 - viga.cargas.psi2) * viga.cargas.q4_uso;
+    double q4_longa = viga.cargas.psi2 * viga.cargas.q4_uso;
+    res.delta_CVN_curta_cm = flecha_q_cm(q4_curta, L_mm, E_a, secao_t0.Itr_mm4);
+    res.delta_CVN_longa_cm = flecha_q_cm(q4_longa, L_mm, E_a, secao_t_inf.Itr_mm4);
+
+    if (viga.cabo.tipo == PRE_TRACAO) {
+        res.delta_protensao_cm = flecha_prot_cm(P1_kN, ep_I_mm, L_mm, E_a, perfil.Ix);
+    } else {
+        res.delta_protensao_cm = flecha_prot_cm(P3_kN, ep_tr_inf_mm, L_mm, E_a, secao_t_inf.Itr_mm4);
+    }
+
+    // Contraflecha executiva (anula ações permanentes)
+    double delta_perm = res.delta_PP_cm + res.delta_conc_cm + res.delta_CPN_cm;
+    double delta_sem_cf = delta_perm + res.delta_CVN_curta_cm + res.delta_CVN_longa_cm + res.delta_protensao_cm;
+
+    if (delta_perm > delta_sem_cf && delta_sem_cf > 0.0) {
+        res.delta_contraflecha_cm = -delta_sem_cf;
+        res.delta_total_cm = 0.0;
+    } else {
+        res.delta_contraflecha_cm = -delta_perm;
+        res.delta_total_cm = delta_sem_cf - delta_perm;
+    }
+
+    res.delta_lim_cm = (L_mm / 350.0) / 10.0;
+    res.aprovado = res.regime_elastico && (res.delta_total_cm <= res.delta_lim_cm);
+
+    return res;
+}
+
+// ----------------------------------------------------------------------------
+// Fase 5: ELS Vibração no Piso - Turini (2021) / NBR 8800 Anexo L
+// ----------------------------------------------------------------------------
+ResultadoELSVibracao calcularELSVibracao(
+    const VigaVMP& viga,
+    const PerfilI& perfil,
+    double P_atuante_kN
+) {
+    ResultadoELSVibracao res;
+    double L_mm = viga.L;
+    double E_a = viga.aco.E_MPa;
+
+    // Regra da largura colaborante para vibração (NBR 8800 Anexo L): b_ef <= Lv / 5
+    double dist_vigas_mm = (viga.a_vigas_mm > 0.0) ? viga.a_vigas_mm : viga.laje.bef_mm;
+    double b_ef_semi = std::min(L_mm / 5.0, dist_vigas_mm / 2.0);
+    res.bef_vib_mm = 2.0 * b_ef_semi;
+
+    // Acréscimo dinâmico de 35% no módulo de elasticidade do concreto para laje mista
+    double Ecs_base = viga.concreto.Ecs_MPa;
+    if (viga.laje.tipo == LAJE_STEEL_DECK || viga.laje.hF_mm > 0.0) {
+        res.Ecs_vib_MPa = 1.35 * Ecs_base;
+    } else {
+        res.Ecs_vib_MPa = Ecs_base;
+    }
+
+    // Calcula seção transformada para vibração (t=0, tempo imediato)
+    Laje laje_vib = viga.laje;
+    laje_vib.bef_mm = res.bef_vib_mm;
+
+    Concreto conc_vib = viga.concreto;
+    conc_vib.Ecs_MPa = res.Ecs_vib_MPa;
+
+    res.secao_vib = calcularSecaoTransformada(
+        perfil, laje_vib, conc_vib, viga.aco, 1.0, viga.cabo.ep, true
+    );
+
+    double ep_tr_vib_mm = res.secao_vib.ytr_mm - std::abs(viga.cabo.ep);
+
+    auto flecha_q_cm = [](double q_kNm, double L_mm, double E_MPa, double I_mm4) -> double {
+        if (E_MPa <= 0.0 || I_mm4 <= 0.0) return 0.0;
+        double delta_mm = (5.0 / 384.0) * (q_kNm * std::pow(L_mm, 4.0)) / (E_MPa * I_mm4);
+        return delta_mm / 10.0;
+    };
+
+    auto flecha_prot_cm = [](double P_kN, double ep_mm, double L_mm, double E_MPa, double I_mm4) -> double {
+        if (E_MPa <= 0.0 || I_mm4 <= 0.0) return 0.0;
+        double delta_mm = -0.125 * (P_kN * 1000.0 * ep_mm * L_mm * L_mm) / (E_MPa * I_mm4);
+        return delta_mm / 10.0;
+    };
+
+    // No modelo simplificado de vibração, todas as cargas atuam sobre o sistema dinâmico da seção mista
+    res.delta_PP_cm = flecha_q_cm(viga.cargas.q1_perfil, L_mm, E_a, res.secao_vib.Itr_mm4);
+    res.delta_conc_cm = flecha_q_cm(viga.cargas.q2_concreto, L_mm, E_a, res.secao_vib.Itr_mm4);
+    res.delta_CPN_cm = flecha_q_cm(viga.cargas.q3_revestimento, L_mm, E_a, res.secao_vib.Itr_mm4);
+    res.delta_CVN_cm = flecha_q_cm(viga.cargas.psi1 * viga.cargas.q4_uso, L_mm, E_a, res.secao_vib.Itr_mm4);
+    res.delta_protensao_cm = flecha_prot_cm(P_atuante_kN, ep_tr_vib_mm, L_mm, E_a, res.secao_vib.Itr_mm4);
+
+    // Na vibração não se aplica contraflecha executiva
+    res.delta_total_cm = res.delta_PP_cm + res.delta_conc_cm + res.delta_CPN_cm + res.delta_CVN_cm + res.delta_protensao_cm;
+    res.delta_lim_cm = 2.0; // 20 mm para uso residencial/comercial (NBR 8800 Anexo L)
+
+    res.aprovado = (res.delta_total_cm <= res.delta_lim_cm);
+    return res;
+}
+
 } // inline namespace v2008
 
 namespace nbr8800::v2024 {

@@ -84,6 +84,8 @@ struct ItemVerificacao {
 
 // Relatório completo da verificação de todas as fases e seções da VMP
 struct RelatorioVMP {
+    bool aprovado_elu = true;
+    bool aprovado_els = true;
     bool aprovado_global = true;
     std::vector<ItemVerificacao> verificacoes;
 
@@ -124,6 +126,10 @@ struct RelatorioVMP {
     ResultadoFaseELU fase1_elu{};
     ResultadoFaseELU fase2_elu{};
     ResultadoFaseELU fase3_elu{};
+
+    // Verificações em Estado Limite de Serviço (ELS)
+    ResultadoELSDeformacao els_deformacao{};
+    ResultadoELSVibracao els_vibracao{};
 };
 
 // Gera as X seções transversais ao longo da viga [0, L] com o perfil geométrico do cabo

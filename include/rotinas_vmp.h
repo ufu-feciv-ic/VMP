@@ -234,6 +234,68 @@ double calcularInerciaLaje(
     const ArmacaoLaje& armacaoLaje,
     double alpha_e
 );
+
+// ----------------------------------------------------------------------------
+// Fase 4: ELS Deformação Excessiva (Flechas) - Turini (2021)
+// ----------------------------------------------------------------------------
+struct ResultadoELSDeformacao {
+    // Verificação de regime elástico
+    double M_Ga_Sd_kNm = 0.0;
+    double M_L_Sd_kNm = 0.0;
+    double sigma_inf_MPa = 0.0;
+    double fy_MPa = 0.0;
+    bool regime_elastico = true;
+
+    // Parcelas de flecha no meio do vão (cm)
+    double delta_PP_cm = 0.0;
+    double delta_conc_cm = 0.0;
+    double delta_CPN_cm = 0.0;
+    double delta_CVN_curta_cm = 0.0;
+    double delta_CVN_longa_cm = 0.0;
+    double delta_protensao_cm = 0.0;
+    double delta_contraflecha_cm = 0.0;
+    double delta_total_cm = 0.0;
+    double delta_lim_cm = 0.0;
+
+    bool aprovado = true;
+};
+
+ResultadoELSDeformacao calcularELSDeformacao(
+    const VigaVMP& viga,
+    const PerfilI& perfil,
+    const ResultadoSecaoTransformada& secao_t0,
+    const ResultadoSecaoTransformada& secao_t_inf,
+    double P1_kN,
+    double P3_kN
+);
+
+// ----------------------------------------------------------------------------
+// Fase 5: ELS Vibração no Piso - Turini (2021) / NBR 8800 Anexo L
+// ----------------------------------------------------------------------------
+struct ResultadoELSVibracao {
+    // Propriedades da seção transformada para vibração
+    double bef_vib_mm = 0.0;
+    double Ecs_vib_MPa = 0.0;
+    ResultadoSecaoTransformada secao_vib{};
+
+    // Parcelas de flecha na combinação frequente dinâmica (cm)
+    double delta_PP_cm = 0.0;
+    double delta_conc_cm = 0.0;
+    double delta_CPN_cm = 0.0;
+    double delta_CVN_cm = 0.0;
+    double delta_protensao_cm = 0.0;
+    double delta_total_cm = 0.0;
+    double delta_lim_cm = 2.0; // 20 mm para residencial/comercial
+
+    bool aprovado = true;
+};
+
+ResultadoELSVibracao calcularELSVibracao(
+    const VigaVMP& viga,
+    const PerfilI& perfil,
+    double P_atuante_kN
+);
+
 } // inline namespace v2008
 
 namespace v2024 {

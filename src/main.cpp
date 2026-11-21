@@ -99,7 +99,21 @@ void imprimir_resumo_comparativo(const std::string& titulo, VigaVMP viga) {
         std::cout << "MRd,VMP- (Fase 2 - FLD)     | " << std::setw(13) << s2_08->MRd_neg_kNm
                   << " | " << std::setw(13) << s2_24->MRd_neg_kNm << " | kN.m\n";
     }
-    std::cout << "Status Global ELU           | " << std::setw(13) << (r08.aprovado_global ? "APROVADO" : "REPROVADO")
+    std::cout << "sigma,inf (ELS Servico)     | " << std::setw(13) << r08.els_deformacao.sigma_inf_MPa
+              << " | " << std::setw(13) << r24.els_deformacao.sigma_inf_MPa << " | MPa\n";
+    std::cout << "delta,total (ELS Flecha)    | " << std::setw(13) << r08.els_deformacao.delta_total_cm
+              << " | " << std::setw(13) << r24.els_deformacao.delta_total_cm << " | cm\n";
+    std::cout << "delta,lim (L/350)           | " << std::setw(13) << r08.els_deformacao.delta_lim_cm
+              << " | " << std::setw(13) << r24.els_deformacao.delta_lim_cm << " | cm\n";
+    std::cout << "delta,vib (ELS Vibracao)    | " << std::setw(13) << r08.els_vibracao.delta_total_cm
+              << " | " << std::setw(13) << r24.els_vibracao.delta_total_cm << " | cm\n";
+    std::cout << "delta,lim,vib (NBR 8800)    | " << std::setw(13) << r08.els_vibracao.delta_lim_cm
+              << " | " << std::setw(13) << r24.els_vibracao.delta_lim_cm << " | cm\n";
+    std::cout << "Status ELU                  | " << std::setw(13) << (r08.aprovado_elu ? "APROVADO" : "REPROVADO")
+              << " | " << std::setw(13) << (r24.aprovado_elu ? "APROVADO" : "REPROVADO") << " |\n";
+    std::cout << "Status ELS                  | " << std::setw(13) << (r08.aprovado_els ? "APROVADO" : "REPROVADO")
+              << " | " << std::setw(13) << (r24.aprovado_els ? "APROVADO" : "REPROVADO") << " |\n";
+    std::cout << "Status Global Final         | " << std::setw(13) << (r08.aprovado_global ? "APROVADO" : "REPROVADO")
               << " | " << std::setw(13) << (r24.aprovado_global ? "APROVADO" : "REPROVADO") << " |\n\n";
 }
 

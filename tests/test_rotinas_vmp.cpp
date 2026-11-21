@@ -416,7 +416,10 @@ TEST_CASE("Verificador Completo: Exemplo 1 (Pré-tração, Traçado Reto, X seç
     ASSERT_PERCENT(f3_meio->VSd_max_kN, 263.00, 0.1);
     ASSERT_PERCENT(f3_meio->MRd_pos_kNm, 802.53, 0.1);
     ASSERT_PERCENT(f3_meio->MRd_neg_kNm, 358.60, 0.1);
-    ASSERT_TRUE(rel.aprovado_global);
+    ASSERT_TRUE(rel.aprovado_elu);
+    ASSERT_TRUE(rel.els_deformacao.aprovado);
+    ASSERT_TRUE(!rel.els_vibracao.aprovado); // Reprovado em vibração conforme Turini (2021) p. 217
+    ASSERT_TRUE(!rel.aprovado_global);
 }
 
 TEST_CASE("Verificador Completo: Pós-tração (Fase 1 sem protensão e Fases 2/3 com protensão)")
@@ -512,7 +515,10 @@ TEST_CASE("Comparativo ABNT NBR 8800:2008 vs ABNT NBR 8800:2024")
     ASSERT_NEAR(rel_2008.cortante_aco.kv, 5.0, 0.01);
     ASSERT_NEAR(rel_2024.cortante_aco.kv, 5.34, 0.01);
     ASSERT_TRUE(rel_2024.cortante_aco.lbw_p > rel_2008.cortante_aco.lbw_p);
-    ASSERT_TRUE(rel_2024.aprovado_global);
+    ASSERT_TRUE(rel_2024.aprovado_elu);
+    ASSERT_TRUE(rel_2024.els_deformacao.aprovado);
+    ASSERT_TRUE(!rel_2024.els_vibracao.aprovado); // Reprovado em vibração conforme Turini (2021) p. 217
+    ASSERT_TRUE(!rel_2024.aprovado_global); // Não aprovado globalmente devido à vibração do piso
 
     // 1. Momento positivo resistente sob interação completa com LNP no perfil de aço (Item L.6.3.1.1.1-b, p. 203):
     //    Na NBR 8800:2024, a equação para LNP no perfil de aço sob interação completa substitui Cad*(d - yt - yc)
@@ -552,4 +558,187 @@ TEST_CASE("Comparativo ABNT NBR 8800:2008 vs ABNT NBR 8800:2024")
         800.0, 500.0, 6000.0, 3000.0, 3.0, 1.1, 1.4
     );
     ASSERT_TRUE(m_neg_2024.Mrd_dist_kNm != m_neg_2008.Mrd_dist_kNm);
+}
+
+TEST_CASE("Fase 4: ELS Deformação excessiva - Exemplo 1 Turini (Pré-tração)")
+{
+    PerfilI perfil = perfil_w360x57_8();
+    Aco aco = aco_a572_gr50();
+    Concreto concreto = concreto_c30();
+    Laje laje = laje_macica_130();
+    CaboProtensao cabo = cabo_190RB();
+
+    VigaVMP viga;
+    viga.perfil = perfil;
+    viga.aco = aco;
+    viga.concreto = concreto;
+    viga.laje = laje;
+    viga.cabo = cabo;
+    viga.L = 12000.0;
+    viga.cargas.q1_perfil = 0.56;
+    viga.cargas.q2_concreto = 9.75;
+    viga.cargas.q3_revestimento = 6.00;
+    viga.cargas.q4_uso = 15.00;
+    viga.cargas.psi1 = 0.6;
+    viga.cargas.psi2 = 0.4;
+    viga.cargas.escorada = false;
+
+    auto secao_t0 = nbr8800::v2008::calcularSecaoTransformada(perfil, laje, concreto, aco, 1.0, cabo.ep, true);
+    auto secao_t_inf = nbr8800::v2008::calcularSecaoTransformada(perfil, laje, concreto, aco, 3.0, cabo.ep, false);
+
+    double P1_kN = 404.63;
+    double P3_kN = 437.81;
+
+    auto res = nbr8800::calcularELSDeformacao(viga, perfil, secao_t0, secao_t_inf, P1_kN, P3_kN);
+
+    // Verificação de regime elástico (Turini p. 214: M_Ga = 13335.11 kN.cm, M_L = 24605.86 kN.cm, sigma = 32.39 kN/cm²)
+    ASSERT_PERCENT(res.M_Ga_Sd_kNm, 133.35, 0.2);
+    ASSERT_PERCENT(res.M_L_Sd_kNm, 246.06, 0.2);
+    ASSERT_PERCENT(res.sigma_inf_MPa, 323.9, 0.2);
+    ASSERT_TRUE(res.regime_elastico);
+
+    // Parcelas de flecha (Turini p. 214-215)
+    ASSERT_PERCENT(res.delta_lim_cm, 3.428, 0.1);
+    ASSERT_NEAR(res.delta_PP_cm, 0.47, 0.01);
+    ASSERT_PERCENT(res.delta_conc_cm, 8.15, 0.5);
+    ASSERT_PERCENT(std::abs(res.delta_protensao_cm), 2.91, 0.5);
+    ASSERT_PERCENT(res.delta_CPN_cm, 1.65, 0.5);
+    ASSERT_PERCENT(res.delta_CVN_curta_cm, 1.99, 0.5);
+    ASSERT_PERCENT(res.delta_CVN_longa_cm, 1.65, 0.5);
+    ASSERT_PERCENT(std::abs(res.delta_contraflecha_cm), 10.27, 0.5);
+    ASSERT_PERCENT(res.delta_total_cm, 0.73, 1.0);
+    ASSERT_TRUE(res.aprovado);
+}
+
+TEST_CASE("Fase 5: ELS Vibração no piso - Exemplo 1 Turini (Pré-tração)")
+{
+    PerfilI perfil = perfil_w360x57_8();
+    Aco aco = aco_a572_gr50();
+    Concreto concreto = concreto_c30();
+    Laje laje = laje_macica_130();
+    CaboProtensao cabo = cabo_190RB();
+
+    VigaVMP viga;
+    viga.perfil = perfil;
+    viga.aco = aco;
+    viga.concreto = concreto;
+    viga.laje = laje;
+    viga.cabo = cabo;
+    viga.L = 12000.0;
+    viga.a_vigas_mm = 3000.0;
+    viga.cargas.q1_perfil = 0.56;
+    viga.cargas.q2_concreto = 9.75;
+    viga.cargas.q3_revestimento = 6.00;
+    viga.cargas.q4_uso = 15.00;
+    viga.cargas.psi1 = 0.6;
+    viga.cargas.psi2 = 0.4;
+
+    double P2_kN = 437.81;
+
+    auto res = nbr8800::calcularELSVibracao(viga, perfil, P2_kN);
+
+    // Largura colaborante Lv/5 = 2400 mm <= a_vigas = 3000 mm -> b_ef = 2 * 12000/5 = 4800? 
+    // Turini: b_ef_esq <= min(1200/5, 300/2) = min(240, 150) = 150 cm -> bef = 300 cm
+    ASSERT_NEAR(res.bef_vib_mm, 3000.0, 1.0);
+    ASSERT_PERCENT(res.secao_vib.Itr_mm4, 60834.17e4, 0.1);
+    ASSERT_NEAR(res.delta_PP_cm, 0.12, 0.01);
+    ASSERT_PERCENT(res.delta_conc_cm, 2.16, 0.5);
+    ASSERT_PERCENT(std::abs(res.delta_protensao_cm), 2.22, 0.5);
+    ASSERT_NEAR(res.delta_lim_cm, 2.0, 0.01);
+    // VMP reprovada na vibração conforme Turini p. 217 (delta_total > 2.0 cm)
+    ASSERT_TRUE(!res.aprovado);
+}
+
+TEST_CASE("Fase 4: ELS Deformação excessiva - Exemplo 2 Turini (Pós-tração)")
+{
+    PerfilI perfil = perfil_w460x89();
+    Aco aco = aco_a572_gr50();
+    Concreto concreto = concreto_c30();
+    Laje laje = laje_mista_exemplo2();
+    CaboProtensao cabo = cabo_exemplo2();
+
+    VigaVMP viga;
+    viga.perfil = perfil;
+    viga.aco = aco;
+    viga.concreto = concreto;
+    viga.laje = laje;
+    viga.cabo = cabo;
+    viga.L = 15000.0;
+    viga.cargas.q1_perfil = 0.88;
+    viga.cargas.q2_concreto = 6.81;
+    viga.cargas.q3_revestimento = 4.00;
+    viga.cargas.q4_uso = 10.00;
+    viga.cargas.psi1 = 0.6;
+    viga.cargas.psi2 = 0.6; // No Ex 2 Turini p. 272 adota psi2 = 0.6
+    viga.cargas.escorada = false;
+
+    auto secao_t0 = nbr8800::v2008::calcularSecaoTransformada(perfil, laje, concreto, aco, 1.0, cabo.ep, true);
+    auto secao_t_inf = nbr8800::v2008::calcularSecaoTransformada(perfil, laje, concreto, aco, 3.0, cabo.ep, false);
+
+    double P1_kN = 0.0; // Pós-tração: não há protensão na Fase 1
+    double P3_kN = 1030.44;
+
+    auto res = nbr8800::calcularELSDeformacao(viga, perfil, secao_t0, secao_t_inf, P1_kN, P3_kN);
+
+    // Verificação de regime elástico (Turini p. 271: M_Ga = 21628.12 kN.cm, M_L = 2650.11 kN.cm, sigma = 13.14 kN/cm²)
+    ASSERT_PERCENT(res.M_Ga_Sd_kNm, 216.28, 0.2);
+    ASSERT_PERCENT(res.M_L_Sd_kNm, 26.50, 0.5);
+    ASSERT_PERCENT(res.sigma_inf_MPa, 131.4, 0.5);
+    ASSERT_TRUE(res.regime_elastico);
+
+    // Parcelas de flecha (Turini p. 271-272)
+    ASSERT_PERCENT(res.delta_lim_cm, 4.285, 0.1);
+    ASSERT_NEAR(res.delta_PP_cm, 0.71, 0.01);
+    ASSERT_PERCENT(res.delta_conc_cm, 5.46, 0.5);
+    ASSERT_PERCENT(std::abs(res.delta_protensao_cm), 4.62, 0.5);
+    ASSERT_PERCENT(res.delta_CPN_cm, 1.18, 0.5);
+    ASSERT_PERCENT(res.delta_CVN_curta_cm, 0.88, 0.5);
+    ASSERT_PERCENT(res.delta_CVN_longa_cm, 1.77, 0.5);
+    // Contraflecha limitada a 5.39 cm para delta_total = 0.0 cm
+    ASSERT_PERCENT(std::abs(res.delta_contraflecha_cm), 5.39, 0.5);
+    ASSERT_NEAR(res.delta_total_cm, 0.0, 0.01);
+    ASSERT_TRUE(res.aprovado);
+}
+
+TEST_CASE("Fase 5: ELS Vibração no piso - Exemplo 2 Turini (Pós-tração)")
+{
+    PerfilI perfil = perfil_w460x89();
+    Aco aco = aco_a572_gr50();
+    Concreto concreto = concreto_c30();
+    Laje laje = laje_mista_exemplo2();
+    CaboProtensao cabo = cabo_exemplo2();
+
+    VigaVMP viga;
+    viga.perfil = perfil;
+    viga.aco = aco;
+    viga.concreto = concreto;
+    viga.laje = laje;
+    viga.cabo = cabo;
+    viga.L = 15000.0;
+    viga.a_vigas_mm = 2000.0;
+    viga.cargas.q1_perfil = 0.88;
+    viga.cargas.q2_concreto = 6.81;
+    viga.cargas.q3_revestimento = 4.00;
+    viga.cargas.q4_uso = 10.00;
+    viga.cargas.psi1 = 0.6;
+    viga.cargas.psi2 = 0.6;
+
+    double P2_kN = 1099.14;
+
+    auto res = nbr8800::calcularELSVibracao(viga, perfil, P2_kN);
+
+    // Propriedades com acréscimo de 35% no Ecs e b_ef = 2000 mm (Turini p. 273)
+    ASSERT_NEAR(res.bef_vib_mm, 2000.0, 1.0);
+    ASSERT_PERCENT(res.Ecs_vib_MPa, 36231.0, 0.1);
+    ASSERT_PERCENT(res.secao_vib.Itr_mm4, 158015.15e4, 0.1);
+
+    // Parcelas de flecha na vibração (Turini p. 274)
+    ASSERT_NEAR(res.delta_PP_cm, 0.18, 0.01);
+    ASSERT_PERCENT(res.delta_conc_cm, 1.42, 0.5);
+    ASSERT_NEAR(res.delta_CPN_cm, 0.83, 0.01);
+    ASSERT_NEAR(res.delta_CVN_cm, 1.25, 0.01);
+    ASSERT_PERCENT(std::abs(res.delta_protensao_cm), 4.50, 0.5);
+    ASSERT_PERCENT(res.delta_total_cm, -0.82, 1.0);
+    ASSERT_NEAR(res.delta_lim_cm, 2.0, 0.01);
+    ASSERT_TRUE(res.aprovado);
 }

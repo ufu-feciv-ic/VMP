@@ -1689,6 +1689,66 @@ int main() {
                         }
                         ImGui::EndTable();
                     }
+
+                    // Detalhamento das Flechas ELS (Fase 4 - Turini 2021)
+                    ImGui::Spacing();
+                    PushBoldFont();
+                    ImGui::TextColored(ImVec4(0.12f, 0.30f, 0.56f, 1.0f), "Fase 4: Detalhamento de Flechas no Meio do Vão (ELS)");
+                    PopBoldFont();
+                    if (ImGui::BeginTable("ELSFlechasTable", 3, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg)) {
+                        ImGui::TableSetupColumn("Parcela de Flecha");
+                        ImGui::TableSetupColumn("Valor (cm)");
+                        ImGui::TableSetupColumn("Descrição");
+                        ImGui::TableHeadersRow();
+
+                        auto add_linha = [](const char* p, double val, const char* desc) {
+                            ImGui::TableNextRow();
+                            ImGui::TableSetColumnIndex(0); ImGui::Text("%s", p);
+                            ImGui::TableSetColumnIndex(1); ImGui::Text("%.2f cm", val);
+                            ImGui::TableSetColumnIndex(2); ImGui::Text("%s", desc);
+                        };
+
+                        add_linha("δ_PP", rel.els_deformacao.delta_PP_cm, "Peso próprio do perfil de aço");
+                        add_linha("δ_conc", rel.els_deformacao.delta_conc_cm, "Peso próprio do concreto fresco");
+                        add_linha("δ_CPN", rel.els_deformacao.delta_CPN_cm, "Carga permanente longa duração (Itr,inf)");
+                        add_linha("δ_CVN (curta)", rel.els_deformacao.delta_CVN_curta_cm, "(1 - ψ2)*q4 na seção de curta duração (Itr,0)");
+                        add_linha("δ_CVN (longa)", rel.els_deformacao.delta_CVN_longa_cm, "ψ2*q4 na seção de longa duração (Itr,inf)");
+                        add_linha("δ_prot", rel.els_deformacao.delta_protensao_cm, "Contraflecha da força de protensão");
+                        add_linha("δ_contraflecha", rel.els_deformacao.delta_contraflecha_cm, "Contraflecha executiva aplicada");
+                        add_linha("δ_total", rel.els_deformacao.delta_total_cm, "Flecha resultante final em serviço");
+                        add_linha("δ_lim", rel.els_deformacao.delta_lim_cm, "Limite normativo (L / 350)");
+
+                        ImGui::EndTable();
+                    }
+
+                    // Detalhamento de Vibração no Piso (Fase 5 - Turini 2021)
+                    ImGui::Spacing();
+                    PushBoldFont();
+                    ImGui::TextColored(ImVec4(0.12f, 0.30f, 0.56f, 1.0f), "Fase 5: Detalhamento de Vibração no Piso (NBR 8800 Anexo L)");
+                    PopBoldFont();
+                    if (ImGui::BeginTable("ELSVibTable", 3, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg)) {
+                        ImGui::TableSetupColumn("Parâmetro Dinâmico");
+                        ImGui::TableSetupColumn("Valor");
+                        ImGui::TableSetupColumn("Critério");
+                        ImGui::TableHeadersRow();
+
+                        ImGui::TableNextRow();
+                        ImGui::TableSetColumnIndex(0); ImGui::Text("Largura Colaborante (bef,vib)");
+                        ImGui::TableSetColumnIndex(1); ImGui::Text("%.0f mm", rel.els_vibracao.bef_vib_mm);
+                        ImGui::TableSetColumnIndex(2); ImGui::Text("<= Lv / 5 (NBR 8800 Anexo L)");
+
+                        ImGui::TableNextRow();
+                        ImGui::TableSetColumnIndex(0); ImGui::Text("Inércia Transf. Dinâmica (Itr,vib)");
+                        ImGui::TableSetColumnIndex(1); ImGui::Text("%.2f cm4", rel.els_vibracao.secao_vib.Itr_mm4 / 1e4);
+                        ImGui::TableSetColumnIndex(2); ImGui::Text("Ecs,vib (+35%% em steel deck)");
+
+                        ImGui::TableNextRow();
+                        ImGui::TableSetColumnIndex(0); ImGui::Text("Deslocamento Dinâmico Total");
+                        ImGui::TableSetColumnIndex(1); ImGui::Text("%.2f cm", rel.els_vibracao.delta_total_cm);
+                        ImGui::TableSetColumnIndex(2); ImGui::Text("Limite = 2,00 cm (20 mm)");
+
+                        ImGui::EndTable();
+                    }
                 }
 
                 ImGui::EndTabItem();

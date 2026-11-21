@@ -1,6 +1,11 @@
 # Plano Diretor: Finalização do Software VMP e Escrita do TCC
 **Tema:** Desenvolvimento de Programa para Verificação de Vigas Mistas de Aço e Concreto Protendidas (VMP): Aferição com Turini (2021) e Atualização para a ABNT NBR 8800:2024.
 
+> [!IMPORTANT]
+> **ATUALIZAÇÃO DE FOCO E ESTRUTURA DO TCC:**  
+> O plano detalhado de reestruturação do TCC — focado no **Estudo Comparativo ABNT NBR 8800:2008 vs. NBR 8800:2024 em Vigas Mistas Protendidas**, integrando o sequenciamento multifásico completo em 5 fases (ELU e ELS) e a matriz de vigas comparativas — encontra-se disponível no documento:  
+> 📄 **[Plano de Reestruturação do TCC (plan/plano_reestruturacao_tcc_vmp.md)](file:///C:/Users/Arthur/Documents/GitHub/VMP/plan/plano_reestruturacao_tcc_vmp.md)**.
+
 ---
 
 ## 1. Visão Geral e Diagnóstico do Projeto
