@@ -408,4 +408,34 @@ TEST_CASE("Comparativo Viga Mista Pura: Escorada vs Nao-Escorada, Interacao Comp
     ASSERT_TRUE(delta_total_nao_esc_comp > delta_lim);
     ASSERT_TRUE(delta_total_esc_comp < delta_lim);
     ASSERT_TRUE(delta_total_esc_parcial < delta_lim);
+
+    // ========================================================================
+    // CASO 5: VERIFICAÇÃO DO PERFIL DE AÇO ISOLADO NA MONTAGEM (ELU Fase 1)
+    // ========================================================================
+    // Na construção não escorada, a seção isolada de aço DEVE ser verificada
+    // sob as ações de peso próprio, concreto fresco e sobrecarga de construção.
+    const double qs_montagem = 2.50; // kN/m (1.0 kN/m² * 2.5 m)
+    const double qSd_montagem = 1.3 * q_conc + 1.2 * qs_montagem; // 1.3 * 8.695 + 1.2 * 2.50 = 14.3035 kN/m
+    const double MSd_montagem = (qSd_montagem * std::pow(L_mm * 1e-3, 2)) / 8.0; // 178.79 kNm
+    const double VSd_montagem = (qSd_montagem * (L_mm * 1e-3)) / 2.0;            // 71.52 kN
+
+    // Verificação com contenção lateral intermediária a cada Lb = 2.50 m:
+    const double Lb_travado = 2500.0; // mm
+    const double Cb_montagem = 1.0;
+    auto res_MRd_travado = nbr8800::v2008::calcularMomentoResistentePerfil(perfil, aco, Lb_travado, Cb_montagem, gamma_a1);
+    auto res_VRd_isolado = nbr8800::v2008::calcularCortanteResistentePerfil(perfil, aco, 0.0, gamma_a1);
+
+    // 1. Momento plástico do perfil de aço isolado:
+    ASSERT_PERCENT(res_MRd_travado.Mpl_kNm, 350.11, 0.2); // Zx * fy / 1.10 = 1014.8 * 345 / 1.1e3 = 318.28 (ou Wx)
+
+    // 2. Com contenção a cada Lb = 2.5 m, o perfil resiste com folga à montagem:
+    ASSERT_TRUE(res_MRd_travado.MRd_kNm > MSd_montagem);
+    ASSERT_TRUE(res_VRd_isolado.VRd_kN > VSd_montagem);
+
+    // 3. Sem contenção lateral (Lb = 10.0 m, vão livre total destravado):
+    auto res_MRd_livre = nbr8800::v2008::calcularMomentoResistentePerfil(perfil, aco, L_mm, Cb_montagem, gamma_a1);
+    
+    // A flambagem lateral com torção (FLT) reduz drasticamente a capacidade do perfil isolado:
+    ASSERT_TRUE(res_MRd_livre.MRd_kNm < res_MRd_travado.MRd_kNm);
+    ASSERT_TRUE(res_MRd_livre.MRd_kNm < MSd_montagem); // FALHA por FLT no perfil isolado se não for contido!
 }

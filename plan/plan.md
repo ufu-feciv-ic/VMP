@@ -3,8 +3,8 @@
 
 > [!IMPORTANT]
 > **ATUALIZAÇÃO DE FOCO E ESTRUTURA DO TCC:**  
-> O plano detalhado de reestruturação do TCC — focado no **Estudo Comparativo ABNT NBR 8800:2008 vs. NBR 8800:2024 em Vigas Mistas Protendidas**, integrando o sequenciamento multifásico completo em 5 fases (ELU e ELS) e a matriz de vigas comparativas — encontra-se disponível no documento:  
-> 📄 **[Plano de Reestruturação do TCC (plan/plano_reestruturacao_tcc_vmp.md)](file:///C:/Users/Arthur/Documents/GitHub/VMP/plan/plano_reestruturacao_tcc_vmp.md)**.
+> - 📄 **[Plano de Reestruturação do TCC (plan/plano_reestruturacao_tcc_vmp.md)](file:///C:/Users/Arthur/Documents/GitHub/VMP/plan/plano_reestruturacao_tcc_vmp.md)**: Estudo Comparativo ABNT NBR 8800:2008 vs. NBR 8800:2024 em Vigas Mistas Protendidas.  
+> - 📄 **[Plano Versão 1.0 - Vigas Mistas Convencionais (plan/plano_v1_vigas_mistas_sem_protensao.md)](file:///C:/Users/Arthur/Documents/GitHub/VMP/plan/plano_v1_vigas_mistas_sem_protensao.md)**: Estratégia de adaptação para lançar uma primeira versão funcional focada no cálculo e dimensionamento de **Vigas Mistas sem protensão**, desacoplando a protensão para a Versão 2.0.
 
 ---
 
