@@ -15,6 +15,7 @@ set(MOTOR_SOURCES
     src/geometria.cpp
     src/rotinas_nbr8800.cpp
     src/rotinas_vmp.cpp
+    src/rotinas_viga_mista.cpp
     src/verificador.cpp
 )
 
@@ -35,6 +36,7 @@ add_executable(vmp_tests
     tests/test_main.cpp
     tests/test_rotinas_nbr8800.cpp
     tests/test_rotinas_vmp.cpp
+    tests/test_viga_mista.cpp
     ${MOTOR_SOURCES}
 )
 

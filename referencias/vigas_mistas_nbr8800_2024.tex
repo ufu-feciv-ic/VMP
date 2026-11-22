@@ -1,0 +1,1418 @@
+\documentclass[11pt,a4paper]{article}
+
+\renewcommand{\contentsname}{Sumário}
+\renewcommand{\figurename}{Figura}
+\renewcommand{\tablename}{Tabela}
+\renewcommand{\refname}{Referências}
+\renewcommand{\abstractname}{Resumo}
+\usepackage{charter}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage[a4paper,margin=20mm]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs,tabularx}
+\usepackage{caption}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{hyperref}
+
+\definecolor{primary}{RGB}{20,75,130}
+\definecolor{calloutbg}{RGB}{240,245,250}
+\definecolor{examplebg}{RGB}{246,248,244}
+\definecolor{exampleaccent}{RGB}{45,105,65}
+\definecolor{placeholderbg}{RGB}{248,248,248}
+\definecolor{placeholderborder}{RGB}{180,185,195}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=primary,
+  citecolor=primary,
+  urlcolor=primary,
+  pdftitle={Vigas mistas de aço e concreto pela ABNT NBR 8800:2024},
+  pdfauthor={Prof. Renato César de Carvalho - Lure Engenharia}
+}
+
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+\setlength{\parindent}{0pt}
+
+\captionsetup{
+  font=small,
+  labelfont={bf,color=primary},
+  justification=raggedright,
+  singlelinecheck=false
+}
+
+% Caixa de conceito / recomendação / atenção
+\newcommand{\caixaconceito}[2]{%
+  \par\vspace{6pt}\noindent\colorbox{calloutbg}{%
+    \parbox{\dimexpr\linewidth-2\fboxsep\relax}{%
+      \vspace{4pt}\textbf{\color{primary}#1}\par\vspace{3pt}#2\vspace{4pt}%
+    }%
+  }\par\vspace{6pt}%
+}
+
+% Caixa de exemplo resolvido
+\newcommand{\caixaexemplo}[2]{%
+  \par\vspace{6pt}\noindent\colorbox{examplebg}{%
+    \parbox{\dimexpr\linewidth-2\fboxsep\relax}{%
+      \vspace{4pt}\textbf{\color{exampleaccent}#1}\par\vspace{3pt}#2\vspace{4pt}%
+    }%
+  }\par\vspace{6pt}%
+}
+
+% Placeholder para figuras do artigo original
+\newcommand{\figuraplaceholder}[2]{%
+  \fcolorbox{placeholderborder}{placeholderbg}{%
+    \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}{%
+      \centering\vspace{12pt}%
+      \textbf{\color{primary}[Imagem: #1]}\\[4pt]
+      {\small\color{black!75}#2}\\[4pt]
+      {\footnotesize\textit{Substitua este bloco por \texttt{\textbackslash includegraphics[width=\textbackslash linewidth]\{...\}} após baixar a imagem original.}}%
+      \vspace{12pt}%
+    }%
+  }%
+}
+
+\title{\textbf{\color{primary}Vigas mistas de aço e concreto pela ABNT NBR 8800:2024}}
+\author{Prof.\ Renato César de Carvalho --- \href{https://lureengenharia.com.br/vigas-mistas-de-aco-e-concreto-pela-abnt-nbr-88002024/}{Lure Engenharia}}
+\date{Texto de apoio ao curso de estruturas metálicas e à planilha didática \texttt{Viga\_Mista\_NBR8800-2024.xlsx}}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+\noindent Conceitos, sistemas de laje, conectores, momento resistente, flechas e vibração de vigas mistas biapoiadas, com um exemplo de piso em \textit{steel deck} resolvido do enunciado à última verificação, conforme a ABNT NBR 8800:2024. Fonte original: \url{https://lureengenharia.com.br/vigas-mistas-de-aco-e-concreto-pela-abnt-nbr-88002024/}.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+% ==============================================================================
+\section{Introdução}
+% ==============================================================================
+
+Nos pisos de edifícios com estrutura de aço, a laje de concreto quase nunca é só um elemento que se apoia nas vigas. Quando a laje é ligada ao perfil por conectores de cisalhamento, os dois materiais passam a trabalhar como uma única peça à flexão. O concreto, que resiste bem à compressão, fica na parte de cima. O aço, que resiste bem à tração, fica embaixo. O resultado é a viga mista de aço e concreto: uma viga mais resistente e muito mais rígida do que o perfil sozinho, com praticamente o mesmo consumo de aço.
+
+Este capítulo trata do caso mais comum na prática brasileira: a viga mista biapoiada de alma cheia, que é a situação típica das vigas secundárias de piso. O texto segue a ABNT NBR 8800:2024, cujo Anexo L reúne os requisitos de vigas mistas. Quando a norma brasileira não traz a expressão de algum efeito, usa-se a especificação norte-americana ANSI/AISC 360-16, e isso é indicado no texto. As ações são as da ABNT NBR 6120:2019, e as propriedades da fôrma de aço vêm do catálogo técnico da Metform.
+
+A estrutura do capítulo acompanha a sequência de cálculo de um projeto. Primeiro vêm os conceitos e os sistemas de laje. Depois, o enunciado de um exemplo, um piso de escritórios com laje \textit{steel deck}, que é resolvido ao longo de todo o texto, etapa por etapa. Cada etapa corresponde a uma etapa do Memorial de cálculo da planilha didática que acompanha o curso, de modo que o leitor pode conferir cada número na planilha.
+
+Ao final do capítulo, o leitor deve ser capaz de:
+\begin{itemize}
+  \item explicar por que aço e concreto ligados por conectores resistem mais e deformam menos;
+  \item escolher o sistema de laje e conhecer as regras da norma para cada um;
+  \item montar as cargas pela NBR 6120 e as combinações últimas e de serviço da NBR 8800;
+  \item calcular a resistência dos conectores, o número necessário e o grau de interação;
+  \item obter o momento fletor resistente pela distribuição plástica de tensões;
+  \item verificar flechas, com fluência e retração, tensões em serviço e vibração do piso.
+\end{itemize}
+
+\begin{figure}[!htbp]
+  \centering
+  \figuraplaceholder{Figura 1}{Fluxograma com as etapas de cálculo: dados, materiais, perfil, laje e largura efetiva, fase de construção, conectores, momento resistente, cortante e estados-limite de serviço.}
+  % \includegraphics[width=\linewidth]{figuras/figura_01.png}
+  \caption{Roteiro de cálculo de uma viga mista biapoiada, na ordem seguida neste capítulo e no Memorial da planilha. Fonte: elaborado pelo autor, com base na ABNT NBR 8800:2024, Anexo L.}
+  \label{fig:roteiro}
+\end{figure}
+
+% ==============================================================================
+\section{O que é uma viga mista}
+% ==============================================================================
+
+\subsection{Definição e componentes}
+
+A NBR 8800:2024 define a viga mista de aço e concreto como o conjunto formado por um componente de aço simétrico em relação ao plano de flexão, que pode ser um perfil I ou uma treliça, e uma laje de concreto situada acima da face superior desse componente. Os dois são ligados mecanicamente por conectores, de modo que funcionem como um conjunto para resistir à flexão, que ocorre no plano que passa pelos centros geométricos das mesas (ABNT, 2024, item L.1.1.1). Quando o componente de aço é um perfil I, a viga é chamada de viga mista de alma cheia. Quando é uma treliça, tem-se uma treliça mista (ABNT, 2024, item L.1.1.2-a). Este capítulo trata apenas das vigas de alma cheia.
+
+A Figura~\ref{fig:componentes} mostra os três componentes em um corte escalonado. Na ponta da frente aparece o perfil sozinho, com a seção I visível. Em seguida aparecem a fôrma de aço, já apoiada sobre a mesa superior, os pinos com cabeça soldados através da fôrma e a tela soldada, posicionada acima das nervuras. No fundo está a laje já concretada. Na face lateral da laje se vê o concreto preenchendo as nervuras da fôrma.
+
+\begin{figure}[!htbp]
+  \centering
+  \figuraplaceholder{Figura 2}{Perspectiva em corte escalonado de uma viga mista: perfil I de aço, fôrma \textit{steel deck}, conectores pino com cabeça, tela soldada e laje de concreto.}
+  % \includegraphics[width=\linewidth]{figuras/figura_02.png}
+  \caption{Componentes de uma viga mista com laje de fôrma de aço incorporada (\textit{steel deck}). Fonte: elaborado pelo autor, com base na ABNT NBR 8800:2024, L.1.1.1 e L.2.6.}
+  \label{fig:componentes}
+\end{figure}
+
+Cada componente tem um papel bem definido:
+\begin{itemize}
+  \item \textbf{Perfil de aço:} resiste à tração na parte inferior da seção e, durante a concretagem, sustenta sozinho o peso do concreto fresco, a menos que a viga seja escorada;
+  \item \textbf{Laje de concreto:} forma a mesa comprimida da seção mista; além de piso, passa a ser parte da viga;
+  \item \textbf{Conectores de cisalhamento:} impedem que a laje escorregue sobre o perfil e transmitem a força de cisalhamento longitudinal entre os dois materiais.
+\end{itemize}
+
+\subsection{Por que a viga mista é tão eficiente}
+
+Imagine uma laje simplesmente apoiada sobre uma viga de aço, sem nenhuma ligação. Sob carga, cada peça flete em torno da sua própria linha neutra: a face inferior da laje se alonga e a face superior do perfil se encurta. As duas superfícies em contato deslizam uma em relação à outra. A capacidade do conjunto é, aproximadamente, a soma das capacidades das duas peças isoladas, e a laje, muito delgada, contribui pouco.
+
+Com conectores, esse deslizamento é impedido. A seção passa a ter uma linha neutra única, que sobe para perto da laje. O concreto fica quase todo comprimido e o aço, quase todo tracionado. Cada material trabalha onde é mais eficiente, e o braço de alavanca entre a resultante de compressão (na laje) e a de tração (no perfil) cresce muito.
+
+O exemplo deste capítulo, apresentado na Seção~4, mostra o tamanho do ganho. O perfil W460x52,0 sozinho, travado lateralmente, tem momento resistente de cálculo de $343{,}7\text{ kN}\cdot\text{m}$. A mesma viga, trabalhando como viga mista com 16 pinos por meio vão, chega a $607{,}7\text{ kN}\cdot\text{m}$: um ganho de $77\%$. O momento de inércia passa de $21\,370\text{ cm}^4$ para $61\,992\text{ cm}^4$, quase três vezes mais rígida. E isso com apenas $54\%$ da interação completa, como será visto na Seção~11. O custo do ganho são os 32 conectores e a mão de obra de soldagem.
+
+Na prática, a viga mista permite perfis mais leves e mais baixos, flechas menores e pisos menos sensíveis à vibração.
+
+\subsection{Interação completa, parcial e escorregamento}
+
+A força que os conectores precisam transmitir depende do que a seção consegue mobilizar. Se os conectores conseguem transmitir toda a força que a laje é capaz de receber, ou toda a força que o perfil é capaz de desenvolver, a interação é completa. A norma formaliza isso: na região de momento positivo, a interação é completa quando a resistência de cálculo dos conectores situados nessa região é igual ou superior à resistência de cálculo do componente de aço à tração ou da laje de concreto à compressão, o que for menor. Caso contrário, a interação é parcial (ABNT, 2024, item L.1.1.2-f).
+
+A Figura~\ref{fig:interacao} compara os três comportamentos. Na parte de cima está a viga fletida, com o escorregamento $s$ entre laje e perfil nas extremidades. Na parte de baixo estão a seção transversal e o diagrama de deformações.
+
+\begin{figure}[!htbp]
+  \centering
+  \figuraplaceholder{Figura 3}{Três casos lado a lado: (a) sem interação, (b) interação parcial e (c) interação completa, mostrando viga fletida com escorregamento $s$, seção transversal e diagramas de deformação.}
+  % \includegraphics[width=\linewidth]{figuras/figura_03.png}
+  \caption{Viga sem interação, com interação parcial e com interação completa: escorregamento nas extremidades e diagramas de deformação. Fonte: elaborado pelo autor, com base na ABNT NBR 8800:2024, L.1.1.2-f e L.2.3.1.1.2.}
+  \label{fig:interacao}
+\end{figure}
+
+\begin{enumerate}
+  \item[(a)] \textbf{Sem interação:} não há conectores. Laje e perfil deslizam livremente, e o escorregamento nas extremidades é grande. Há duas linhas neutras, uma em cada material, e o momento total é a soma dos momentos de cada peça, $M = M_a + M_c$.
+  \item[(b)] \textbf{Interação parcial:} os conectores existem, mas não conseguem transmitir toda a força necessária ($\Sigma Q_{Rd} < F_{hd}$). O escorregamento diminui, as duas linhas neutras se aproximam e sobra um salto de deformação na interface. A resistência e a rigidez ficam entre os dois extremos.
+  \item[(c)] \textbf{Interação completa:} não há escorregamento e a deformação é linear em toda a altura da seção. Há uma só linha neutra, próxima da laje.
+\end{enumerate}
+
+Por que aceitar a interação parcial? Porque, muitas vezes, a resistência à flexão já sobra com menos conectores, e economizar conectores reduz custo. A norma, porém, impõe um grau de interação mínimo para que o escorregamento não comprometa a capacidade de deformação plástica da ligação. Esse limite é tratado na Seção~11.
+
+\subsection{Vinculação da viga}
+
+As vigas mistas de alma cheia podem ser biapoiadas, contínuas ou semicontínuas (ABNT, 2024, item L.1.1.2-b). Nas biapoiadas, as ligações nos apoios são consideradas rótulas e só existe momento positivo, com a laje comprimida em todo o vão. Nas contínuas, o perfil e a armadura da laje têm continuidade total nos apoios internos, e surge momento negativo, com a laje tracionada sobre os apoios (ABNT, 2024, itens L.2.4 e L.2.5). Nas semicontínuas, as ligações nos apoios são ligações mistas de resistência parcial, tratadas no Anexo O da norma. Este capítulo trata apenas das vigas biapoiadas.
+
+% ==============================================================================
+\section{Sistemas de laje}
+% ==============================================================================
+
+\subsection{Os quatro sistemas admitidos pela norma}
+
+A NBR 8800:2024 admite quatro tipos de laje em vigas mistas: a laje maciça moldada no local, a laje mista de aço e concreto, a laje com pré-laje de concreto pré-moldada e a laje alveolar pré-moldada (ABNT, 2024, item L.1.1.1). A laje mista, com fôrma de aço incorporada, é dimensionada pelo Anexo N da própria NBR 8800. As demais são dimensionadas pela ABNT NBR 6118 e pelas normas específicas de cada sistema, como a ABNT NBR 14859 para pré-lajes e lajes treliçadas e a ABNT NBR 14861 para lajes alveolares, atendendo também aos requisitos do Anexo L. Esses quatro sistemas são também os mais usados em edifícios de estrutura de aço no Brasil.
+
+\begin{figure}[!htbp]
+  \centering
+  \figuraplaceholder{Figura 4}{Quatro blocos em perspectiva, cada um com um trecho de perfil I sob a laje: laje maciça, \textit{steel deck}, pré-laje e laje alveolar.}
+  % \includegraphics[width=\linewidth]{figuras/figura_04.png}
+  \caption{Os quatro sistemas de laje previstos para vigas mistas. Fonte: elaborado pelo autor, com base na ABNT NBR 8800:2024, L.1.1.1, L.2.6, L.2.7 e L.2.8.}
+  \label{fig:sistemas-laje}
+\end{figure}
+
+Em cada bloco da Figura~\ref{fig:sistemas-laje}, a face da esquerda é o corte transversal da viga, com o pino sobre a alma do perfil. A face da direita é paralela à viga e mostra o que diferencia um sistema do outro: a onda da fôrma, no \textit{steel deck}, com as nervuras perpendiculares à viga; as treliças, na pré-laje; e os alvéolos, na laje alveolar. Na pré-laje e na laje alveolar, as peças pré-moldadas terminam sobre a mesa do perfil, e o espaço entre elas é concretado junto com a capa, envolvendo o conector. A capa é a camada de concreto moldada no local por cima dos elementos pré-moldados ou da fôrma de aço: ela solidariza as peças em um piso contínuo e forma a mesa comprimida da viga mista. No \textit{steel deck}, chama-se de capa o concreto acima do topo das nervuras.
+
+O \textit{steel deck} domina em edifícios comerciais e garagens, porque dispensa escoramento nos vãos usuais e a própria fôrma serve de plataforma de trabalho. A laje alveolar aparece quando os vãos da laje são grandes. A pré-laje e a laje treliçada são comuns em obras feitas por construtoras habituadas ao concreto. A planilha que acompanha este capítulo dimensiona a laje maciça e o \textit{steel deck}.
+
+\subsection{Vantagens e cuidados de cada sistema}
+
+\begin{table}[!htbp]
+  \centering
+  \caption{Vantagens, cuidados normativos e tipo de conector de cada sistema de laje. Fonte: elaborado pelo autor, com base na ABNT NBR 8800:2024, itens indicados, e no catálogo Metform.}
+  \label{tab:sistemas-laje}
+  \footnotesize
+  \begin{tabularx}{\linewidth}{lXXl}
+    \toprule
+    \textbf{Sistema} & \textbf{Vantagens} & \textbf{Cuidados (item da NBR 8800:2024)} & \textbf{Conector} \\
+    \midrule
+    Laje maciça & Não depende de fornecedor; espessura livre; aceita perfil U & Fôrma e escoramento da laje; perfil sem contenção lateral na concretagem (L.2.3.2-a); U exige face inferior plana (L.4.2.2.1) & Pino ou perfil U \\
+    \addlinespace
+    \textit{Steel deck} & Dispensa escoramento nos vãos usuais; a fôrma é plataforma de trabalho e armadura positiva & $h_F \le 75\text{ mm}$, pino com $\varnothing \le 19\text{ mm}$ e demais limites de L.2.6.1; concreto das nervuras perpendiculares desprezado (L.2.6.2); $R_g$ e $R_p$ reduzem $Q_{Rd}$ (L.4.2.1) & Pino com cabeça \\
+    \addlinespace
+    Pré-laje e capa & Industrializada; menos fôrma & Pré-laje com até $75\text{ mm}$; largura da mesa do perfil de pelo menos a espessura da pré-laje $+ \varnothing + 40\text{ mm}$, ou $140\text{ mm}$; pino com $20\text{ mm}$ de cobrimento lateral (L.2.7) & Pino com cabeça \\
+    \addlinespace
+    Alveolar e capa & Grandes vãos de laje; rapidez; pouco concreto & Altura até $265\text{ mm}$, capa de pelo menos $50\text{ mm}$, apoio mínimo, garganta mínima, alvéolos preenchidos em $650\text{ mm}$ e armaduras transversais (L.2.8); $R_g = 0{,}90$ (L.4.2.1.2) & Pino $\varnothing 19 \times 125\text{ mm}$ \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+Em resumo: o \textit{steel deck} é a escolha natural quando o prazo e a eliminação do escoramento pesam na decisão. A laje maciça é preferível quando a laje tem geometria irregular, muitas aberturas ou cargas altas, situação em que o conector em perfil U, mais resistente, também se torna atraente.
+
+% ==============================================================================
+\section{O exemplo do capítulo}
+% ==============================================================================
+
+Todo o restante do capítulo é aplicado a um único exemplo, apresentado aqui por completo antes de qualquer conta. Os números são os mesmos que aparecem na planilha didática quando ela é aberta com os dados de exemplo.
+
+\subsection{Enunciado}
+
+\caixaconceito{Enunciado}{%
+Um edifício de escritórios tem pisos em estrutura de aço com laje mista do tipo \textit{steel deck}. As vigas secundárias V1 apoiam-se nas vigas principais VP por meio de ligações flexíveis, vencem um vão de $9{,}00\text{ m}$ e estão espaçadas a cada $2{,}80\text{ m}$. A fôrma Metform MF-75, com chapa de $0{,}80\text{ mm}$, apoia-se sobre as V1 com as nervuras perpendiculares a elas, e cada chapa é contínua sobre três vãos. A laje tem altura total de $140\text{ mm}$ e é feita com concreto C30 e brita de granito. O piso tem $20\text{ m}$ de largura na direção das vigas principais.\par\vspace{4pt}
+A V1 é um perfil laminado W460x52,0 em aço ASTM A572 Grau 50. Os conectores são pinos com cabeça $\varnothing 19 \times 125\text{ mm}$, com aço de resistência à ruptura de $415\text{ MPa}$, um em cada nervura baixa da fôrma, soldados através dela. A construção é não escorada, e o perfil é fabricado com contraflecha de $15\text{ mm}$.\par\vspace{4pt}
+Sobre a laje atuam revestimento de piso com $5\text{ cm}$ de espessura, forro de gesso acartonado e dutos de ar-condicionado, além da carga de uso de escritório com divisórias móveis.\par\vspace{4pt}
+\textbf{Pede-se:} verificar uma V1 interna como viga mista biapoiada pela ABNT NBR 8800:2024.}
+
+A Figura~\ref{fig:planta-piso} mostra a planta de um trecho do piso. As vigas principais VP ficam nas linhas de pilares, a cada $9{,}00\text{ m}$. As V1 vencem esses $9{,}00\text{ m}$ e se repetem a cada $2{,}80\text{ m}$: há três vãos de laje de $2{,}80\text{ m}$ em cada módulo de $8{,}40\text{ m}$ entre pilares. Como as ligações das V1 nas VP são flexíveis, feitas com cantoneiras ou chapa de alma, a V1 é biapoiada e só tem momento positivo.
+
+\begin{figure}[!htbp]
+  \centering
+  \figuraplaceholder{Figura 5}{Planta de um trecho do piso: vigas principais VP nas linhas de pilares, vigas secundárias V1 a cada $2{,}80\text{ m}$ vencendo $9{,}00\text{ m}$, e faixa de influência da V1 em estudo.}
+  % \includegraphics[width=\linewidth]{figuras/figura_05.png}
+  \caption{Planta de um trecho do piso do exemplo, com a viga V1 em estudo e a sua faixa de influência. Fonte: elaborado pelo autor.}
+  \label{fig:planta-piso}
+\end{figure}
+
+A fôrma de aço vence os $2{,}80\text{ m}$ entre as V1, como uma laje unidirecional apoiada nelas, isto é, uma laje que transmite a carga em uma só direção, como se fosse uma sequência de vigas largas e baixas, lado a lado, apoiadas nas V1. Isso acontece porque a fôrma só tem rigidez na direção das nervuras e porque o vão nessa direção, $2{,}80\text{ m}$, é muito menor que o da outra, $9{,}00\text{ m}$. Por isso as nervuras correm perpendicularmente às V1. A V1 em estudo é interna: tem laje dos dois lados, e a faixa de piso que ela recebe é a metade do vão da laje para cada lado, $1{,}40 + 1{,}40 = 2{,}80\text{ m}$. A largura total do piso, $20\text{ m}$, entra apenas na verificação de vibração, porque limita a largura de piso que participa do modo de vibrar.
+
+\subsection{Seção, materiais e conectores}
+
+\begin{figure}[!htbp]
+  \centering
+  \figuraplaceholder{Figura 6}{(a) Seção transversal da V1: perfil W460x52,0 com altura de $450\text{ mm}$, fôrma MF-75 e laje de $140\text{ mm}$; (b) corte ao longo da viga com a onda da fôrma ($s = 274\text{ mm}$) e a posição dos pinos.}
+  % \includegraphics[width=\linewidth]{figuras/figura_06.png}
+  \caption{Seção transversal da V1 e corte ao longo da viga, com a onda da fôrma e a posição dos pinos. Fonte: elaborado pelo autor, com dados dos catálogos Gerdau e Metform.}
+  \label{fig:secao-v1}
+\end{figure}
+
+O corte (a) da Figura~\ref{fig:secao-v1} passa por uma nervura baixa da fôrma, onde a chapa encosta na mesa do perfil e o pino é soldado. A linha tracejada indica o topo das nervuras altas, que ficam fora do plano do corte. O corte (b) mostra por que o espaçamento dos pinos é igual ao passo da onda, $274\text{ mm}$: só há onde soldá-los nas nervuras baixas.
+
+\begin{table}[!htbp]
+  \centering
+  \caption{Dados do exemplo. Fonte: catálogo de perfis Gerdau; catálogo Metform; planilha didática, aba Dados.}
+  \label{tab:dados-exemplo}
+  \small
+  \begin{tabularx}{\linewidth}{lX}
+    \toprule
+    \textbf{Elemento} & \textbf{Dados} \\
+    \midrule
+    Perfil & W460x52,0: $d = 450\text{ mm}$; $b_f = 152\text{ mm}$; $t_f = 10{,}8\text{ mm}$; $t_w = 7{,}6\text{ mm}$; $d' = 404\text{ mm}$; $I_x = 21\,370\text{ cm}^4$; $W_x = 949{,}8\text{ cm}^3$; $Z_x = 1\,095{,}9\text{ cm}^3$; massa $52\text{ kg/m}$ \\
+    Aço do perfil & ASTM A572 Grau 50: $f_y = 345\text{ MPa}$; $f_u = 450\text{ MPa}$ \\
+    Fôrma & Metform MF-75, chapa de $0{,}80\text{ mm}$ ($9{,}37\text{ kg/m}^2$), nervuras perpendiculares à viga, contínua sobre três vãos \\
+    Laje & $h = 140\text{ mm}$, com $h_F = 75\text{ mm}$ de nervura e $t_c = 65\text{ mm}$ de concreto acima da fôrma; consumo de $0{,}1025\text{ m}^3/\text{m}^2$ \\
+    Concreto & C30 ($f_{ck} = 30\text{ MPa}$), densidade normal, brita de granito \\
+    Conectores & Pino com cabeça $\varnothing 19 \times 125\text{ mm}$, $f_{ucs} = 415\text{ MPa}$, um por nervura baixa ($s = 274\text{ mm}$), centrado na nervura ($e_{mh} = 59\text{ mm}$), soldado através da fôrma \\
+    Construção & Não escorada; sobrecarga de construção de $1{,}0\text{ kN/m}^2$; contraflecha $\delta_0 = 15\text{ mm}$ \\
+    Vibração & Escritório convencional, com forro e instalações suspensos, sem divisórias de piso a teto; piso com $20\text{ m}$ de largura \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\caixaconceito{Conceitos de concreto armado $\cdot$ $f_{ck}$, classe C30 e densidade normal}{%
+A resistência característica à compressão do concreto, $f_{ck}$, é obtida no ensaio de compressão de corpos de prova cilíndricos aos 28 dias de idade. Como a resistência do concreto varia bastante de um lote para outro, o $f_{ck}$ não é a média dos ensaios: é o valor que tem $95\%$ de probabilidade de ser superado, o chamado quantil de $5\%$ (ABNT NBR 6118). O papel dele no projeto é o mesmo do $f_y$ do aço: é o valor de resistência especificado, a partir do qual se calcula a resistência de cálculo.\par\vspace{4pt}
+A classe do concreto é o seu $f_{ck}$ em megapascals precedido da letra C: o concreto C30 tem $f_{ck} = 30\text{ MPa}$. É assim que o concreto é especificado no projeto e pedido à concreteira.\par\vspace{4pt}
+O concreto de densidade normal é o concreto comum, feito com areia e brita naturais, com massa específica seca entre $2\,000\text{ kg/m}^3$ e $2\,800\text{ kg/m}^3$ (ABNT NBR 6118). Os concretos leves, feitos com agregados como argila expandida, têm módulo de elasticidade e resistência ao cisalhamento diferentes e exigem adaptações nas expressões da NBR 8800 (ABNT, 2024, item 4.6.3.1).}
+
+\subsection{Fases de carregamento e o que se pede}
+
+Como a construção é não escorada, a viga passa por duas fases, ilustradas na Figura~\ref{fig:fases}. Na fase~1, a concretagem, o perfil isolado recebe o próprio peso, a fôrma, o concreto fresco e a sobrecarga de construção. A fôrma, ligada ao perfil pelos pinos, trava a mesa superior lateralmente nessa fase. Na fase~2, depois que o concreto atinge $75\%$ de $f_{ck}$, a viga passa a ser mista e recebe as cargas aplicadas depois da cura: revestimento, forro, dutos, uso e divisórias. A contraflecha de fabricação, de $15\text{ mm}$, é descontada da flecha total; a Seção~14.2 explica como ela é feita.
+
+\caixaconceito{Conceitos de concreto armado $\cdot$ concretagem, escoramento e cura}{%
+Em edifícios, o concreto quase sempre é usinado, isto é, produzido em uma central dosadora (a concreteira) e levado à obra em caminhão betoneira, e é bombeado, lançado sobre a laje por uma tubulação ligada a uma bomba. O concreto recém-lançado, ainda mole, é chamado de concreto fresco: nessa fase ele é apenas peso, sem nenhuma resistência.\par\vspace{4pt}
+Escorar é apoiar provisoriamente a laje ou a viga em escoras, pontaletes metálicos ou de madeira apoiados no pavimento de baixo, que sustentam o peso do concreto fresco até ele ganhar resistência. Escorar a viga significa colocar escoras sob o perfil, para que ele praticamente não receba carga na concretagem. Escorar a laje significa colocar escoras sob a fôrma, o que é necessário quando o vão da laje passa do vão máximo sem escoramento do catálogo.\par\vspace{4pt}
+A cura é o período depois da concretagem em que o concreto endurece, por causa da reação química entre o cimento e a água. A resistência cresce rapidamente nos primeiros dias e mais devagar depois; por convenção, o $f_{ck}$ se refere à idade de 28 dias. A palavra também designa os cuidados para manter o concreto úmido nesse início, que reduzem a fissuração. A NBR 8800 considera que a seção mista passa a existir quando o concreto atinge $75\%$ do $f_{ck}$: antes disso, todo o peso fica no perfil ou nas escoras (ABNT, 2024, itens L.1.1.2-g e L.2.3.2-a). Com os cimentos usuais, isso costuma ocorrer entre a primeira e a segunda semana, mas o prazo depende do cimento e do clima, e deve ser confirmado por ensaio antes de retirar escoramentos.}
+
+\begin{figure}[!htbp]
+  \centering
+  \figuraplaceholder{Figura 7}{Esquema estático da V1 biapoiada com $9{,}00\text{ m}$ de vão. Fase 1: perfil isolado com $g_1$ e $q_c$; Fase 2: seção mista com $g_2$ e $q$; além da contraflecha $\delta_0 = 15\text{ mm}$.}
+  % \includegraphics[width=\linewidth]{figuras/figura_07.png}
+  \caption{Esquema estático da V1 nas duas fases e contraflecha de fabricação. Fonte: elaborado pelo autor, com base na ABNT NBR 8800:2024, L.2.3.2 e N.4.1.3.}
+  \label{fig:fases}
+\end{figure}
+
+As verificações pedidas, na ordem em que aparecem neste capítulo, são:
+\begin{itemize}
+  \item perfil isolado na concretagem (ABNT, 2024, item L.2.3.2-a);
+  \item resistência dos conectores e grau de interação mínimo (itens L.4 e L.2.3.1.1.2);
+  \item momento fletor resistente da viga mista (item L.2.3.1);
+  \item força cortante (item L.3.1);
+  \item flechas, com limite de $L/350$ (Anexo B);
+  \item tensão em serviço na mesa inferior (item L.2.3.2-b);
+  \item vibração do piso pelo caminhar de pessoas (Anexo I);
+  \item a própria laje, pelo catálogo do fabricante.
+\end{itemize}
+
+% ==============================================================================
+\section{Classificação da viga: o método de cálculo}
+% ==============================================================================
+
+Antes de calcular a resistência, é preciso saber qual método se aplica. Nas vigas biapoiadas, quem decide é a esbeltez da alma do perfil, $h/t_w$. Se a alma é compacta, a seção mista pode plastificar por completo antes de a alma flambar localmente, e o momento resistente é calculado pela distribuição plástica de tensões. Se a alma é semicompacta, a flambagem local pode ocorrer antes da plastificação, e a verificação é feita por tensões elásticas. Almas mais esbeltas que isso não são admitidas em vigas mistas biapoiadas (ABNT, 2024, itens L.1.1.2-c e L.1.1.2-d).
+
+\begin{table}[!htbp]
+  \centering
+  \caption{Classificação da alma em vigas mistas biapoiadas. Fonte: ABNT NBR 8800:2024, L.1.1.2-c e L.1.1.2-d.}
+  \label{tab:classificacao-alma}
+  \small
+  \begin{tabularx}{\linewidth}{lXl}
+    \toprule
+    \textbf{Esbeltez da alma} & \textbf{Classe} & \textbf{Momento resistente} \\
+    \midrule
+    $h/t_w \le 3{,}76\sqrt{E/f_y}$ & Compacta & Plástico (L.2.3.1.1) \\
+    $3{,}76\sqrt{E/f_y} < h/t_w \le 5{,}70\sqrt{E/f_y}$ & Semicompacta & Elástico, por tensões (L.2.3.1.2) \\
+    $h/t_w > 5{,}70\sqrt{E/f_y}$ & Esbelta & Não admitida em viga mista biapoiada \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+Atenção à definição de $h$. Nos perfis soldados, é a distância entre as faces internas das mesas. Nos perfis laminados, é essa distância menos os dois raios de concordância entre mesa e alma, o valor indicado como $d'$ nos catálogos. Todos os perfis W da tabela Gerdau têm alma compacta para $f_y$ até $345\text{ MPa}$: o maior valor de $h/t_w$ é $55{,}8$, do W410x38,8, contra o limite de $90{,}5$ (Seção~12.4). A especificação norte-americana faz a mesma observação para os perfis laminados W (AISC, 2016, User Note da seção I3.2a). Já os perfis soldados altos e de alma fina, como o VS 1000x140, podem cair na faixa semicompacta.
+
+\caixaexemplo{Exemplo $\cdot$ classificação da alma}{%
+$h/t_w = d'/t_w = 404/7{,}6 = 53{,}2$\par
+$3{,}76\sqrt{E/f_y} = 3{,}76\sqrt{200\,000/345} = 3{,}76 \times 24{,}08 = 90{,}5$\par
+$53{,}2 \le 90{,}5$: \textbf{alma compacta}. O momento resistente será calculado pela distribuição plástica de tensões.}
+
+% ==============================================================================
+\section{Materiais}
+% ==============================================================================
+
+\subsection{Aço estrutural}
+
+Para os aços estruturais, a NBR 8800:2024 adota módulo de elasticidade $E = 200\,000\text{ MPa}$, coeficiente de Poisson $0{,}3$, módulo de elasticidade transversal $G = 77\,000\text{ MPa}$ e massa específica de $7\,850\text{ kg/m}^3$ (ABNT, 2024, item 4.6.2.9). A resistência de cálculo ao escoamento é obtida dividindo a resistência característica pelo coeficiente de ponderação $\gamma_{a1}$, igual a $1{,}10$ nas combinações normais e de construção (ABNT, 2024, Tabela 3).
+\begin{equation}
+  f_{yd} = \frac{f_y}{\gamma_{a1}}
+  \label{eq:fyd}
+\end{equation}
+
+Para os conectores, a norma usa um coeficiente próprio, $\gamma_{cs} = 1{,}25$ nas combinações normais, especiais e de construção (ABNT, 2024, item L.4.2.1.1).
+
+\subsection{Concreto}
+
+A norma trata de concretos de densidade normal com $f_{ck}$ entre $20\text{ MPa}$ e $50\text{ MPa}$ (ABNT, 2024, item 4.6.3.1). O módulo de elasticidade tangente inicial depende do tipo de agregado graúdo, e o módulo secante, usado nas análises elásticas e nos estados-limite de serviço, é $85\%$ dele:
+\begin{equation}
+  E_{ci} = \alpha_{ag} \cdot 5600 \cdot \sqrt{f_{ck}} \quad ; \quad E_c = 0{,}85 \cdot E_{ci} \quad (\text{MPa})
+  \label{eq:ec}
+\end{equation}
+onde $\alpha_{ag} = 1{,}2$ para basalto e diabásio; $1{,}0$ para granito e gnaisse; $0{,}9$ para calcário; $0{,}7$ para arenito.
+
+\caixaconceito{Conceitos de concreto armado $\cdot$ módulo tangente inicial e módulo secante}{%
+No aço, a curva tensão-deformação é uma reta até o escoamento, e o módulo de elasticidade é um só. No concreto, a curva é curva desde o início: a inclinação diminui à medida que a tensão cresce. Por isso se definem dois módulos. O módulo tangente inicial, $E_{ci}$, é a inclinação da tangente à curva na origem. O módulo secante, $E_c$, é a inclinação da reta que liga a origem a um ponto da curva correspondente a uma tensão de serviço, da ordem de $40\%$ da resistência. É o mesmo conceito de módulo secante usado para materiais não lineares, como os polímeros.\par\vspace{4pt}
+Como nas análises elásticas e nos estados-limite de serviço as tensões no concreto ficam nessa faixa, a norma manda usar o módulo secante, e fixa $E_c = 0{,}85\cdot E_{ci}$ (ABNT, 2024, item 4.6.3.1).}
+
+Na norma, esse fator do agregado é representado por $\alpha_e$, o ``parâmetro relacionado à rocha matriz da brita empregada'' (ABNT, 2024, item 3.3). Neste texto e na planilha ele é chamado de $\alpha_{ag}$, para não ser confundido com a razão modular $\alpha_E = E/E_c$, usada na homogeneização da seção (Seção~14). A edição de 2008 usava $E_c = 4\,760\sqrt{f_{ck}}$, sem considerar o agregado.
+
+\caixaconceito{Que valor de $\alpha_{ag}$ adotar quando a brita não é conhecida}{%
+No início do projeto, o calculista raramente sabe de qual pedreira virá a brita. A NBR 8800 e a NBR 6118 não indicam um valor padrão para esse caso: dão apenas os valores por tipo de rocha. Algumas observações ajudam a escolher.\par\vspace{4pt}
+\textbf{O tipo de laje não muda o fator.} O valor de $\alpha_{ag}$ depende só da brita do concreto, e não de a laje ser \textit{steel deck}, maciça ou pré-laje. No \textit{steel deck}, o concreto é quase sempre usinado e bombeado, normalmente com brita 0 ou 1, e a rocha é a que a concreteira da região usa.\par\vspace{4pt}
+\textbf{Granito e gnaisse são a referência.} Com $\alpha_{ag} = 1{,}0$, a expressão~(\ref{eq:ec}) se reduz à forma clássica $E_{ci} = 5600\sqrt{f_{ck}}$. Essas rochas são a origem mais comum da brita nas grandes cidades do Sudeste e do litoral brasileiro.\par\vspace{4pt}
+\textbf{O basalto é comum em parte do país.} Na região da bacia do Paraná, que inclui boa parte do Paraná, de Santa Catarina, do Rio Grande do Sul e do oeste de São Paulo, a brita costuma ser de basalto. Nesses casos $\alpha_{ag} = 1{,}2$, e adotar $1{,}0$ subestima o módulo, o que fica a favor da segurança nas flechas.\par\vspace{4pt}
+\textbf{Calcário e arenito pedem cuidado.} Onde a brita pode ser de calcário ($0{,}9$) ou, mais raramente, de arenito ($0{,}7$), adotar $1{,}0$ superestima o módulo e fica contra a segurança nas flechas.\par\vspace{4pt}
+\textbf{Recomendação deste texto:} Na falta de informação sobre a brita, adote $\alpha_{ag} = 1{,}0$ (granito e gnaisse), que é também o valor padrão da planilha. Se a obra fica em região onde a brita de calcário é comum, use $0{,}9$ ou consulte a concreteira antes de fechar o projeto. Em qualquer caso, registre nas notas do projeto o módulo de elasticidade adotado (no exemplo, $E_{ci} = 30\,672\text{ MPa}$) e peça à concreteira que informe a origem da brita. Quando necessário, o módulo pode ser confirmado por ensaio, conforme a ABNT NBR 8522.}
+
+Como referência do efeito: para $f_{ck} = 30\text{ MPa}$, trocar $\alpha_{ag} = 1{,}0$ por $0{,}9$ reduz $E_c$ de $26\,072\text{ MPa}$ para $23\,465\text{ MPa}$ ($10\%$). Isso aumenta a razão modular $\alpha_E$ de $7{,}67$ para $8{,}52$ e reduz um pouco a rigidez da seção mista. Na verificação de vibração o fator não pesa, porque o Anexo I usa um módulo dinâmico fixo de $38\text{ GPa}$ (ABNT, 2024, item I.1.7).
+
+A resistência de cálculo do concreto é $f_{cd} = f_{ck}/\gamma_c$, com $\gamma_c = 1{,}40$ nas combinações normais e $1{,}20$ nas de construção (ABNT, 2024, Tabela 3). A edição 2024 introduziu um coeficiente de fragilidade para concretos de alta resistência, que reduz o bloco de compressão quando $f_{ck}$ passa de $40\text{ MPa}$ (ABNT, 2024, item L.1.3.4):
+\begin{equation}
+  \eta_c = \left(\frac{40}{f_{ck}}\right)^{1/3} \le 1{,}0 \quad (f_{ck}\text{ em MPa})
+  \label{eq:etac}
+\end{equation}
+
+O bloco de tensões de compressão no concreto passa a valer $0{,}85\cdot\eta_c\cdot f_{cd}$. O coeficiente $0{,}85$ representa principalmente os efeitos de carga de longa duração sobre a resistência do concreto, conhecidos como efeito Rüsch, em referência ao pesquisador alemão Hubert Rüsch, que os estudou. O $f_{ck}$ é medido em um ensaio rápido, de poucos minutos, mas na estrutura a carga fica aplicada por anos, e o concreto sob carga mantida rompe com uma tensão menor que a do ensaio rápido. O coeficiente $0{,}85$ combina essa redução com o ganho de resistência que o concreto ainda tem depois dos 28 dias e com a diferença entre o corpo de prova e a peça real.
+
+\caixaexemplo{Exemplo $\cdot$ propriedades de cálculo}{%
+$f_{yd} = 345/1{,}10 = 313{,}6\text{ MPa} = 31{,}36\text{ kN/cm}^2$\par
+$E_{ci} = 1{,}0 \times 5600 \times \sqrt{30} = 30\,672\text{ MPa} \rightarrow E_c = 0{,}85 \times 30\,672 = 26\,072\text{ MPa}$\par
+$\alpha_E = E/E_c = 200\,000/26\,072 = 7{,}67$\par
+$f_{cd} = 30/1{,}40 = 21{,}43\text{ MPa} = 2{,}143\text{ kN/cm}^2$; $\eta_c = (40/30)^{1/3} = 1{,}10 \rightarrow \eta_c = 1{,}0$}
+
+% ==============================================================================
+\section{Ações e combinações}
+% ==============================================================================
+
+\subsection{Cargas do piso pela NBR 6120}
+
+A ABNT NBR 6120:2019 fornece os pesos específicos dos materiais, os pesos de componentes construtivos e as cargas de uso. Em uma laje \textit{steel deck}, o peso do concreto é obtido do consumo indicado no catálogo do fabricante, multiplicado pelo peso específico do concreto armado, $25\text{ kN/m}^3$ (ABNT, 2019, Tabela 1). Para a MF-75 com laje de $140\text{ mm}$, o consumo é de $0{,}1025\text{ m}^3/\text{m}^2$, o que dá $0{,}1025 \times 25 = 2{,}56\text{ kN/m}^2$. A chapa de $0{,}80\text{ mm}$ pesa $9{,}37\text{ kg/m}^2$, ou $0{,}09\text{ kN/m}^2$ (METFORM, s.d.).
+
+Na construção não escorada, não basta somar todas as cargas: é preciso saber quando cada uma passa a atuar, porque isso define qual seção a resiste (Seção~9). Por isso as cargas do exemplo são separadas em três grupos:
+\begin{itemize}
+  \item $g_1$, permanentes antes da cura: o peso da própria laje (concreto fresco e fôrma), que é lançado quando a viga ainda é só o perfil de aço;
+  \item $g_2$, permanentes depois da cura: revestimento, forro e dutos, instalados quando a laje já endureceu e a viga já é mista;
+  \item $q$, variáveis: o uso do piso e as divisórias móveis, que também atuam sobre a viga mista.
+\end{itemize}
+
+\begin{table}[!htbp]
+  \centering
+  \caption{Cargas do piso do exemplo, separadas pelo momento em que passam a atuar. Fonte: ABNT NBR 6120:2019, Tabelas 1, 4, 8, 10 e 11 e item 6.2; catálogo Metform.}
+  \label{tab:cargas-piso}
+  \small
+  \begin{tabularx}{\linewidth}{Xlr}
+    \toprule
+    \textbf{Ação} & \textbf{Origem} & \textbf{kN/m$^2$} \\
+    \midrule
+    \multicolumn{3}{l}{\textbf{Grupo $g_1$ $\cdot$ permanentes antes da cura (atuam no perfil isolado)}} \\
+    Concreto da laje ($0{,}1025\text{ m}^3/\text{m}^2 \times 25\text{ kN/m}^3$) & NBR 6120, Tab.\ 1; Metform & $2{,}56$ \\
+    Fôrma MF-75, chapa de $0{,}80\text{ mm}$ & Catálogo Metform & $0{,}09$ \\
+    \textbf{Subtotal $g_1 = 2{,}56 + 0{,}09$} & & $\mathbf{2{,}65}$ \\
+    \midrule
+    \multicolumn{3}{l}{\textbf{Grupo $g_2$ $\cdot$ permanentes depois da cura (atuam na viga mista)}} \\
+    Revestimento de piso com $5\text{ cm}$ & NBR 6120, Tab.\ 4 & $1{,}00$ \\
+    Forro de gesso acartonado com estrutura & NBR 6120, Tab.\ 8 & $0{,}25$ \\
+    Dutos de ar-condicionado com isolamento & NBR 6120, Tab.\ 8 & $0{,}30$ \\
+    \textbf{Subtotal $g_2 = 1{,}00 + 0{,}25 + 0{,}30$} & & $\mathbf{1{,}55}$ \\
+    \midrule
+    \multicolumn{3}{l}{\textbf{Grupo $q$ $\cdot$ variáveis (atuam na viga mista)}} \\
+    Uso: escritórios, salas de uso geral & NBR 6120, Tab.\ 10 & $2{,}50$ \\
+    Divisórias móveis de $1$ a $2\text{ kN/m}$ & NBR 6120, 6.2 e Tab.\ 11 & $0{,}75$ \\
+    \textbf{Subtotal $q = 2{,}50 + 0{,}75$} & & $\mathbf{3{,}25}$ \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+O peso próprio do perfil, $52\text{ kg/m}$ ou $0{,}51\text{ kN/m}$, também pertence ao grupo $g_1$. Ele não aparece na tabela porque já é uma carga por metro de viga, e não por metro quadrado de piso: é somado depois, na Seção~7.4, quando as cargas da tabela são multiplicadas pela faixa de influência de $2{,}80\text{ m}$.
+
+As divisórias sem posição definida em projeto são consideradas como carga uniformemente distribuída, função do peso por metro linear da parede: $0{,}5\text{ kN/m}^2$ até $1\text{ kN/m}$; $0{,}75\text{ kN/m}^2$ de $1$ a $2\text{ kN/m}$; $1{,}0\text{ kN/m}^2$ de $2$ a $3\text{ kN/m}$. Paredes mais pesadas que $3\text{ kN/m}$ entram como carga permanente na posição de projeto (ABNT, 2019, item 6.2 e Tabela 11). Uma divisória de gesso acartonado de $0{,}5\text{ kN/m}^2$ com $2{,}8\text{ m}$ de altura pesa $1{,}4\text{ kN/m}$, daí os $0{,}75\text{ kN/m}^2$ do exemplo. A carga de divisórias pode ser dispensada quando a carga de uso já é de pelo menos $4{,}0\text{ kN/m}^2$, exceto para paredes acima de $3{,}0\text{ kN/m}$. Para comparação, a mesma Tabela 10 indica $1{,}5\text{ kN/m}^2$ para dormitórios residenciais e $4{,}0\text{ kN/m}^2$ para lojas e shopping centers.
+
+\subsection{Coeficientes de ponderação e fatores de combinação}
+
+A NBR 8800:2024 permite ponderar as ações permanentes separadamente, por tipo, ou agrupadas. A Tabela~\ref{tab:gammaf} reúne os valores usados no exemplo, para ações desfavoráveis. Quando a ação permanente é favorável, usa-se $1{,}00$.
+
+\begin{table}[!htbp]
+  \centering
+  \caption{Coeficientes de ponderação $\gamma_f$ das ações desfavoráveis. Fonte: ABNT NBR 8800:2024, Tabela 1 (item 4.8).}
+  \label{tab:gammaf}
+  \small
+  \begin{tabularx}{\linewidth}{Xrr}
+    \toprule
+    \textbf{Ação} & \textbf{Normal} & \textbf{Construção} \\
+    \midrule
+    Peso próprio de estrutura metálica & $1{,}25$ & $1{,}15$ \\
+    Estrutura moldada no local & $1{,}35$ & $1{,}25$ \\
+    Elementos construtivos em geral & $1{,}50$ & $1{,}40$ \\
+    Permanentes agrupadas & $1{,}35$ & $1{,}25$ \\
+    Ações variáveis & $1{,}50$ & $1{,}30$ \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\begin{table}[!htbp]
+  \centering
+  \caption{Fatores de combinação $\psi_0$ e de redução $\psi_1$ e $\psi_2$ das cargas de uso. Fonte: ABNT NBR 8800:2024, Tabela 2.}
+  \label{tab:psi}
+  \small
+  \begin{tabularx}{\linewidth}{Xrrr}
+    \toprule
+    \textbf{Local} & $\psi_0$ & $\psi_1$ & $\psi_2$ \\
+    \midrule
+    Residencial, de acesso restrito & $0{,}5$ & $0{,}4$ & $0{,}3$ \\
+    Industrial, comercial, escritórios, acesso público & $0{,}7$ & $0{,}6$ & $0{,}4$ \\
+    Bibliotecas, arquivos, depósitos, oficinas, garagens & $0{,}8$ & $0{,}7$ & $0{,}6$ \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\subsection{Combinações de ações}
+
+Cada verificação usa a sua combinação. Nos estados-limite últimos, a combinação normal (ABNT, 2024, item 4.8.7.2.1) é:
+\begin{equation}
+  F_d = \sum \gamma_g\cdot F_{G,k} + \gamma_q\cdot F_{Q1,k} + \sum \gamma_q\cdot \psi_0\cdot F_{Qj,k}
+  \label{eq:comb-normal}
+\end{equation}
+
+Ela é usada na flexão, no cortante, nos conectores e no grau de interação. A combinação última de construção (item 4.8.7.2.3) tem a mesma forma, com os coeficientes da coluna de construção, e é usada na verificação do perfil isolado durante a concretagem. Para essa fase, a sobrecarga de construção é a mais desfavorável entre $1{,}0\text{ kN/m}^2$ uniforme e $2{,}2\text{ kN/m}$ linear (ABNT, 2024, item N.4.1.3); o exemplo usa $1{,}0\text{ kN/m}^2$.
+
+Nos estados-limite de serviço há três combinações (item 4.8.7.3). A quase permanente, $\sum F_{G,k} + \sum \psi_2\cdot F_{Q,k}$, representa os efeitos de longa duração e é usada para a flecha máxima ligada ao aspecto da estrutura (ABNT, 2024, item B.2.4). A frequente, $\sum F_{G,k} + \psi_1\cdot F_{Q1,k} + \sum \psi_2\cdot F_{Qj,k}$, trata de estados reversíveis e é usada na vibração, com $\psi_1 = \psi_2 = 0{,}1$ (item I.1.5). A rara, $\sum F_{G,k} + F_{Q1,k} + \sum \psi_1\cdot F_{Qj,k}$, trata de estados irreversíveis, como danos a paredes e forros, e é usada também na tensão em serviço da viga não escorada (item L.2.3.2-b).
+
+\subsection{Esforços solicitantes do exemplo}
+
+Com a faixa de influência de $2{,}80\text{ m}$, as cargas por área viram cargas por metro de viga. Na combinação normal, as permanentes são ponderadas por tipo: o concreto moldado no local com $1{,}35$; a fôrma e o perfil, que são estrutura metálica, com $1{,}25$; revestimento, forro e dutos, elementos construtivos em geral, com $1{,}50$.
+
+\caixaexemplo{Exemplo $\cdot$ cargas e esforços}{%
+Concreto: $2{,}56 \times 2{,}80 = 7{,}18\text{ kN/m}$; fôrma e perfil: $0{,}09 \times 2{,}80 + 0{,}51 = 0{,}77\text{ kN/m}$\par
+$g_1$ (antes da cura) $= 7{,}18 + 0{,}77 = 7{,}94\text{ kN/m}$; $g_2 = 1{,}55 \times 2{,}80 = 4{,}34\text{ kN/m}$; $q = 3{,}25 \times 2{,}80 = 9{,}10\text{ kN/m}$\par
+$q_d = 1{,}35 \times 7{,}18 + 1{,}25 \times 0{,}77 + 1{,}50 \times 4{,}34 + 1{,}50 \times 9{,}10 = 30{,}81\text{ kN/m}$\par
+$M_{Sd} = q_d L^2/8 = 30{,}81 \times 9{,}00^2/8 = 311{,}9\text{ kN}\cdot\text{m}$; $V_{Sd} = q_d L/2 = 30{,}81 \times 9{,}00/2 = 138{,}6\text{ kN}$\par\vspace{3pt}
+Construção: $q_{d,c} = 1{,}25 \times 7{,}18 + 1{,}15 \times 0{,}77 + 1{,}30 \times (1{,}0 \times 2{,}80) = 13{,}49\text{ kN/m}$\par
+$M_{Sd,c} = 13{,}49 \times 9{,}00^2/8 = 136{,}6\text{ kN}\cdot\text{m}$ (perfil isolado)}
+
+% ==============================================================================
+\section{A laje com fôrma de aço}
+% ==============================================================================
+
+\subsection{As fôrmas Metform MF-50 e MF-75}
+
+A fôrma de aço de uma laje mista tem dupla função. Na concretagem, é a fôrma: suporta o concreto fresco e serve de plataforma de trabalho. Em serviço, é a armadura positiva da laje, graças às mossas estampadas nas almas, que garantem a aderência mecânica entre a chapa e o concreto. As nervuras largas permitem soldar os pinos através da chapa e calcular as vigas como mistas (METFORM, s.d.).
+
+\caixaconceito{Conceitos de concreto armado $\cdot$ armadura positiva}{%
+O concreto resiste bem à compressão, mas muito pouco à tração: a sua resistência à tração é da ordem de $10\%$ da resistência à compressão, e ele fissura com facilidade quando é tracionado. Por isso, em toda região de um elemento de concreto que fica tracionada, colocam-se barras de aço, chamadas de armadura. Depois que o concreto fissura, é a armadura que resiste à tração. É esse conjunto que se chama de concreto armado.\par\vspace{4pt}
+Na convenção usual de estruturas, o momento positivo é o que traciona a face inferior da peça: é o caso do meio do vão de uma laje ou viga apoiada, que fica com a ``barriga'' para baixo. A armadura positiva é, portanto, a armadura colocada perto da face de baixo da laje, para resistir à tração causada pelo momento positivo. O momento negativo, que aparece sobre apoios de lajes contínuas, traciona a face superior e exige armadura negativa, colocada perto da face de cima.\par\vspace{4pt}
+Na laje mista, a fôrma de aço fica justamente na face inferior. Para que ela possa fazer o papel da armadura positiva, a chapa e o concreto não podem escorregar um em relação ao outro. Quem impede esse escorregamento são as mossas, pequenas saliências estampadas nas almas das nervuras, que se travam no concreto. É o mesmo princípio dos conectores da viga mista, em escala menor. Por isso, a laje \textit{steel deck} dispensa as barras de armadura positiva que uma laje maciça precisaria.\par\vspace{4pt}
+A tela soldada que aparece na Figura~\ref{fig:componentes} tem outra função: é uma malha leve de fios de aço colocada perto da face superior, para controlar a fissuração causada pela retração do concreto e pelas variações de temperatura. O catálogo da Metform recomenda essa armadura nas duas direções e, além dela, armaduras localizadas sobre as vigas principais e em volta dos pilares, onde a laje tende a trabalhar como contínua (METFORM, s.d.).}
+
+\begin{figure}[!htbp]
+  \centering
+  \figuraplaceholder{Figura 8}{Perfis trapezoidais das fôrmas Metform MF-50 ($h_F = 50\text{ mm}$, passo $305\text{ mm}$) e MF-75 ($h_F = 75\text{ mm}$, passo $274\text{ mm}$) com largura útil, passo e largura média da nervura.}
+  % \includegraphics[width=\linewidth]{figuras/figura_08.png}
+  \caption{Perfis trapezoidais das fôrmas Metform MF-50 e MF-75. Fonte: elaborado pelo autor, com dados do catálogo Metform.}
+  \label{fig:metform}
+\end{figure}
+
+\begin{table}[!htbp]
+  \centering
+  \caption{Características das fôrmas Metform. Fonte: catálogo Metform Steel Deck.}
+  \label{tab:metform}
+  \small
+  \begin{tabularx}{\linewidth}{lXX}
+    \toprule
+    \textbf{Característica} & \textbf{MF-50} & \textbf{MF-75} \\
+    \midrule
+    Altura da nervura, $h_F$ & $50\text{ mm}$ & $75\text{ mm}$ \\
+    Largura útil & $915\text{ mm}$ & $820\text{ mm}$ \\
+    Passo da onda & $305\text{ mm}$ & $274\text{ mm}$ \\
+    Largura média da nervura, $b_F$ & $152{,}5\text{ mm}$ & $137\text{ mm}$ \\
+    Altura total da laje & $100$ a $170\text{ mm}$ & $130$ a $200\text{ mm}$ \\
+    Aplicação indicada & Hotéis, hospitais, escritórios, garagens & Edificações industriais e cargas elevadas \\
+    Aço da chapa & \multicolumn{2}{p{9.5cm}}{ASTM A653 Grau 40 (ZAR-280), galvanizado, $f_y = 280\text{ MPa}$; espessuras de $0{,}80$, $0{,}95$ e $1{,}25\text{ mm}$; comprimento até $12\text{ m}$} \\
+    Concreto e armadura & \multicolumn{2}{p{9.5cm}}{$f_{ck} \ge 20\text{ MPa}$; tela soldada com área de pelo menos $0{,}1\%$ da seção de concreto acima da fôrma} \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\subsection{Regras para usar a fôrma em viga mista}
+
+Para que a laje mista possa ser considerada na viga mista, a NBR 8800:2024 impõe limites geométricos (ABNT, 2024, item L.2.6.1):
+\begin{itemize}
+  \item altura das nervuras $h_F \le 75\text{ mm}$;
+  \item largura média $b_F$ da nervura situada sobre o perfil $\ge 50\text{ mm}$, sem considerar no cálculo valor maior que a largura livre mínima no topo da fôrma;
+  \item conectores do tipo pino com cabeça, com diâmetro $\le 19\text{ mm}$, soldados através da fôrma ou por furos nela;
+  \item projeção do pino acima do topo da fôrma de pelo menos $40\text{ mm}$, depois de instalado;
+  \item espessura de concreto acima do topo da fôrma de pelo menos $50\text{ mm}$.
+\end{itemize}
+
+A especificação norte-americana traz limites equivalentes: nervura de até $75\text{ mm}$, largura média de pelo menos $50\text{ mm}$, projeção do pino de $38\text{ mm}$, cobrimento de $13\text{ mm}$ sobre o pino, $50\text{ mm}$ de laje acima da fôrma e ancoragem da fôrma a cada $460\text{ mm}$ (AISC, 2016, seção I3.2c).
+
+O cobrimento é a espessura de concreto entre uma peça de aço embutida, seja uma barra de armadura, a tela ou um conector, e a superfície de concreto mais próxima. Nas armaduras, ele protege o aço contra a corrosão e o fogo. Nos conectores, garante concreto suficiente em volta do fuste e da cabeça do pino para que ele se ancore na laje sem arrancar o concreto à sua volta.
+
+\begin{figure}[!htbp]
+  \centering
+  \figuraplaceholder{Figura 9}{Corte longitudinal com nervuras perpendiculares e corte transversal com nervuras paralelas, cotando $h_F$, $t_c$, projeção do pino e cobrimento.}
+  % \includegraphics[width=\linewidth]{figuras/figura_09.png}
+  \caption{Limitações geométricas da laje com fôrma de aço, com nervuras perpendiculares e paralelas à viga. Fonte: elaborado pelo autor, com base na ABNT NBR 8800:2024, L.2.6.1 a L.2.6.3 e Figura L.11.}
+  \label{fig:limites-forma}
+\end{figure}
+
+A direção das nervuras muda o modelo de cálculo. Com nervuras perpendiculares à viga, o caso das vigas secundárias, o concreto abaixo do topo da fôrma é desprezado na determinação das propriedades da seção, e a fôrma deve ser ancorada no perfil a cada $450\text{ mm}$ no máximo, por pinos ou soldas tampão (ABNT, 2024, item L.2.6.2). Com nervuras paralelas, o concreto das nervuras pode ser incluído se estiver todo comprimido, e a fôrma pode ser interrompida sobre a mesa para formar uma mísula de concreto (item L.2.6.3). A planilha despreza o concreto das nervuras também no caso paralelo, a favor da segurança.
+
+\caixaconceito{Na obra $\cdot$ ancoragem da fôrma e solda tampão}{%
+Antes da concretagem, a fôrma precisa estar presa ao perfil. A ancoragem impede que as chapas sejam levantadas pelo vento ou deslizem durante a montagem e faz com que a fôrma trave lateralmente a mesa superior do perfil na concretagem (Seção~9.1). Onde há pinos soldados através da fôrma, os próprios pinos fazem essa ancoragem. Nos demais pontos, por exemplo sobre vigas sem conectores ou para completar o espaçamento máximo de $450\text{ mm}$, usa-se a solda tampão.\par\vspace{4pt}
+No \textit{steel deck}, a solda tampão é um ponto de solda feito com eletrodo revestido diretamente sobre a chapa, sem furo prévio. O arco fura e funde a chapa fina e a superfície da mesa logo abaixo dela, e o metal de adição forma um botão de solda, da ordem de $15$ a $20\text{ mm}$ de diâmetro, que prende a chapa ao perfil. Em chapas muito finas, pode-se usar uma arruela de aço sobre a chapa para que o arco não abra um buraco grande. Em inglês, essa solda é chamada de \textit{puddle weld} ou \textit{arc spot weld}, e a especificação norte-americana prevê a ancoragem da fôrma a cada $460\text{ mm}$ por conectores, por esses pontos de solda ou por outros dispositivos definidos no projeto (AISC, 2016, seção I3.2c). Na prática também se usam parafusos autobrocantes ou pinos cravados a pólvora, conforme o manual do fabricante da fôrma.\par\vspace{4pt}
+\textbf{Atenção ao nome:} nas normas de soldagem, solda tampão (em inglês, \textit{plug weld}) designa a solda que preenche um furo feito previamente em uma das chapas. No contexto do \textit{steel deck}, o termo é usado para o ponto de solda feito sem furo.}
+
+\caixaexemplo{Exemplo $\cdot$ limitações de L.2.6.1}{%
+$h_F = 75\text{ mm} \le 75\text{ mm}$ $\cdot$ $b_F = 137\text{ mm} \ge 50\text{ mm}$ $\cdot$ pino $\varnothing 19 \le 19\text{ mm}$\par
+Projeção do pino: $125 - 75 = 50\text{ mm} \ge 40\text{ mm}$ $\cdot$ cobrimento sobre o pino: $140 - 125 = 15\text{ mm}$\par
+$t_c = 65\text{ mm} \ge 50\text{ mm}$: todas as limitações atendidas.}
+
+\subsection{A própria laje se verifica pelo catálogo}
+
+A laje mista em si é dimensionada pelo Anexo N da NBR 8800:2024. Na prática de projeto, porém, usam-se as tabelas do fabricante, que já trazem, para cada combinação de fôrma, espessura de chapa e altura de laje, o vão máximo sem escoramento e a carga sobreposta máxima em função do vão. A carga sobreposta é tudo o que atua além do peso próprio da laje: revestimentos, forro e sobrecarga, em valores característicos. Segundo o catálogo, as tabelas foram elaboradas pelo Anexo C da ABNT NBR 14323 e valem em temperatura ambiente ou em situação de incêndio até $30$ minutos (METFORM, s.d.).
+
+\begin{table}[!htbp]
+  \centering
+  \caption{Linha do catálogo para MF-75, chapa de $0{,}80\text{ mm}$ e laje de $140\text{ mm}$. Fonte: catálogo Metform Steel Deck, tabela da MF-75.}
+  \label{tab:catalogo-mf75}
+  \small
+  \begin{tabularx}{\linewidth}{Xllr}
+    \toprule
+    \textbf{Vão máx.\ sem escoramento (simples / duplo / triplo)} & \textbf{Peso próprio} & \textbf{Inércia da laje mista} & \textbf{Carga sobreposta máx.\ ($2700 / 2800 / 2900\text{ mm}$)} \\
+    \midrule
+    $2\,200$ / $3\,100$ / $3\,200\text{ mm}$ & $2{,}50\text{ kN/m}^2$ & $13{,}17\cdot 10^6\text{ mm}^4/\text{m}$ & $6{,}11$ / $5{,}51$ / $4{,}97\text{ kN/m}^2$ \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+A continuidade da chapa faz muita diferença na concretagem. A mesma chapa, contínua sobre três vãos, dispensa escoramento até $3\,200\text{ mm}$; em vão simples, só até $2\,200\text{ mm}$. Para a fase inicial, o Anexo N limita ainda a flecha da fôrma a $L_F/180$ ou $20\text{ mm}$, sem contar a sobrecarga de construção (ABNT, 2024, item N.2.2).
+
+\caixaexemplo{Exemplo $\cdot$ verificação da laje pelo catálogo}{%
+Escoramento: vão da laje $2\,800\text{ mm} \le 3\,200\text{ mm}$ (fôrma contínua sobre três vãos). Dispensa escoramento. Em vão simples, seria necessário escorar.\par
+Carga sobreposta: $g_2 + q = 1{,}55 + 3{,}25 = 4{,}80\text{ kN/m}^2 \le 5{,}51\text{ kN/m}^2$. Atende, com $87\%$ de utilização.}
+
+\subsection{Largura efetiva da laje}
+
+Nem toda a laje trabalha junto com a viga. As tensões de compressão na laje não são uniformes: são máximas sobre o perfil e diminuem à medida que se afastam dele, por causa da deformação por cisalhamento no plano da laje, fenômeno conhecido como \textit{shear lag}. A largura efetiva é a largura fictícia que, com tensão uniforme, produz a mesma resultante de compressão (Figura~\ref{fig:largura-efetiva}).
+
+\begin{figure}[!htbp]
+  \centering
+  \figuraplaceholder{Figura 10}{Planta do piso com a faixa de largura efetiva sobre a viga analisada e corte mostrando a distribuição real e equivalente das tensões na laje (\textit{shear lag}).}
+  % \includegraphics[width=\linewidth]{figuras/figura_10.png}
+  \caption{Largura efetiva: planta do piso e distribuição real e equivalente das tensões na laje. Fonte: elaborado pelo autor, com base na ABNT NBR 8800:2024, L.2.2.1.1.}
+  \label{fig:largura-efetiva}
+\end{figure}
+
+Em vigas mistas biapoiadas com laje maciça, mista ou com pré-laje, a largura efetiva de cada lado do eixo da viga é o menor entre três valores (ABNT, 2024, item L.2.2.1.1):
+\begin{itemize}
+  \item $1/8$ do vão da viga, entre centros dos apoios;
+  \item metade da distância entre o eixo da viga e o eixo da viga adjacente;
+  \item distância do eixo da viga à borda de uma laje em balanço.
+\end{itemize}
+
+Nas vigas contínuas e semicontínuas, o vão é substituído pela distância entre pontos de momento nulo (item L.2.2.2). Para lajes alveolares há um limite adicional, ligado ao comprimento das armaduras colocadas nos alvéolos (item L.2.2.1.2).
+
+\caixaexemplo{Exemplo $\cdot$ largura efetiva}{%
+$L/8 = 9{,}00/8 = 1{,}125\text{ m}$ $\cdot$ $e/2 = 2{,}80/2 = 1{,}40\text{ m}$ (para cada lado)\par
+$b = 2 \times 1{,}125 = 2{,}25\text{ m}$ (governa o vão, e $b$ fica menor que o espaçamento de $2{,}80\text{ m}$)}
+
+% ==============================================================================
+\section{Fase de construção}
+% ==============================================================================
+
+\subsection{Construção escorada e não escorada}
+
+Uma viga mista só é mista depois que o concreto endurece. Enquanto o concreto está fresco, alguém precisa carregar o seu peso, e há duas maneiras de construir:
+\begin{itemize}
+  \item \textbf{Construção não escorada:} a fôrma de aço apoia-se nas vigas, e o perfil de aço, sozinho, carrega o concreto fresco, a fôrma e a sobrecarga de construção. Ele flete e fica tensionado já nessa fase.
+  \item \textbf{Construção escorada:} antes da concretagem, colocam-se escoras (pontaletes) sob a viga, apoiadas no piso de baixo. O peso do concreto fresco desce pelas escoras, e o perfil fica descarregado. Só depois que o concreto endurece as escoras são retiradas, e aí o peso da laje passa para a viga, que já trabalha como seção mista.
+\end{itemize}
+
+A norma só aceita calcular a viga como escorada se duas condições forem cumpridas na obra (ABNT, 2024, item L.1.1.2-g):
+\begin{enumerate}
+  \item As escoras precisam realmente aliviar o perfil. O perfil deve ficar ``praticamente sem solicitação'' durante a concretagem, isto é, quase sem momento fletor e sem flechar. Escoras poucas, muito espaçadas ou apoiadas em base que cede deixam o perfil trabalhar sozinho, e então a viga não é escorada para efeito de cálculo.
+  \item As escoras só podem sair depois que o concreto atingir $75\%$ da sua resistência característica, ou seja, $f_c \ge 0{,}75\cdot f_{ck}$. Com o C30 do exemplo, isso significa esperar o concreto chegar a $22{,}5\text{ MPa}$, o que se confirma pelo ensaio de corpos de prova moldados na concretagem.
+\end{enumerate}
+
+Cumpridas as duas condições, quando as escoras são retiradas o concreto já colabora com o perfil, e a seção mista resiste a todas as ações, inclusive ao peso próprio da laje. Se qualquer uma delas falhar, a viga deve ser verificada como não escorada. A Figura~\ref{fig:tensoes-fases} compara as tensões nos dois casos, com os números do exemplo.
+
+\begin{figure}[!htbp]
+  \centering
+  \figuraplaceholder{Figura 11}{(a) Construção não escorada: superposição das tensões da fase 1 (perfil isolado) e fase 2 (seção mista); (b) construção escorada: todas as cargas aplicadas à seção mista.}
+  % \includegraphics[width=\linewidth]{figuras/figura_11.png}
+  \caption{Tensões nas construções não escorada e escorada. Fonte: elaborado pelo autor, com base na ABNT NBR 8800:2024, L.1.1.2-g e L.2.3.2. Valores do exemplo das Seções~14.1 a 14.4; o valor da viga escorada é ilustrativo ($g_1$ aplicado à seção mista de longa duração).}
+  \label{fig:tensoes-fases}
+\end{figure}
+
+Na construção não escorada, o perfil de aço, sozinho, deve resistir a todas as ações de cálculo aplicadas antes de o concreto atingir $0{,}75\cdot f_{ck}$ (ABNT, 2024, item L.2.3.2-a). Se a viga for biapoiada e suportar uma fôrma de aço devidamente ligada a ela, pode ser considerada contida lateralmente. Com outros tipos de laje, o perfil é verificado como destravado, com atenção à torção e a estados-limite localizados. Essa fase costuma ser esquecida e pode governar o dimensionamento de vigas longas com laje maciça.
+
+Depois da cura, as tensões das duas fases se somam na mesa inferior. O tipo de construção também aparece no grau de interação mínimo, pelo coeficiente $c_p$ (Seção~11.2).
+
+\paragraph{Como verificar a tensão na mesa inferior (construção não escorada).}
+Na construção não escorada, o perfil chega à fase~2 já tensionado pelo peso do concreto. As cargas da fase~2 somam-se a essa tensão, e a mesa inferior, que é a fibra mais tracionada, pode escoar em serviço antes do que um cálculo ``todo misto'' indicaria. Se ela escoar, deixam de valer as flechas calculadas por análise elástica (ABNT, 2024, item L.1.2.3). A verificação segue cinco passos:
+\begin{enumerate}
+  \item \textbf{Escolher o caso pela esbeltez da alma.} Se $h/t_w \le 3{,}76\sqrt{E/f_y}$, aplica-se o item L.2.3.2-b: momentos nominais da combinação rara de serviço e limite $f_y$. Se $3{,}76\sqrt{E/f_y} < h/t_w \le 5{,}70\sqrt{E/f_y}$, aplica-se o item L.2.3.2-c: momentos de cálculo da combinação última normal e limite $f_{yd} = f_y/\gamma_{a1}$.
+  \item \textbf{Separar as ações pelo instante em que entram.} Antes de o concreto atingir $0{,}75\cdot f_{ck}$: $g_1$, isto é, o peso do perfil, da fôrma e do concreto, sem a sobrecarga de construção, que é retirada (quadro abaixo). Depois: $g_2$ (revestimento, forro, dutos) e $q$ (uso e divisórias).
+  \item \textbf{Calcular os momentos de cada fase.} Na combinação rara, as permanentes e a variável principal entram com valor integral, sem coeficientes de ponderação, e as variáveis secundárias com $\psi_1$. Para a viga biapoiada: $M_{Ga,S} = g_1 L^2/8$ e $M_{L,S} = (g_2 + q) L^2/8$.
+  \item \textbf{Calcular a tensão de cada fase com a seção que a resiste.} O momento da fase~1 atua no perfil isolado, com módulo resistente $W_a$. O da fase~2 atua na seção mista, com o módulo efetivo $W_{\text{ef}}$ da interação parcial. Na planilha, $g_2$ usa o $W_{\text{ef}}$ de longa duração, com fluência, e $q$ o de curta duração.
+  \item \textbf{Somar e comparar com $f_y$.} No caso b, o limite é a resistência ao escoamento sem o coeficiente $\gamma_{a1}$: é uma verificação de serviço, cuja pergunta é ``o aço escoa sob as cargas reais?'', e não uma verificação de resistência com margem de segurança.
+\end{enumerate}
+\begin{equation}
+  \sigma = \frac{M_{Ga,S}}{W_a} + \frac{M_{L,S}}{W_{\text{ef}}} \le f_y
+  \label{eq:tensao-servico}
+\end{equation}
+
+\caixaexemplo{Exemplo $\cdot$ tensão na mesa inferior da V1}{%
+Alma: $h/t_w = 404/7{,}6 = 53{,}2 \le 3{,}76\sqrt{20\,000/34{,}5} = 3{,}76 \times 24{,}08 = 90{,}5 \rightarrow$ caso b (combinação rara, limite $f_y$)\par
+Fase 1: $M_{Ga,S} = g_1 L^2/8 = 7{,}94 \times 9{,}00^2/8 = 80{,}4\text{ kN}\cdot\text{m} = 8\,040\text{ kN}\cdot\text{cm}$\par
+$\sigma_1 = M_{Ga,S}/W_a = 8\,040/949{,}8 = 8{,}47\text{ kN/cm}^2 = 84{,}7\text{ MPa}$ (sem $q_c$)\par
+Fase 2, $g_2$: $M = 4{,}34 \times 9{,}00^2/8 = 43{,}9\text{ kN}\cdot\text{m} = 4\,394\text{ kN}\cdot\text{cm} \rightarrow \sigma = 4\,394/1\,344 = 3{,}27\text{ kN/cm}^2 = 32{,}7\text{ MPa}$ ($W_{\text{ef}}$ de longa duração)\par
+Fase 2, $q$: $M = 9{,}10 \times 9{,}00^2/8 = 92{,}1\text{ kN}\cdot\text{m} = 9\,214\text{ kN}\cdot\text{cm} \rightarrow \sigma = 9\,214/1\,446 = 6{,}37\text{ kN/cm}^2 = 63{,}7\text{ MPa}$ ($W_{\text{ef}}$ de curta duração)\par
+$\sigma = 84{,}7 + 32{,}7 + 63{,}7 = 181{,}1\text{ MPa} \le f_y = 345\text{ MPa}$. Atende, com $52\%$. Os módulos $W_{\text{ef}}$ são calculados na Seção~14.4.}
+
+\begin{table}[!htbp]
+  \centering
+  \caption{Resumo das três verificações ligadas à fase~1. Fonte: elaborado pelo autor, com base na ABNT NBR 8800:2024, itens L.2.3.2 e B.3.2.}
+  \label{tab:verificacoes-fase1}
+  \footnotesize
+  \begin{tabularx}{\linewidth}{XXXXX}
+    \toprule
+    \textbf{Verificação} & \textbf{Ações da fase 1} & \textbf{Combinação} & \textbf{Seção} & \textbf{Limite} \\
+    \midrule
+    Resistência do perfil na concretagem (L.2.3.2-a, Seção~9.2) & $g_1 + q_c$ & última de construção, com $\gamma$ & perfil isolado & $M_{Rd}$ do perfil, com $\gamma_{a1}$ \\
+    \addlinespace
+    Tensão na mesa inferior em serviço (L.2.3.2-b) & só $g_1$; depois $g_2 + q$ na seção mista & rara de serviço, sem $\gamma$ & $W_a$ na fase 1; $W_{\text{ef}}$ na fase 2 & $f_y$, sem $\gamma_{a1}$ \\
+    \addlinespace
+    Flecha da fase 1 e contraflecha (Seções~14.1 e 14.2) & só $g_1$ & serviço & $I_x$ do perfil isolado & contraflecha $\le \delta_1$ \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\caixaconceito{Dúvida frequente $\cdot$ a sobrecarga de construção entra na fase~1?}{%
+Entra, mas só em uma das verificações. Durante a concretagem há operários, equipamentos, mangotes e concreto acumulado sobre a fôrma. Esse peso é a sobrecarga de construção, aqui chamada de $q_c$, com valor característico de $1{,}0\text{ kN/m}^2$ uniforme ou $2{,}2\text{ kN/m}$ em linha, o que for mais nocivo (ABNT, 2024, item N.4.1.3). Ela aparece em duas perguntas diferentes sobre a fase~1, com respostas diferentes:\par\vspace{4pt}
+\textbf{O perfil aguenta a concretagem? Sim, com $q_c$.} É o estado-limite último da fase de construção: o perfil isolado deve resistir a todas as ações de cálculo aplicadas antes de o concreto atingir $0{,}75\cdot f_{ck}$ (ABNT, 2024, item L.2.3.2-a), na combinação última de construção (item 4.8.7.2.3). No exemplo, $q_{d,c} = 1{,}25 \times 7{,}18 + 1{,}15 \times 0{,}77 + 1{,}30 \times 2{,}80 = 13{,}49\text{ kN/m}$ e $M_{Sd,c} = 136{,}6\text{ kN}\cdot\text{m}$ (Seções~7.4 e 9.2).\par\vspace{4pt}
+\textbf{Que tensão fica no perfil depois que a viga vira mista? Só a de $g_1$.} A sobrecarga de construção é temporária: termina a concretagem, a equipe e os equipamentos saem da laje. Como o perfil trabalhou em regime elástico (o item anterior garante que ele não escoou), a tensão e a flecha causadas por $q_c$ desaparecem quando ela é retirada. O que fica ``travado'' no perfil quando o concreto endurece é apenas o efeito do peso próprio do perfil, da fôrma e do concreto. Depois disso, a seção mista recebe $g_2$ e $q$, e $q_c$ não volta a atuar junto com a sobrecarga de uso.\par\vspace{4pt}
+Por isso $q_c$ não entra em $M_{Ga,S}$ na verificação de tensão em serviço (Seção~14.4) nem na flecha $\delta_1$ usada para definir a contraflecha. O texto da NBR 8800 fala apenas em ``ações aplicadas antes'' de o concreto atingir $0{,}75\cdot f_{ck}$, sem citar a sobrecarga de construção. O comentário da especificação norte-americana é explícito: as tensões a superpor no perfil são as das cargas permanentes aplicadas antes da cura (AISC, 2016, Comentário I3.2a). Se algum material ficar estocado sobre a laje depois que o concreto endureceu, ele atua na seção mista e deve ser tratado como sobrecarga da fase~2.}
+
+\subsection{O perfil isolado na concretagem}
+
+O momento resistente do perfil isolado segue a seção 5.4.2 e o Anexo D da norma. Para cada estado-limite, calcula-se a esbeltez $\lambda$ e compara-se com os limites $\lambda_p$ e $\lambda_r$. Até $\lambda_p$, vale o momento de plastificação $M_{pl} = Z_x \cdot f_y$. Entre $\lambda_p$ e $\lambda_r$, interpola-se linearmente até $M_r = (f_y - \sigma_r)\cdot W$, com tensão residual $\sigma_r = 0{,}3\cdot f_y$. Acima de $\lambda_r$, vale o momento crítico elástico (ABNT, 2024, Anexo D).
+
+\begin{table}[!htbp]
+  \centering
+  \caption{Parâmetros de esbeltez para perfis I fletidos em torno do eixo de maior inércia. Fonte: ABNT NBR 8800:2024, Anexo D, Tabela D.1 e D.2.8.}
+  \label{tab:esbeltez-perfil}
+  \small
+  \begin{tabularx}{\linewidth}{lllll}
+    \toprule
+    \textbf{Estado-limite} & $\lambda$ & $\lambda_p$ & $\lambda_r$ & \textbf{Exemplo} \\
+    \midrule
+    FLM & $b_f/(2 t_f)$ & $0{,}38\sqrt{E/f_y}$ & $0{,}83\sqrt{E/(f_y - \sigma_r)}$ (laminados) & $7{,}04 \le 9{,}15$ \\
+    FLA & $h/t_w$ & $3{,}76\sqrt{E/f_y}$ & $5{,}70\sqrt{E/f_y}$ & $53{,}2 \le 90{,}5$ \\
+    FLT & $L_b/r_y$ & $1{,}76\sqrt{E/f_y}$ & D.2.8-a, com $C_b$ & contido pela fôrma \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+O momento resistente de cálculo é o menor dos três, dividido por $\gamma_{a1}$, e limitado a $1{,}5\cdot W\cdot f_y/\gamma_{a1}$ (ABNT, 2024, item 5.4.2.2).
+
+\caixaexemplo{Exemplo $\cdot$ perfil isolado na concretagem}{%
+Perfil W460x52,0 em aço ASTM A572 grau 50: $f_y = 34{,}5\text{ kN/cm}^2$ e $E = 20\,000\text{ kN/cm}^2$ ($200\,000\text{ MPa}$). Nas raízes, $E$ e $f_y$ entram na mesma unidade, e a razão fica adimensional.\par\vspace{3pt}
+\textbf{1. Solicitação na concretagem (Seção~7.4)}\par
+Concreto fresco: $2{,}56 \times 2{,}80 = 7{,}18\text{ kN/m}$; fôrma e perfil: $0{,}09 \times 2{,}80 + 0{,}51 = 0{,}77\text{ kN/m}$; $q_c = 1{,}0 \times 2{,}80 = 2{,}80\text{ kN/m}$\par
+$q_{d,c} = 1{,}25 \times 7{,}18 + 1{,}15 \times 0{,}77 + 1{,}30 \times 2{,}80 = 8{,}97 + 0{,}88 + 3{,}64 = 13{,}49\text{ kN/m}$\par
+$M_{Sd,c} = q_{d,c} L^2/8 = 13{,}49 \times 9{,}00^2/8 = 136{,}6\text{ kN}\cdot\text{m}$\par\vspace{3pt}
+\textbf{2. Flambagem local da mesa (FLM)}\par
+$\lambda = b_f/(2 t_f) = 152/(2 \times 10{,}8) = 7{,}04$\par
+$\lambda_p = 0{,}38\sqrt{E/f_y} = 0{,}38\sqrt{20\,000/34{,}5} = 0{,}38 \times 24{,}08 = 9{,}15$\par
+$\lambda = 7{,}04 \le \lambda_p = 9{,}15 \rightarrow$ mesa compacta: a FLM não reduz o momento, vale $M_{pl}$\par\vspace{3pt}
+\textbf{3. Flambagem local da alma (FLA)}\par
+$\lambda = h/t_w = d'/t_w = 404/7{,}6 = 53{,}2$\par
+$\lambda_p = 3{,}76\sqrt{E/f_y} = 3{,}76 \times 24{,}08 = 90{,}5$\par
+$\lambda = 53{,}2 \le \lambda_p = 90{,}5 \rightarrow$ alma compacta: vale $M_{pl}$\par\vspace{3pt}
+\textbf{4. Flambagem lateral com torção (FLT)}\par
+A fôrma de aço, ligada à mesa superior pelos pinos, trava o perfil biapoiado ao longo do vão (L.2.3.2-a) $\rightarrow L_b \approx 0$: a FLT não ocorre, vale $M_{pl}$\par\vspace{3pt}
+\textbf{5. Momento resistente de cálculo}\par
+$M_{pl} = Z_x f_y = 1\,095{,}9\text{ cm}^3 \times 34{,}5\text{ kN/cm}^2 = 37\,809\text{ kN}\cdot\text{cm}$\par
+Limite: $1{,}5 W_x f_y = 1{,}5 \times 949{,}8 \times 34{,}5 = 49\,152\text{ kN}\cdot\text{cm} \rightarrow M_{pl} = 37\,809\text{ kN}\cdot\text{cm} < 49\,152\text{ kN}\cdot\text{cm}$, o limite não governa\par
+$M_{Rd,a} = M_{pl}/\gamma_{a1} = 37\,809/1{,}10 = 34\,371\text{ kN}\cdot\text{cm} = 343{,}7\text{ kN}\cdot\text{m}$\par\vspace{3pt}
+\textbf{6. Verificação}\par
+$M_{Sd,c} = 136{,}6\text{ kN}\cdot\text{m} \le M_{Rd,a} = 343{,}7\text{ kN}\cdot\text{m}$. Atende: $136{,}6/343{,}7 = 0{,}40$, ou seja, $40\%$ de utilização.}
+
+Com laje maciça, o perfil não é travado pela fôrma, e o comprimento destravado $L_b$ passa a ser o vão inteiro, a menos que se prevejam travamentos provisórios. Nesse caso a FLT pode reduzir drasticamente o momento resistente: é o primeiro exercício proposto ao final do capítulo.
+
+% ==============================================================================
+\section{Conectores de cisalhamento}
+% ==============================================================================
+
+\subsection{Resistência do pino com cabeça}
+
+O conector mais usado é o pino com cabeça, nome adotado pela NBR 8800: uma barra cilíndrica de aço com uma cabeça forjada em uma das pontas, soldada ao perfil pela outra ponta. Na prática de obra, nos catálogos e nos projetos, a mesma peça é muito mais conhecida como \textit{stud bolt}, ou simplesmente \textit{stud}; o próprio catálogo da Metform usa esse nome (METFORM, s.d.). Os dois termos designam o mesmo conector. Uma curiosidade para quem vem da mecânica: no inglês técnico, \textit{stud bolt} costuma designar um prisioneiro, isto é, uma barra roscada nas duas pontas. A especificação norte-americana chama o conector de \textit{steel headed stud anchor} (AISC, 2016, capítulo I).
+
+A sua resistência é o menor entre dois modos de falha: o esmagamento do concreto em volta do pino e a ruptura do próprio pino (ABNT, 2024, item L.4.2.1.1):
+\begin{equation}
+  Q_{Rd} = \min\left\{\frac{\frac{1}{2} A_{cs}\sqrt{f_{ck} E_c}}{\gamma_{cs}} \; ; \; \frac{R_g R_p A_{cs} f_{ucs}}{\gamma_{cs}}\right\}
+  \label{eq:qrd-pino}
+\end{equation}
+onde $A_{cs}$ é a área da seção transversal do pino; $f_{ucs}$, a resistência à ruptura do aço do pino; $f_{ck}$ e $E_c$ em $\text{kN/cm}^2$; $\gamma_{cs} = 1{,}25$ nas combinações normais, especiais e de construção, e $1{,}10$ nas excepcionais. $R_g$ considera o efeito de grupo e $R_p$, a posição do pino em relação à fôrma.
+
+\begin{table}[!htbp]
+  \centering
+  \caption{Coeficientes $R_g$ e $R_p$ do pino com cabeça. Fonte: ABNT NBR 8800:2024, L.4.2.1.2 e L.4.2.1.3.}
+  \label{tab:rg-rp}
+  \small
+  \begin{tabularx}{\linewidth}{llX}
+    \toprule
+    \textbf{Coef.} & \textbf{Valor} & \textbf{Situação} \\
+    \midrule
+    $R_g$ & $1{,}00$ & Um pino por nervura perpendicular; qualquer número de pinos em linha soldados diretamente no perfil; nervura paralela com $b_F/h_F \ge 1{,}5$ \\
+    $R_g$ & $0{,}90$ & Laje alveolar \\
+    $R_g$ & $0{,}85$ & Dois pinos por nervura perpendicular; um pino em nervura paralela com $b_F/h_F < 1{,}5$ \\
+    $R_g$ & $0{,}70$ & Três ou mais pinos por nervura perpendicular \\
+    \midrule
+    $R_p$ & $0{,}75$ & Pino soldado diretamente no perfil; nervura paralela; nervura perpendicular com $e_{mh} \ge 50\text{ mm}$ \\
+    $R_p$ & $0{,}60$ & Nervura perpendicular com $e_{mh} < 50\text{ mm}$ \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+A distância $e_{mh}$ é medida da borda do fuste do pino até a alma da nervura, a meia altura da nervura, no sentido da força cortante que atua no conector (ABNT, 2024, Figura L.13). Uma mudança importante da edição 2024: o pino soldado diretamente no perfil, sem fôrma, passou a ter $R_p = 0{,}75$. Na edição de 2008 esse valor era $1{,}00$. Quando a ruptura do aço governa, isso reduz em $25\%$ a resistência do pino em relação a projetos antigos.
+
+\caixaconceito{Como o pino é soldado}{%
+O pino não é soldado com eletrodo, como uma solda de filete comum. Ele é fixado por um processo próprio, a soldagem de pinos por arco elétrico (em inglês, \textit{stud welding}), feita com uma pistola de soldagem ligada a uma fonte de energia de alta corrente com controle de tempo. O processo é praticamente automático: o operador posiciona a pistola e aperta o gatilho, e o equipamento faz o resto. Cada pino leva menos de um segundo para ser soldado, o que permite instalar centenas de pinos por dia com uma equipe pequena, e a solda é feita de cima, sobre a própria fôrma, sem acesso por baixo da laje. A Figura~\ref{fig:stud-welding} mostra a sequência:\par\vspace{4pt}
+\textbf{1. Posicionar.} O pino é encaixado no mandril da pistola. Na ponta a ser soldada ele recebe um anel cerâmico (em inglês, \textit{ferrule}), e a própria ponta do pino traz uma pequena carga de fluxo, que desoxida o metal fundido. O operador encosta o pino na chapa da fôrma, exatamente sobre a mesa do perfil, apoiando a pistola na vertical.\par
+\textbf{2. Abrir o arco.} Ao acionar o gatilho, a pistola levanta o pino alguns milímetros e abre um arco elétrico entre ele e a chapa, com corrente muito alta durante uma fração de segundo. O calor funde a ponta do pino, atravessa a chapa galvanizada da fôrma e funde a superfície da mesa do perfil.\par
+\textbf{3. Mergulhar.} Terminado o tempo programado, uma mola da pistola empurra o pino para dentro da poça de metal fundido e a corrente é cortada. O anel cerâmico contém o metal líquido e dá forma ao filete em volta da base do pino.\par
+\textbf{4. Retirar o anel.} Depois que o metal solidifica, o anel cerâmico é quebrado e descartado. Fica um filete contínuo em toda a volta do pino, que termina com o comprimento final previsto em projeto, um pouco menor que o original, porque parte dele é consumida na solda.\par\vspace{4pt}
+A soldagem através da fôrma é mais delicada que a soldagem direta na mesa. A chapa precisa estar bem assentada sobre o perfil, sem folga, e limpa e seca. A camada de zinco da chapa galvanizada, a umidade e eventual pintura da mesa prejudicam a fusão, e por isso a corrente e o tempo dependem da espessura da chapa e do revestimento. É por essa sensibilidade que a NBR 8800 lembra que a solda de pinos através da fôrma não é pré-qualificada pela AWS D1.1 e deve ser qualificada em cada obra (ABNT, 2024, item L.4.1). Na produção, o controle é simples: inspeção visual do filete, que deve envolver todo o pino, e ensaios de dobramento, em que alguns pinos são dobrados a martelo, no início de cada turno de trabalho, para verificar se a solda não se rompe (AWS, 2020).\par\vspace{4pt}
+O valor $f_{ucs} = 415\text{ MPa}$ é o usual na literatura técnica brasileira; a AWS D1.1 especifica $450\text{ MPa}$ para os pinos do tipo B.}
+
+\begin{figure}[!htbp]
+  \centering
+  \figuraplaceholder{Figura 12}{Quatro etapas da soldagem por arco elétrico (\textit{stud welding}): 1) posicionar o pino com anel cerâmico no mandril; 2) abrir o arco; 3) mergulhar na poça fundida; 4) retirar o anel cerâmico.}
+  % \includegraphics[width=\linewidth]{figuras/figura_12.png}
+  \caption{Sequência da soldagem de um pino com cabeça através da fôrma de aço. Fonte: elaborado pelo autor.}
+  \label{fig:stud-welding}
+\end{figure}
+
+\caixaexemplo{Exemplo $\cdot$ resistência de um pino $\varnothing 19$}{%
+Unidades: kN e cm. Lembre que $1\text{ kN/cm}^2 = 10\text{ MPa}$.\par\vspace{3pt}
+\textbf{1. Dados}\par
+Área do fuste: $A_{cs} = \pi d_{cs}^2/4 = \pi \times 1{,}9^2/4 = 2{,}835\text{ cm}^2$\par
+Concreto C30: $f_{ck} = 30\text{ MPa} = 3{,}0\text{ kN/cm}^2$; $E_c = 26\,072\text{ MPa} = 2\,607\text{ kN/cm}^2$ (Seção~6.2)\par
+Aço do pino: $f_{ucs} = 415\text{ MPa} = 41{,}5\text{ kN/cm}^2$; $\gamma_{cs} = 1{,}25$ (combinação normal)\par\vspace{3pt}
+\textbf{2. Coeficientes $R_g$ e $R_p$ (Tabela~\ref{tab:rg-rp})}\par
+Um pino por nervura, com nervuras perpendiculares à viga $\rightarrow R_g = 1{,}00$\par
+Pino centrado na nervura: $e_{mh} = (b_F - d_{cs})/2 = (137 - 19)/2 = 59\text{ mm} \ge 50\text{ mm} \rightarrow R_p = 0{,}75$ (Figura~\ref{fig:conectores}b)\par\vspace{3pt}
+\textbf{3. Esmagamento do concreto em volta do pino}\par
+$f_{ck} E_c = 3{,}0 \times 2\,607 = 7\,821 \rightarrow \sqrt{7\,821} = 88{,}44\text{ kN/cm}^2$\par
+$Q_{Rd1} = \frac{1}{2} A_{cs}\sqrt{f_{ck} E_c}/\gamma_{cs} = 0{,}5 \times 2{,}835 \times 88{,}44/1{,}25 = 125{,}4/1{,}25 = 100{,}3\text{ kN}$\par\vspace{3pt}
+\textbf{4. Ruptura do aço do pino}\par
+$Q_{Rd2} = R_g R_p A_{cs} f_{ucs}/\gamma_{cs} = 1{,}00 \times 0{,}75 \times 2{,}835 \times 41{,}5/1{,}25 = 88{,}24/1{,}25 = 70{,}6\text{ kN}$\par\vspace{3pt}
+\textbf{5. Resistência do pino}\par
+$Q_{Rd} = \min(100{,}3;\, 70{,}6) = 70{,}6\text{ kN}$. Governa a ruptura do aço, com $70\%$ do valor do concreto ($70{,}6/100{,}3 = 0{,}70$).}
+
+\subsection{Conector em perfil U}
+
+Em lajes maciças, pode-se usar como conector um perfil U laminado, com altura da seção de pelo menos $75\text{ mm}$, totalmente embutido em laje de face inferior plana e diretamente apoiada sobre a viga (ABNT, 2024, item L.4.2.2.1):
+\begin{equation}
+  Q_{Rd} = \frac{0{,}3\cdot (t_{fcs} + 0{,}5\cdot t_{wcs})\cdot L_{cs}\cdot \sqrt{f_{ck} E_c}}{\gamma_{cs}}
+  \label{eq:qrd-u}
+\end{equation}
+onde $t_{fcs}$ é a espessura da mesa do conector, tomada a meia distância entre a borda livre e a face da alma; $t_{wcs}$, a espessura da alma; $L_{cs}$, o comprimento do conector.
+
+Para U formado a frio, $t_{fcs} = t_{wcs} = \text{espessura da chapa}$, e recomenda-se chapa de pelo menos $4{,}75\text{ mm}$, raio interno de dobra de pelo menos $2t$, altura de pelo menos $75\text{ mm}$ e $12{,}5t$ e mesa de pelo menos $40\text{ mm}$ e $6t$, para evitar trincas nas dobras (item L.4.2.2.2). O U é instalado com uma das mesas apoiada no perfil e a alma perpendicular ao eixo da viga (item L.4.2.2.3), com solda contínua pelo menos nas duas extremidades da mesa, dimensionada para $1{,}25\cdot Q_{Rd}$ (item L.4.1). Ele não pode ser usado com \textit{steel deck}, que exige pino com cabeça (item L.2.6.1-c).
+
+\caixaexemplo{Exemplo complementar $\cdot$ U $101{,}6 \times 8{,}0$ em laje maciça de $120\text{ mm}$}{%
+Perfil U laminado de $101{,}6\text{ mm}$ ($4''$) com $8{,}0\text{ kg/m}$, com comprimento de $100\text{ mm}$, soldado sobre a mesa de uma viga com laje maciça de $120\text{ mm}$ e concreto C30. Unidades: kN e cm.\par\vspace{3pt}
+\textbf{1. Dados do conector:} $t_{fcs} = 7{,}52\text{ mm} = 0{,}752\text{ cm}$ (mesa, a meia largura); $t_{wcs} = 4{,}67\text{ mm} = 0{,}467\text{ cm}$ (alma); $L_{cs} = 100\text{ mm} = 10{,}0\text{ cm}$; $\sqrt{f_{ck} E_c} = 88{,}44\text{ kN/cm}^2$; $\gamma_{cs} = 1{,}25$.\par
+\textbf{2. Requisitos geométricos:} altura $101{,}6\text{ mm} \ge 75\text{ mm}$ (L.4.2.2.1); embutido na laje: $101{,}6\text{ mm} < 120\text{ mm}$.\par
+\textbf{3. Resistência (Equação~\ref{eq:qrd-u}):} espessura equivalente $t_{fcs} + 0{,}5 t_{wcs} = 0{,}752 + 0{,}5 \times 0{,}467 = 0{,}986\text{ cm}$; área equivalente $0{,}986 \times 10{,}0 = 9{,}86\text{ cm}^2$; $Q_{Rd} = 0{,}3 \times 9{,}86 \times 88{,}44/1{,}25 = 209{,}2\text{ kN}$.\par
+\textbf{4. Consequências para o projeto:} solda nas extremidades dimensionada para $1{,}25 Q_{Rd} = 261{,}5\text{ kN}$ (L.4.1); espaçamento mínimo $\max(101{,}6;\, 100) = 101{,}6\text{ mm}$ (L.4.3.4). $Q_{Rd} = 209{,}2\text{ kN}$ equivale a $2{,}96$ vezes a resistência de um pino $\varnothing 19$.}
+
+\subsection{Disposição dos conectores}
+
+\begin{figure}[!htbp]
+  \centering
+  \figuraplaceholder{Figura 13}{(a) Pino com cabeça cotado; (b) pino na nervura da MF-75 (base $119\text{ mm}$, topo $155\text{ mm}$, altura $75\text{ mm}$); (c) conector em perfil U; (d) espaçamentos mínimos e máximos sobre a mesa do perfil.}
+  % \includegraphics[width=\linewidth]{figuras/figura_13.png}
+  \caption{Pino com cabeça, conector em perfil U e espaçamentos mínimos e máximos sobre a mesa do perfil. Fonte: elaborado pelo autor, com base na ABNT NBR 8800:2024, L.2.6, L.4.1, L.4.2, L.4.3 e L.4.4, e no catálogo Metform.}
+  \label{fig:conectores}
+\end{figure}
+
+As regras de disposição estão nos itens L.4.1, L.4.3 e L.4.4 da NBR 8800:2024:
+\begin{itemize}
+  \item o pino deve ter, depois de instalado, comprimento de pelo menos $4$ diâmetros e ficar totalmente embutido no concreto, com cobrimento superior de pelo menos $10\text{ mm}$ (L.4.1);
+  \item em vigas biapoiadas com carga distribuída, os conectores podem ser uniformemente espaçados entre a seção de momento máximo e a de momento nulo; com cargas concentradas, verifica-se o número mínimo de conectores entre a seção da carga e o apoio (L.4.3.1);
+  \item espaçamento máximo de $8$ vezes a espessura total da laje e, com fôrma de nervuras perpendiculares, $915\text{ mm}$ (L.4.3.3);
+  \item espaçamento mínimo de $6$ diâmetros ao longo do vão e $4$ diâmetros na transversal; com fôrma de aço, $4$ diâmetros em qualquer direção; para o perfil U, o maior entre a altura e o comprimento do conector (L.4.3.4);
+  \item diâmetro do pino de no máximo $2{,}5$ vezes a espessura da mesa, exceto quando o pino fica sobre a alma (L.4.4.1);
+  \item cobrimento lateral de pelo menos $25\text{ mm}$, exceto em nervuras de fôrma de aço (L.4.4.2);
+  \item ancoragem da fôrma no perfil a cada $450\text{ mm}$ no máximo (L.2.6.2-b).
+\end{itemize}
+
+\caixaexemplo{Exemplo $\cdot$ disposição dos pinos}{%
+Um pino $\varnothing 19 \times 125\text{ mm}$ em cada nervura baixa da MF-75, sobre a alma do W460x52,0; laje de $140\text{ mm}$ (Figura~\ref{fig:conectores}b e \ref{fig:conectores}d).\par\vspace{3pt}
+\textbf{1. Espaçamento ao longo do vão:} $s = 274\text{ mm}$. Mínimo com fôrma: $4 d_{cs} = 76\text{ mm} \rightarrow 274 \ge 76\text{ mm}$ (L.4.3.4). Máximo: $\min(8 \times 140;\, 915) = 915\text{ mm} \rightarrow 274 \le 915\text{ mm}$ (L.4.3.3). Ancoragem: $274 \le 450\text{ mm}$ (L.2.6.2-b).\par
+\textbf{2. Diâmetro, comprimento e cobrimentos:} $2{,}5 t_f = 2{,}5 \times 10{,}8 = 27\text{ mm} \ge 19\text{ mm}$ (L.4.4.1). Comprimento: $125 \ge 4 d_{cs} = 76\text{ mm}$ (L.4.1). Projeção: $125 - 75 = 50\text{ mm} \ge 40\text{ mm}$; cobrimento superior: $140 - 125 = 15\text{ mm} \ge 10\text{ mm}$. Cobrimento lateral de $25\text{ mm}$ não se aplica em nervura de fôrma (L.4.4.2).\par
+\textbf{3. Número de pinos:} entre o apoio e o meio do vão, $L/2 = 4\,500\text{ mm} \rightarrow 4\,500/274 = 16{,}4 \rightarrow 16$ nervuras, $16$ pinos. Na viga inteira: $2 \times 16 = 32$ pinos.}
+
+% ==============================================================================
+\section{Grau de interação}
+% ==============================================================================
+
+\subsection{Força de cisalhamento e grau de interação}
+
+Para que a interação seja completa, os conectores situados entre a seção de momento máximo e o apoio precisam transmitir uma força igual à menor entre a resistência do perfil à tração e a resistência da laje à compressão (ABNT, 2024, itens L.1.1.2-f e L.2.3.1.1.2):
+\begin{equation}
+  F_{hd} = \min\left(A_a f_{yd} \; ; \; 0{,}85\,\eta_c\,f_{cd}\,b\,t_c\right)
+  \label{eq:fhd}
+\end{equation}
+em que $A_a$ é a área do perfil, $b$ a largura efetiva e $t_c$ a espessura de concreto considerada, que na laje mista é a espessura acima do topo da fôrma. O grau de interação é a razão entre a força que os conectores efetivamente transmitem, a soma das resistências $\Sigma Q_{Rd}$ dos conectores do meio vão, e essa força:
+\begin{equation}
+  \eta = \frac{\Sigma Q_{Rd}}{F_{hd}} \le 1{,}0
+  \label{eq:eta}
+\end{equation}
+
+\caixaexemplo{Exemplo $\cdot$ grau de interação}{%
+Unidades: kN e cm.\par
+\textbf{1. Resistência do perfil à tração:} $A_a = 66{,}6\text{ cm}^2$; $f_{yd} = 31{,}36\text{ kN/cm}^2 \rightarrow A_a f_{yd} = 66{,}6 \times 31{,}36 = 2\,088{,}8\text{ kN}$.\par
+\textbf{2. Resistência da laje à compressão:} $f_{cd} = 2{,}143\text{ kN/cm}^2$; $\eta_c = 1{,}0$; $b = 225\text{ cm}$; $t_c = 6{,}5\text{ cm} \rightarrow 0{,}85\,\eta_c\,f_{cd}\,b\,t_c = 0{,}85 \times 1{,}0 \times 2{,}143 \times 225 \times 6{,}5 = 2\,663{,}8\text{ kN}$.\par
+\textbf{3. Força para interação completa:} $F_{hd} = \min(2\,088{,}8;\, 2\,663{,}8) = 2\,088{,}8\text{ kN}$ (governa o perfil).\par
+\textbf{4. Força que os conectores transmitem:} $16$ pinos por meio vão $\rightarrow \Sigma Q_{Rd} = 16 \times 70{,}6 = 1\,129{,}6\text{ kN}$.\par
+\textbf{5. Grau de interação:} $\eta = 1\,129{,}6/2\,088{,}8 = 0{,}541 \approx 0{,}54 < 1{,}0$: interação parcial.}
+
+A área $A_a = 66{,}6\text{ cm}^2$ é a do catálogo, que já inclui os raios de concordância entre as mesas e a alma. Em perfis laminados, não há motivo para usar outro valor. O modelo de chapas, $A_a = 2 b_f t_f + h_w t_w$, só faz sentido em perfis soldados, que não têm esses raios.
+
+Para a interação completa seriam necessários $2\,088{,}8/70{,}6 = 29{,}6$, ou seja, $30$ pinos por meio vão. Isso não cabe com um pino por nervura a cada $274\text{ mm}$: exigiria dois pinos por nervura, com $R_g = 0{,}85$. Como se verá, com $\eta = 0{,}54$ a viga já atende com folga.
+
+\subsection{Grau de interação mínimo}
+
+A interação parcial é aceita desde que o grau de interação não fique abaixo de um mínimo. A edição 2024 da NBR 8800 reformulou esse limite (ABNT, 2024, item L.2.3.1.1.2). O grau de interação $\eta$ não pode ser inferior a $\eta_i$, e $\eta_i$, por sua vez, não pode ser menor que um limite inferior $\eta_{\text{lim}}$:
+\begin{equation}
+  \eta \ge \eta_i = c_p c_r^2 \eta_0 \ge \eta_{\text{lim}} \quad (\text{e } \eta_i \le 1{,}0)
+  \label{eq:etai}
+\end{equation}
+\begin{equation}
+  \eta_0 = 1 - \frac{E}{580 f_y}\left[0{,}75 - 0{,}45\rho - (0{,}030 - 0{,}015\rho) L_e\right]
+  \label{eq:eta0}
+\end{equation}
+\begin{equation}
+  \eta_{\text{lim}} = 0{,}4\, c_r\, (1 + 0{,}8\rho)
+  \label{eq:etalim}
+\end{equation}
+onde $\eta_0$ é o grau de interação básico; $E$ e $f_y$ em MPa; $L_e$ é o comprimento do trecho de momento positivo, em metros (na viga biapoiada, o próprio vão); $\rho = \frac{1}{2}(A_{fb}/A_{ft} - 1)$ mede a assimetria do perfil, em que $A_{fb}$ e $A_{ft}$ são as áreas das mesas inferior e superior, com $A_{fb} \le 3 A_{ft}$ (vale zero em perfis de mesas iguais); $c_p = 0{,}85$ para construção não escorada e $1{,}00$ para escorada; $c_r = M_{Sd}/M_{Rd} \ge 0{,}7$ representa a utilização da viga.
+
+Na prática, o mínimo exigido é o maior entre $c_p c_r^2 \eta_0$ e $\eta_{\text{lim}}$, sem passar de $1{,}0$. O raciocínio por trás da expressão é físico. Com poucos conectores, o escorregamento na interface cresce, e em vãos longos os conectores das extremidades precisariam de uma capacidade de deformação maior do que a que têm. Por isso $\eta_0$ aumenta com o vão $L_e$ e diminui com a ductilidade do aço. O coeficiente $c_r$ aparece ao quadrado em $\eta_i$ e de forma linear em $\eta_{\text{lim}}$: uma viga pouco solicitada pode ter menos conectores, mas $c_r$ nunca é tomado menor que $0{,}7$. A planilha usa no coeficiente $c_r$ o momento resistente com o grau de interação adotado.
+
+\caixaexemplo{Exemplo $\cdot$ grau de interação mínimo}{%
+\textbf{1. Assimetria do perfil:} W460x52,0 de mesas iguais: $A_{fb} = A_{ft} = 15{,}2 \times 1{,}08 = 16{,}42\text{ cm}^2 \rightarrow \rho = 0$.\par
+\textbf{2. Grau de interação básico (Equação~\ref{eq:eta0}):} $E/(580 f_y) = 200\,000/(580 \times 345) = 0{,}9995$; colchete: $0{,}75 - 0{,}030 \times 9{,}00 = 0{,}480 \rightarrow \eta_0 = 1 - 0{,}9995 \times 0{,}480 = 0{,}520$.\par
+\textbf{3. Coeficientes $c_p$ e $c_r$:} não escorada $\rightarrow c_p = 0{,}85$; $c_r = M_{Sd}/M_{Rd} = 311{,}9/607{,}7 = 0{,}513 < 0{,}7 \rightarrow c_r = 0{,}70$ ($M_{Rd}$ da Seção~12.3).\par
+\textbf{4. Parcela $c_p c_r^2 \eta_0$:} $0{,}85 \times 0{,}70^2 \times 0{,}520 = 0{,}217$.\par
+\textbf{5. Limite inferior (Equação~\ref{eq:etalim}):} $\eta_{\text{lim}} = 0{,}4 \times 0{,}70 \times (1 + 0) = 0{,}280$.\par
+\textbf{6. Grau de interação mínimo:} $\eta_i = \max(0{,}217;\, 0{,}280) = 0{,}280 \le 1{,}0$ (governa $\eta_{\text{lim}}$).\par
+Pinos mínimos por meio vão: $\eta_i F_{hd}/Q_{Rd} = 0{,}280 \times 2\,088{,}8/70{,}6 = 8{,}3 \rightarrow 9$ pinos.\par
+$\eta = 0{,}54 \ge \eta_i = 0{,}28$: atende. Foram adotados $16$ pinos por meio vão, contra $9$ necessários.}
+
+Para comparação, a edição de 2008 usava, para perfis de mesas iguais, $\eta \ge 1 - E/(578 f_y)\cdot(0{,}75 - 0{,}03 L_e)$, com mínimo de $0{,}40$. A nova expressão incorpora a assimetria do perfil, o tipo de construção e a utilização da viga.
+
+% ==============================================================================
+\section{Momento fletor resistente}
+% ==============================================================================
+
+\subsection{Distribuição plástica de tensões}
+
+Com alma compacta, o momento resistente vem da seção mista totalmente plastificada (ABNT, 2024, item L.2.3.1.1 e Figuras L.5 e L.6). As hipóteses são simples:
+\begin{itemize}
+  \item o concreto comprimido trabalha com tensão uniforme $0{,}85\,\eta_c\,f_{cd}$, em uma altura $a$ medida a partir do topo da laje;
+  \item o concreto tracionado é desprezado, porque o concreto fissura com tensões de tração baixas e, depois de fissurado, não transmite tração (Seção~8.1);
+  \item o aço trabalha com $f_{yd}$, tracionado abaixo da sua linha neutra plástica e comprimido acima dela;
+  \item o equilíbrio de forças é sempre $C_{cd} + C_{ad} = T_{ad}$, em que $C_{cd}$ é a compressão no concreto, $C_{ad}$ a compressão no aço e $T_{ad}$ a tração no aço.
+\end{itemize}
+
+Conforme a relação entre as resistências dos conectores, da laje e do perfil, a linha neutra plástica pode estar em três posições (Figura~\ref{fig:plastica}).
+
+\begin{figure}[!htbp]
+  \centering
+  \figuraplaceholder{Figura 14}{Distribuição plástica de tensões nos três casos de posição da linha neutra: (a) na laje; (b) no perfil com interação completa; (c) interação parcial, com seção, diagrama de tensões e resultantes.}
+  % \includegraphics[width=\linewidth]{figuras/figura_14.png}
+  \caption{Distribuição plástica de tensões nos três casos de posição da linha neutra. Fonte: elaborado pelo autor, com base na ABNT NBR 8800:2024, L.2.3.1.1.1 e Figuras L.5 e L.6.}
+  \label{fig:plastica}
+\end{figure}
+
+\begin{enumerate}
+  \item[(a)] \textbf{Linha neutra na laje:} $\Sigma Q_{Rd} \ge A_a f_{yd}$ e $0{,}85\,\eta_c\,f_{cd}\,b\,t_c \ge A_a f_{yd}$. O perfil inteiro fica tracionado.
+  \item[(b)] \textbf{Linha neutra no perfil, interação completa:} $\Sigma Q_{Rd} \ge 0{,}85\,\eta_c\,f_{cd}\,b\,t_c$ e $A_a f_{yd} \ge 0{,}85\,\eta_c\,f_{cd}\,b\,t_c$. A laje inteira comprimida não basta para equilibrar o perfil, e parte dele fica comprimida.
+  \item[(c)] \textbf{Interação parcial:} $\Sigma Q_{Rd}$ é menor que as duas resistências. A força na laje fica limitada ao que os conectores transmitem, $C_{cd} = \Sigma Q_{Rd}$, e surgem duas linhas neutras, uma na laje e outra no perfil.
+\end{enumerate}
+
+\subsection{Equações do momento resistente}
+
+As equações a seguir são as do item L.2.3.1.1.1 da NBR 8800:2024. Em todas, $t_c$ é a espessura de concreto considerada (altura total na laje maciça, espessura acima da fôrma na laje mista) e $h_F$ é a altura da fôrma, nula na laje maciça. O coeficiente $\beta_{vm}$ vale $1{,}00$ em vigas biapoiadas e contínuas; em semicontínuas, varia de $0{,}85$ a $0{,}95$ conforme a capacidade de rotação da ligação (Anexo O).
+
+\paragraph{Caso (a), linha neutra na laje:}
+\begin{equation}
+  T_{ad} = A_a f_{yd} \quad ; \quad a = \frac{T_{ad}}{0{,}85\,\eta_c\,f_{cd}\,b}
+  \label{eq:caso-a-forca}
+\end{equation}
+\begin{equation}
+  M_{Rd} = \beta_{vm}\, T_{ad} \left(d_1 + h_F + t_c - \frac{a}{2}\right)
+  \label{eq:caso-a-mrd}
+\end{equation}
+em que $d_1$ é a distância do centroide do perfil à face superior do perfil. O braço de alavanca vai do centroide do perfil ao centro do bloco comprimido.
+
+\paragraph{Caso (b), linha neutra no perfil com interação completa:}
+\begin{equation}
+  C_{cd} = 0{,}85\,\eta_c\,f_{cd}\,b\,t_c \quad ; \quad C_{ad} = \frac{1}{2}\left(A_a f_{yd} - C_{cd}\right)
+  \label{eq:caso-b-forca}
+\end{equation}
+\begin{equation}
+  M_{Rd} = \beta_{vm}\left[C_{ad}(d - y_t - y_c) + C_{cd}\left(\frac{t_c}{2} + h_F + d - y_t\right)\right]
+  \label{eq:caso-b-mrd}
+\end{equation}
+
+\caixaconceito{Atenção ao texto da norma $\cdot$ Equação~(\ref{eq:caso-b-mrd})}{%
+No item L.2.3.1.1.1-b da NBR 8800:2024, o primeiro termo dessa expressão aparece impresso como $\Sigma Q_{Rd}(d - y_t - y_c)$, e não como $C_{ad}(d - y_t - y_c)$. Pelo equilíbrio da seção, o termo correto é $C_{ad}$, e é assim que este texto e a planilha calculam. Três motivos:\par\vspace{4pt}
+\textbf{1. É o momento de $C_{ad}$.} $M_{Rd}$ é a soma dos momentos das forças de compressão em relação à resultante de tração $T_{ad}$. As compressões na seção são duas: $C_{cd}$, no centro da laje, e $C_{ad}$, no centroide da parte comprimida do perfil, a $y_c$ do topo. A distância $d - y_t - y_c$ é exatamente o braço de $C_{ad}$ (Figura~\ref{fig:plastica}b).\par
+\textbf{2. $\Sigma Q_{Rd}$ não é uma força que atua na seção no caso (b).} Com interação completa, os conectores transmitem só $C_{cd}$, e $\Sigma Q_{Rd} \ge C_{cd}$ é apenas a capacidade deles. Com $\Sigma Q_{Rd}$ na fórmula, bastaria colocar mais conectores para $M_{Rd}$ crescer sem limite, o que é fisicamente impossível: com interação completa, mais conectores não aumentam a resistência.\par
+\textbf{3. Coerência com o caso (c) e com a edição anterior.} No caso (c), Equação~(\ref{eq:caso-c-mrd}), a própria norma escreve $C_{ad}$ no mesmo termo, e a edição de 2008 usava $C_{ad}$ também no caso (b) (ABNT, 2008, item O.2.3.1.1.1-b).\par\vspace{4pt}
+Como $\Sigma Q_{Rd}$ e $C_{ad}$ são, em geral, valores bem diferentes, usar o texto impresso levaria a um momento resistente errado, e contra a segurança sempre que $\Sigma Q_{Rd}$ for maior que $C_{ad}$. Na dúvida, confira a errata mais recente da norma no catálogo da ABNT.}
+
+\paragraph{Caso (c), interação parcial:}
+\begin{equation}
+  C_{cd} = \Sigma Q_{Rd} \quad ; \quad a = \frac{C_{cd}}{0{,}85\,\eta_c\,f_{cd}\,b} \quad ; \quad C_{ad}\text{ como em (\ref{eq:caso-b-forca})}
+  \label{eq:caso-c-forca}
+\end{equation}
+\begin{equation}
+  M_{Rd} = \beta_{vm}\left[C_{ad}(d - y_t - y_c) + C_{cd}\left(t_c - \frac{a}{2} + h_F + d - y_t\right)\right]
+  \label{eq:caso-c-mrd}
+\end{equation}
+
+Nos casos (b) e (c), o momento é tomado em relação à resultante de tração $T_{ad}$, cujo centroide fica a $y_t$ da face inferior do perfil. A força no aço comprimido, com centroide a $y_c$ do topo do perfil, tem braço $d - y_t - y_c$. A expressão de $C_{ad}$ vem das duas equações de equilíbrio: $C_{cd} + C_{ad} = T_{ad}$ e $C_{ad} + T_{ad} = A_a f_{yd}$. A diferença entre (b) e (c) está apenas na força e na altura do bloco de concreto: em (b) a laje inteira está comprimida ($a = t_c$); em (c), $C_{cd} = \Sigma Q_{Rd}$ e $a < t_c$.
+
+Para localizar a linha neutra dentro do perfil: se a compressão $C_{ad}$ cabe na mesa superior, ela está na mesa; caso contrário, está na alma.
+\begin{equation}
+  \text{Mesa } (C_{ad} \le A_{af} f_{yd}): \quad y_p = \frac{C_{ad}}{A_{af} f_{yd}}\cdot t_f
+  \label{eq:yp-mesa}
+\end{equation}
+\begin{equation}
+  \text{Alma}: \quad y_p = t_f + h_w\cdot\frac{C_{ad} - A_{af} f_{yd}}{A_{aw} f_{yd}}
+  \label{eq:yp-alma}
+\end{equation}
+onde $A_{af}$ é a área da mesa superior; $A_{aw} = h_w t_w$, a área da alma; $y_p$ é medido do topo do perfil.
+
+\subsection{Momento resistente do exemplo}
+
+\caixaexemplo{Exemplo $\cdot$ momento fletor resistente (kN e cm)}{%
+Dados: $d = 45{,}0\text{ cm}$; $b_f = 15{,}2\text{ cm}$; $t_f = 1{,}08\text{ cm}$; $A_a = 66{,}6\text{ cm}^2$; $f_{yd} = 31{,}36\text{ kN/cm}^2$; $f_{cd} = 2{,}143\text{ kN/cm}^2$; $\eta_c = 1{,}0$; $b = 225\text{ cm}$; $t_c = 6{,}5\text{ cm}$; $h_F = 7{,}5\text{ cm}$; $\Sigma Q_{Rd} = 1\,129{,}6\text{ kN}$; $\beta_{vm} = 1{,}00$ (viga biapoiada).\par\vspace{3pt}
+\textbf{1. Qual dos três casos:} perfil $A_a f_{yd} = 2\,088{,}8\text{ kN}$; laje $0{,}85\,\eta_c\,f_{cd}\,b\,t_c = 2\,663{,}8\text{ kN}$. $\Sigma Q_{Rd} = 1\,129{,}6\text{ kN}$ é menor que as duas $\rightarrow$ \textbf{caso (c), interação parcial} (Figura~\ref{fig:plastica}c).\par
+\textbf{2. Compressão no concreto:} $C_{cd} = \Sigma Q_{Rd} = 1\,129{,}6\text{ kN}$; $a = 1\,129{,}6/(0{,}85 \times 1{,}0 \times 2{,}143 \times 225) = 1\,129{,}6/409{,}8 = 2{,}76\text{ cm} \le t_c = 6{,}5\text{ cm}$ (linha neutra da laje dentro da capa).\par
+\textbf{3. Forças no perfil (equilíbrio):} $C_{ad} = \frac{1}{2}(2\,088{,}8 - 1\,129{,}6) = 479{,}6\text{ kN}$; $T_{ad} = 1\,129{,}6 + 479{,}6 = 1\,609{,}2\text{ kN}$.\par
+\textbf{4. Posição da linha neutra no perfil:} $A_{af} f_{yd} = 15{,}2 \times 1{,}08 \times 31{,}36 = 514{,}9\text{ kN} \ge C_{ad} = 479{,}6\text{ kN} \rightarrow$ LNP na mesa (Equação~\ref{eq:yp-mesa}): $y_p = (479{,}6/514{,}9) \times 1{,}08 = 1{,}006\text{ cm}$.\par
+\textbf{5. Centroides das partes comprimida e tracionada:} parte comprimida $A_c = 15{,}2 \times 1{,}006 = 15{,}29\text{ cm}^2$, $y_c = y_p/2 = 0{,}503\text{ cm}$ (do topo). Parte tracionada $A_t = 66{,}6 - 15{,}29 = 51{,}31\text{ cm}^2$. Momento estático em relação à base: $y_t = (66{,}6 \times 22{,}5 - 15{,}29 \times 44{,}497)/51{,}31 = 818{,}1/51{,}31 = 15{,}94\text{ cm}$.\par
+\textbf{6. Braços de alavanca em relação a $T_{ad}$:} de $C_{ad}$: $45{,}0 - 15{,}94 - 0{,}503 = 28{,}55\text{ cm}$; de $C_{cd}$: $6{,}5 - 1{,}378 + 7{,}5 + 45{,}0 - 15{,}94 = 41{,}68\text{ cm}$.\par
+\textbf{7. Momento resistente (Equação~\ref{eq:caso-c-mrd}):} $M_{Rd} = 1{,}00 \times [479{,}6 \times 28{,}55 + 1\,129{,}6 \times 41{,}68] = 13\,694 + 47\,080 = 60\,774\text{ kN}\cdot\text{cm} = 607{,}7\text{ kN}\cdot\text{m}$.\par
+\textbf{8. Verificação:} $M_{Sd} = 311{,}9\text{ kN}\cdot\text{m} \le M_{Rd} = 607{,}7\text{ kN}\cdot\text{m}$. Atende, com $51\%$ de utilização ($+77\%$ de resistência em relação ao perfil isolado).}
+
+Vale notar a parcela de cada material: $47\,080/60\,774 = 77\%$ do momento resistente vem do binário entre a compressão no concreto e a tração no aço, que tem um braço de alavanca de $41{,}7\text{ cm}$. Com interação completa ($30$ pinos por meio vão), o perfil inteiro ficaria tracionado e a linha neutra subiria para dentro da laje, caso (a).
+
+\subsection{Alma semicompacta: verificação por tensões}
+
+Todo o cálculo plástico das Seções~12.1 a 12.3 parte de uma hipótese: a alma do perfil aguenta, sem flambar, as tensões de compressão que aparecem quando a seção plastifica. Isso só é garantido quando a alma é compacta, isto é, quando $h/t_w \le 3{,}76\sqrt{E/f_y}$. Se a alma for mais fina, ela pode sofrer flambagem local antes de a seção inteira escoar, e o momento de plastificação deixa de ser alcançável. A norma então troca o critério: em vez da resistência plástica, o limite passa a ser o início do escoamento, verificado com tensões elásticas (ABNT, 2024, item L.2.3.1.2). É a mesma lógica da especificação norte-americana, que adota o primeiro escoamento como limite para almas mais esbeltas (AISC, 2016, Comentário I3.2a).
+
+\begin{table}[!htbp]
+  \centering
+  \caption{Classificação da alma para momento positivo em viga mista (aço com $f_y = 345\text{ MPa}$). Fonte: ABNT NBR 8800:2024, L.2.3.1.1 e L.2.3.1.2. Limites com $E = 200\,000\text{ MPa}$: $\sqrt{200\,000/345} = 24{,}08$.}
+  \label{tab:alma-positiva}
+  \small
+  \begin{tabularx}{\linewidth}{lXll}
+    \toprule
+    \textbf{Alma} & \textbf{Limite de $h/t_w$} & $f_y = 345\text{ MPa}$ & \textbf{Procedimento} \\
+    \midrule
+    Compacta & $h/t_w \le 3{,}76\sqrt{E/f_y}$ & $\le 90{,}5$ & plástico (12.1 a 12.3) \\
+    Semicompacta & $3{,}76\sqrt{E/f_y} < h/t_w \le 5{,}70\sqrt{E/f_y}$ & $90{,}5$ a $137{,}2$ & elástico, por tensões (12.4) \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+Na prática, quase só perfis soldados caem nesse caso. Os perfis laminados W são fabricados com almas relativamente grossas para a sua altura. Na tabela de perfis W da Gerdau, o maior valor de $h/t_w$ é o do W410x38,8: $d'/t_w = 357/6{,}4 = 55{,}8$, bem abaixo de $90{,}5$. O W460x52,0 do exemplo tem $53{,}2$. Mesmo com aço de $f_y = 450\text{ MPa}$, cujo limite cai para $3{,}76\sqrt{200\,000/450} = 79{,}3$, todos continuam compactos (Gerdau, tabela de bitolas). Almas semicompactas aparecem em perfis soldados, como as séries VS e CVS ou perfis feitos sob medida, em que o projetista escolhe a espessura da alma e tende a usar chapas finas em vigas altas para economizar aço. O VS 1000x140, por exemplo, tem alma de $975 \times 8\text{ mm}$: $h/t_w = 975/8 = 121{,}9$, semicompacta.
+
+A verificação segue quatro passos:
+\begin{enumerate}
+  \item Montar a seção homogeneizada (Seção~14.1), dividindo a largura efetiva da laje por $\alpha_E$. Se a fluência for desfavorável, para as ações permanentes usa-se $3\alpha_E$, como nas flechas.
+  \item Calcular os módulos resistentes elásticos da seção homogeneizada: $(W_{tr})_i$, em relação à face inferior do perfil, e $(W_{tr})_s$, em relação à face superior da laje.
+  \item Calcular as tensões com o momento de cálculo $M_{Sd}$, da combinação última normal, e comparar com as resistências de cálculo:
+  \begin{equation}
+    \sigma_{td} = \frac{M_{Sd}}{(W_{tr})_i} \le f_{yd} \quad ; \quad \sigma_{cd} = \frac{M_{Sd}}{\alpha_E (W_{tr})_s} \le 0{,}85 f_{cd}
+    \label{eq:tensoes-elasticas}
+  \end{equation}
+  onde $\sigma_{td}$ é a tensão de tração na mesa inferior do perfil e $\sigma_{cd}$, a tensão de compressão na face superior da laje.
+  \item Com interação parcial, $(W_{tr})_i$ é substituído pelo módulo efetivo:
+  \begin{equation}
+    W_{\text{ef}} = W_a + \sqrt{\frac{\Sigma Q_{Rd}}{F_{hd}}}\left[(W_{tr})_i - W_a\right]
+    \label{eq:wef}
+  \end{equation}
+  Em construção não escorada, soma-se as tensões das duas fases na mesa inferior (ABNT, 2024, item L.2.3.2-c):
+  \begin{equation}
+    \frac{M_{Ga,Sd}}{W_a} + \frac{M_{L,Sd}}{W_{\text{ef}}} \le f_{yd}
+    \label{eq:nao-escorada-semicompacta}
+  \end{equation}
+\end{enumerate}
+
+\caixaexemplo{Exemplo ilustrativo $\cdot$ se a alma da V1 fosse semicompacta}{%
+A V1 tem alma compacta e não precisa desta verificação. O cálculo abaixo usa os números dela só para mostrar o procedimento e comparar com o resultado plástico. Unidades: kN e cm.\par\vspace{3pt}
+\textbf{1. Momentos de cálculo de cada fase (combinação normal, Seção~7.4):} $g_1$: $1{,}35 \times 7{,}18 + 1{,}25 \times 0{,}77 = 10{,}66\text{ kN/m} \rightarrow M_{Ga,Sd} = 107{,}9\text{ kN}\cdot\text{m}$; $g_2$: $1{,}50 \times 4{,}34 = 6{,}51\text{ kN/m} \rightarrow 65{,}9\text{ kN}\cdot\text{m}$; $q$: $1{,}50 \times 9{,}10 = 13{,}65\text{ kN/m} \rightarrow 138{,}2\text{ kN}\cdot\text{m}$. Soma $= 312{,}0\text{ kN}\cdot\text{m} \approx M_{Sd} = 311{,}9\text{ kN}\cdot\text{m}$.\par
+\textbf{2. Tensão na mesa inferior (Equação~\ref{eq:nao-escorada-semicompacta}):} Fase 1: $10\,790/949{,}8 = 113{,}6\text{ MPa}$; Fase 2 ($g_2$): $6\,590/1\,344 = 49{,}0\text{ MPa}$; Fase 2 ($q$): $13\,820/1\,446 = 95{,}6\text{ MPa} \rightarrow \sigma_{td} = 258{,}2\text{ MPa} \le f_{yd} = 313{,}6\text{ MPa}$ ($82\%$, contra $51\%$ no método plástico).\par
+\textbf{3. Tensão no topo da laje (a $59{,}0\text{ cm}$ da base):} $q$ (curta duração): $(W_{tr})_s = 76\,609/(59{,}0 - 47{,}1) = 6\,459\text{ cm}^3 \rightarrow 2{,}8\text{ MPa}$; $g_2$ (longa duração): $(W_{tr})_s = 57\,546/(59{,}0 - 38{,}7) = 2\,840\text{ cm}^3 \rightarrow 1{,}0\text{ MPa} \rightarrow \sigma_{cd} = 3{,}8\text{ MPa} \le 0{,}85 f_{cd} = 18{,}2\text{ MPa}$ ($21\%$).}
+
+\caixaconceito{Caso testado na planilha}{%
+Um VS 1000x140 com vão de $15\text{ m}$, vigas espaçadas de $3{,}00\text{ m}$ e um pino a cada três nervuras tem $h/t_w = 121{,}9 > 90{,}5$: regime elástico. A flexão atende, com $\sigma_{td} = 148\text{ MPa} \le 314\text{ MPa}$ e $\sigma_{cd} = 3{,}2\text{ MPa}$. Mas $\eta = 0{,}18 < \eta_i = 0{,}29$: há $9$ pinos por meio vão, e o mínimo é $15$. Faltam conectores. É um bom lembrete de que a viga precisa atender a todas as verificações, não só ao momento.}
+
+% ==============================================================================
+\section{Força cortante}
+% ==============================================================================
+
+Em vigas mistas de alma cheia, a força cortante resistente de cálculo considera apenas o perfil de aço, conforme a seção 5.4.3 da norma (ABNT, 2024, item L.3.1). Para seções I fletidas em torno do eixo de maior inércia (ABNT, 2024, itens 5.4.3.1.1 e 5.4.3.1.2):
+\begin{equation}
+  \lambda = \frac{h}{t_w} \quad ; \quad \lambda_p = 1{,}10\sqrt{\frac{k_v E}{f_y}} \quad ; \quad \lambda_r = 1{,}37\sqrt{\frac{k_v E}{f_y}}
+  \label{eq:cortante-lambda}
+\end{equation}
+\begin{equation}
+  V_{pl} = 0{,}60\, A_w\, f_y \quad \text{com } A_w = d\, t_w
+  \label{eq:vpl}
+\end{equation}
+\begin{equation}
+  \lambda \le \lambda_p: V_{Rd} = \frac{V_{pl}}{\gamma_{a1}} \quad ; \quad \lambda_p < \lambda \le \lambda_r: V_{Rd} = \frac{\lambda_p}{\lambda}\frac{V_{pl}}{\gamma_{a1}} \quad ; \quad \lambda > \lambda_r: V_{Rd} = 1{,}24\left(\frac{\lambda_p}{\lambda}\right)^2 \frac{V_{pl}}{\gamma_{a1}}
+  \label{eq:vrd}
+\end{equation}
+onde $k_v = 5{,}34$ para almas sem enrijecedores transversais ou com $a/h > 3$; com enrijecedores, $k_v = 5{,}0 + 5/(a/h)^2$. Na edição de 2008, sem enrijecedores, usava-se $5{,}0$.
+
+\caixaexemplo{Exemplo $\cdot$ força cortante}{%
+W460x52,0: $d = 450\text{ mm}$; $t_w = 7{,}6\text{ mm}$; $h = d' = 404\text{ mm}$; $k_v = 5{,}34$. Unidades: kN e cm.\par
+\textbf{1. Esbeltez da alma:} $\lambda = 404/7{,}6 = 53{,}2$; $\sqrt{5{,}34 \times 200\,000/345} = 55{,}64 \rightarrow \lambda_p = 1{,}10 \times 55{,}64 = 61{,}2$; $\lambda_r = 76{,}2$. Como $\lambda = 53{,}2 \le \lambda_p = 61{,}2$, vale $V_{pl}$.\par
+\textbf{2. Força cortante de plastificação:} $A_w = 45{,}0 \times 0{,}76 = 34{,}2\text{ cm}^2 \rightarrow V_{pl} = 0{,}60 \times 34{,}2 \times 34{,}5 = 707{,}9\text{ kN}$.\par
+\textbf{3. Resistência de cálculo:} $V_{Rd} = 707{,}9/1{,}10 = 643{,}6\text{ kN}$.\par
+\textbf{4. Solicitações e verificação:} serviço $V_{Sd} = 30{,}81 \times 9{,}00/2 = 138{,}6\text{ kN}$ ($22\%$); concretagem $V_{Sd,c} = 13{,}49 \times 9{,}00/2 = 60{,}7\text{ kN}$ ($9\%$). $V_{Sd} = 138{,}6\text{ kN} \le V_{Rd} = 643{,}6\text{ kN}$. Atende.}
+
+Em vigas mistas biapoiadas com carga distribuída, o cortante raramente governa. Ele passa a importar com cargas concentradas próximas aos apoios ou com perfis de alma muito fina. A planilha também confere o cortante na fase de construção.
+
+% ==============================================================================
+\section{Estados-limite de serviço}
+% ==============================================================================
+
+Uma viga mista que resiste bem no estado-limite último ainda pode deformar ou vibrar demais. Em vigas mistas de piso, as verificações de serviço frequentemente governam o dimensionamento: a flecha, por causa da fluência e da retração do concreto e da fase não escorada; e a vibração, porque os pisos mistos são leves e têm pouco amortecimento.
+
+\subsection{Seção homogeneizada e rigidez efetiva}
+
+Para calcular deslocamentos, as propriedades da seção mista são obtidas por homogeneização: a largura efetiva da laje é dividida pela razão modular $\alpha_E = E/E_c$, transformando o concreto em uma área equivalente de aço. Despreza-se o concreto tracionado e admite-se distribuição linear de deformações (ABNT, 2024, item L.1.2.1). A Figura~\ref{fig:homogeneizada} mostra a transformação.
+
+\begin{figure}[!htbp]
+  \centering
+  \figuraplaceholder{Figura 15}{(a) Seção real com laje de $2\,250\text{ mm}$ de largura efetiva, capa de $65\text{ mm}$ e perfil W460x52,0; (b) seção homogeneizada de curta duração ($\alpha_E = 7{,}67$, $b/\alpha_E = 293\text{ mm}$); (c) longa duração ($3\alpha_E = 23{,}0$, $b/(3\alpha_E) = 98\text{ mm}$).}
+  % \includegraphics[width=\linewidth]{figuras/figura_15.png}
+  \caption{Seção real e seções homogeneizadas de curta e longa duração do exemplo. Fonte: elaborado pelo autor, com base na ABNT NBR 8800:2024, L.1.2.1 e L.1.2.2.}
+  \label{fig:homogeneizada}
+\end{figure}
+
+\caixaconceito{Conceitos de concreto armado $\cdot$ fissuração, fluência e retração}{%
+\textbf{Fissuração.} Quando a tensão de tração no concreto passa da sua resistência à tração, da ordem de $10\%$ da resistência à compressão, ele fissura: abrem-se trincas finas, e a região fissurada deixa de transmitir tração. Na viga mista biapoiada a laje fica comprimida, por isso o concreto abaixo da linha neutra, que seria tracionado, é desprezado nos cálculos. Na verificação de vibração, em que as deformações são muito pequenas, a norma permite considerar o concreto não fissurado (ABNT, 2024, Anexo I).\par\vspace{4pt}
+\textbf{Fluência.} Sob uma carga mantida, o concreto continua se deformando ao longo de meses e anos, mesmo sem aumento da carga. A deformação final pode chegar a duas ou três vezes a deformação imediata. É um fenômeno análogo à fluência dos polímeros, mas que ocorre no concreto em temperatura ambiente e com tensões de serviço. Para as cargas permanentes, o concreto se comporta como se fosse menos rígido, e é isso que o fator $3$ aplicado à razão modular representa.\par\vspace{4pt}
+\textbf{Retração.} Mesmo sem nenhuma carga, o concreto encurta à medida que perde água e que o cimento reage. Na viga mista, os conectores impedem a laje de encurtar livremente sobre o perfil, e esse encurtamento impedido faz a viga fletir: é a flecha por retração, calculada na Seção~14.3. A retração também é a principal causa de fissuras na superfície das lajes, controladas pela tela soldada.}
+
+Os efeitos de longa duração, fluência e retração, devem ser considerados conforme a ABNT NBR 6118. Simplificadamente, a norma permite multiplicar a razão modular por $3$ para as ações permanentes e para os valores quase permanentes das ações variáveis (ABNT, 2024, item L.1.2.1). Isso reduz a contribuição do concreto e, portanto, a rigidez da seção.
+
+Com interação parcial, o escorregamento na interface também reduz a rigidez. Em regiões de momento positivo, usa-se o momento de inércia efetivo (ABNT, 2024, item L.1.2.2.1):
+\begin{equation}
+  I_{\text{ef}} = I_a + \sqrt{\frac{\Sigma Q_{Rd}}{F_{hd}}}\left(I_{tr} - I_a\right)
+  \label{eq:ief}
+\end{equation}
+onde $I_a$ é o momento de inércia do perfil de aço e $I_{tr}$, o da seção homogeneizada com interação completa.
+
+A especificação norte-americana usa a mesma expressão, chamada de inércia equivalente, e recomenda não aplicá-la quando a relação entre a força nos conectores e a força de compressão na laje for menor que $0{,}25$. O comentário observa também que a redução adicional de $0{,}75$, usada em edições antigas, foi abandonada (AISC, 2016, Comentário I3, equação C-I3-3).
+
+\caixaexemplo{Exemplo $\cdot$ seção homogeneizada}{%
+Unidades: cm. Perfil W460x52,0: $A_a = 66{,}6\text{ cm}^2$, $I_a = 21\,370\text{ cm}^4$, centroide a $22{,}5\text{ cm}$ da base. Laje: $b = 225\text{ cm}$, $t_c = 6{,}5\text{ cm}$, centro a $55{,}75\text{ cm}$ da base; $A_c = 1\,462{,}5\text{ cm}^2$.\par\vspace{3pt}
+\textbf{1. Razões modulares:} $\alpha_E = 7{,}67$ (curta duração); $3\alpha_E = 23{,}0$ (longa duração).\par
+\textbf{2. Curta duração:} largura equivalente $225/7{,}67 = 29{,}33\text{ cm}$, área $190{,}65\text{ cm}^2$. Linha neutra: $y = (66{,}6 \times 22{,}5 + 190{,}65 \times 55{,}75)/(66{,}6 + 190{,}65) = 47{,}14\text{ cm} < 52{,}5\text{ cm}$. Pelo teorema de Steiner: $I_{tr} = 21\,370 + 66{,}6(47{,}14 - 22{,}5)^2 + 29{,}33 \times 6{,}5^3/12 + 190{,}65(55{,}75 - 47{,}14)^2 = 76\,609\text{ cm}^4$.\par
+\textbf{3. Longa duração ($3\alpha_E = 23{,}0$):} largura $9{,}78\text{ cm}$, área $63{,}55\text{ cm}^2$. Linha neutra: $y = 38{,}74\text{ cm}$; $I_{tr} = 57\,546\text{ cm}^4$.\par
+\textbf{4. Interação parcial (Equação~\ref{eq:ief}):} $\sqrt{\Sigma Q_{Rd}/F_{hd}} = \sqrt{0{,}541} = 0{,}735$. $I_{\text{ef},s} = 21\,370 + 0{,}735(76\,609 - 21\,370) = 61\,992\text{ cm}^4$ (curta); $I_{\text{ef},l} = 21\,370 + 0{,}735(57\,546 - 21\,370) = 47\,973\text{ cm}^4$ (longa).}
+
+\subsection{As parcelas de flecha do Anexo B}
+
+O Anexo B da NBR 8800:2024 decompõe o deslocamento vertical de uma viga em parcelas (Figura~\ref{fig:flechas}), definidas no item B.3.1:
+\begin{itemize}
+  \item $\delta_0$, a contraflecha da viga;
+  \item $\delta_1$, o deslocamento das ações permanentes, sem efeitos de longa duração;
+  \item $\delta_2$, o deslocamento causado pelos efeitos de longa duração das ações permanentes;
+  \item $\delta_3$, o deslocamento das ações variáveis, incluindo, quando houver, os efeitos de longa duração dos seus valores quase permanentes;
+  \item $\delta_{\text{tot}} = \delta_1 + \delta_2 + \delta_3$, o deslocamento total, e $\delta_{\max} = \delta_{\text{tot}} - \delta_0$, o deslocamento máximo descontada a contraflecha.
+\end{itemize}
+
+\begin{figure}[!htbp]
+  \centering
+  \figuraplaceholder{Figura 16}{Deformadas em escala da viga do exemplo: contraflecha $\delta_0 = 15\text{ mm}$ e parcelas $\delta_1 = 18{,}9\text{ mm}$, $\delta_2 = 5{,}4\text{ mm}$, $\delta_3 = 3{,}2\text{ mm}$ e $\delta_{\max} = 12{,}5\text{ mm}$.}
+  % \includegraphics[width=\linewidth]{figuras/figura_16.png}
+  \caption{Parcelas do deslocamento vertical da viga do exemplo. Fonte: elaborado pelo autor, com base na ABNT NBR 8800:2024, Anexo B, Figura B.1, e nos valores da Seção~14.3.}
+  \label{fig:flechas}
+\end{figure}
+
+Para vigas de piso, o limite é $L/350$. Se houver paredes de alvenaria solidarizadas à viga, o deslocamento também não pode passar de $15\text{ mm}$ (ABNT, 2024, Tabela B.1). A combinação depende do efeito que se quer controlar: $\delta_{\max}$, que normalmente se relaciona ao aspecto da estrutura, usa a combinação quase permanente; quando o deslocamento pode afetar equipamentos, causar empoçamento ou danificar elementos não estruturais, usa-se a combinação frequente ou a rara (item B.2.4). Na maioria dos casos, quem causa danos a paredes e forros é a parcela $\delta_2 + \delta_3$ (item B.3.3). A contraflecha pode ser deduzida até o valor de $\delta_1$ (item B.3.2).
+
+\caixaconceito{Na fábrica $\cdot$ como se dá a contraflecha a uma viga}{%
+A contraflecha é uma curvatura para cima dada à viga na fábrica, para compensar a flecha das cargas permanentes. Com ela, a viga fica aproximadamente reta depois de carregada. A NBR 8800 diz como considerá-la no cálculo, mas não regula como ela é feita: isso é um procedimento de fabricação. Os três processos mais usados são:\par\vspace{4pt}
+\textbf{A frio, em prensa de contraflechar.} É o processo mais comum para perfis laminados, como os W. O perfil é apoiado em dois pontos, e uma prensa hidráulica aplica forças concentradas até que o aço escoe localmente. Ao retirar a carga, a deformação plástica fica, e a viga mantém a curvatura.\par
+\textbf{A quente, por aquecimento localizado.} Com maçarico, aquecem-se regiões em forma de cunha na alma, com a base da cunha na mesa superior, e a própria mesa superior nesses trechos. O aço aquecido tenta se dilatar, é impedido pelo material frio em volta e, ao esfriar, encurta, curvando a viga para cima.\par
+\textbf{Na própria fabricação do perfil soldado.} Em perfis soldados, como os VS, a chapa da alma é cortada já com a borda curva, em máquina de corte por plasma ou oxicorte, antes da soldagem das mesas.\par\vspace{4pt}
+No projeto, indica-se o valor da contraflecha no meio do vão e a sua tolerância, e a viga deve ser montada com a curvatura para cima. Contraflecha demais também é problema: se a viga flete menos que o previsto, ela fica com a ``barriga'' para cima, e a laje, nivelada por cima, fica mais fina no meio do vão. Por isso costuma-se adotar um valor um pouco menor que a flecha calculada para o peso do concreto fresco. Contraflechas pequenas, como os $15\text{ mm}$ do exemplo, ficam perto do limite de precisão de muitos processos: confirme com o fabricante se o valor é viável.}
+
+\subsection{Flechas do exemplo}
+
+Todas as parcelas de carga vêm da fórmula clássica da flecha no meio do vão de uma viga biapoiada sob carga uniformemente distribuída, $\delta = 5 p L^4/(384 E I)$. Como o vão e o aço são os mesmos em todas as parcelas, convém separar a parte constante:
+\begin{equation}
+  \delta = \frac{k\cdot p}{I} \quad \text{com } k = \frac{5 L^4}{384 E}
+  \label{eq:flecha-k}
+\end{equation}
+No exemplo, com $L = 900\text{ cm}$ e $E = 20\,000\text{ kN/cm}^2$: $k = 5 \times 900^4/(384 \times 20\,000) = 427\,148\text{ cm}^3$.
+
+A retração do concreto precisa de atenção à parte. A NBR 8800 não traz uma expressão para a flecha por retração no método simplificado, e por isso usa-se o modelo do Comentário da especificação norte-americana (AISC, 2016, Comentário I3, Figura C-I3.2):
+\begin{equation}
+  P_{sh} = \varepsilon_{sh}\, E_{c,\text{ef}}\, A_c \quad ; \quad \delta_{sh} = \frac{P_{sh}\, e_{sh}\, L^2}{8 E I_{\text{ef},l}}
+  \label{eq:retracao}
+\end{equation}
+onde $\varepsilon_{sh} = 0{,}0002$ na falta de dados; $E_{c,\text{ef}} = E_c/3$; $A_c = b\, t_c$; $e_{sh}$ é a distância do centro da laje à linha neutra da seção de longa duração.
+
+\begin{table}[!htbp]
+  \centering
+  \caption{Parcelas de flecha do exemplo. Fonte: ABNT NBR 8800:2024, Anexo B e L.1.2; AISC 360-16, Comentário I3; planilha didática, Memorial 11. As parcelas são somadas sem arredondamento.}
+  \label{tab:flechas}
+  \small
+  \begin{tabularx}{\linewidth}{lXr}
+    \toprule
+    \textbf{Parcela} & \textbf{Expressão e significado} & \textbf{mm} \\
+    \midrule
+    $\delta_{g1}$ & $k\cdot g_1/I_a$: perfil isolado sob o concreto fresco & $15{,}9$ \\
+    $\delta_1$ & $\delta_{g1} + k\cdot g_2/I_{\text{ef},s}$ & $18{,}9$ \\
+    $\delta_{fl}$ & $k\cdot g_2\cdot(1/I_{\text{ef},l} - 1/I_{\text{ef},s})$: fluência das permanentes & $0{,}9$ \\
+    $\delta_{sh}$ & $P_{sh}\cdot e_{sh}\cdot L^2/(8 E I_{\text{ef},l})$: retração & $4{,}6$ \\
+    $\delta_2$ & $\delta_{fl} + \delta_{sh}$ & $5{,}4$ \\
+    $\delta_3$ & $\psi_2\cdot q = 0{,}4 \times 9{,}10\text{ kN/m}$ na seção de curta duração, mais a sua fluência (quase permanente) & $3{,}2$ \\
+    \midrule
+    $\delta_{\text{tot}}$ & $\delta_1 + \delta_2 + \delta_3$ & $\mathbf{27{,}5}$ \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\caixaexemplo{Exemplo $\cdot$ flechas}{%
+Unidades: kN e cm. $k = 427\,148\text{ cm}^3$ (Equação~\ref{eq:flecha-k}). $g_1 = 0{,}0794\text{ kN/cm}$; $g_2 = 0{,}0434\text{ kN/cm}$; $q = 0{,}0910\text{ kN/cm}$; $\psi_2 = 0{,}4 \rightarrow \psi_2 q = 0{,}0364\text{ kN/cm}$.\par\vspace{3pt}
+\textbf{1. $\delta_1$ (permanentes, imediato):} $\delta_{g1} = 427\,148 \times 0{,}0794/21\,370 = 1{,}587\text{ cm}$; $\delta_{g2} = 427\,148 \times 0{,}0434/61\,992 = 0{,}299\text{ cm} \rightarrow \delta_1 = 1{,}886\text{ cm} = 18{,}9\text{ mm}$.\par
+\textbf{2. $\delta_2$ (longa duração):} $\delta_{fl} = 18\,538 \times (1/47\,973 - 1/61\,992) = 0{,}087\text{ cm}$. Retração: $E_{c,\text{ef}} = 2\,607/3 = 869\text{ kN/cm}^2$; $P_{sh} = 0{,}0002 \times 869 \times 1\,462{,}5 = 254\text{ kN}$; $e_{sh} = 55{,}75 - 38{,}74 = 17{,}0\text{ cm}$; $\delta_{sh} = 254 \times 17{,}0 \times 900^2/(8 \times 20\,000 \times 47\,973) = 0{,}456\text{ cm} \rightarrow \delta_2 = 0{,}543\text{ cm} = 5{,}4\text{ mm}$.\par
+\textbf{3. $\delta_3$ (variáveis, quase permanente):} $\delta_3 = 427\,148 \times 0{,}0364/47\,973 = 0{,}324\text{ cm} = 3{,}2\text{ mm}$.\par
+\textbf{4. Total e contraflecha:} $\delta_{\text{tot}} = 27{,}5\text{ mm}$; $\delta_0 = 15\text{ mm} \le \delta_1 = 18{,}9\text{ mm}$; $\delta_{\max} = 27{,}5 - 15 = 12{,}5\text{ mm} \le L/350 = 25{,}7\text{ mm}$ ($49\%$). Atende.\par
+\textbf{5. Paredes e forros (combinação rara):} $\delta_{3,\text{rara}} = 0{,}627 + 0{,}073 = 0{,}700\text{ cm} = 7{,}0\text{ mm} \rightarrow \delta_2 + \delta_{3,\text{rara}} = 12{,}4\text{ mm} \le 25{,}7\text{ mm}$. Atende.}
+
+Sem a contraflecha, $\delta_{\max}$ seria de $27{,}5\text{ mm}$ e a viga não atenderia. As alternativas seriam um perfil mais alto, mais conectores (que aumentam $I_{\text{ef}}$) ou o escoramento da viga, que elimina a parcela $\delta_{g1}$ do perfil isolado. Repare também que mais da metade da flecha total vem da fase de construção: essa é a principal desvantagem da construção não escorada. A planilha sugere a contraflecha como múltiplo de $5\text{ mm}$ da flecha $\delta_{g1}$.
+
+\subsection{Tensão em serviço na mesa inferior}
+
+As flechas foram calculadas por análise elástica, que só vale se o aço não escoar em serviço (ABNT, 2024, item L.1.2.3). Em vigas biapoiadas não escoradas com alma compacta, a norma exige, na mesa inferior da seção mais solicitada (ABNT, 2024, item L.2.3.2-b):
+\begin{equation}
+  \sigma = \frac{M_{Ga,S}}{W_a} + \frac{M_{L,S}}{W_{\text{ef}}} \le f_y
+  \label{eq:tensao-servico-2}
+\end{equation}
+onde $M_{Ga,S}$ e $M_{L,S}$ são os momentos nominais da combinação rara de serviço devidos às ações aplicadas antes e depois de o concreto atingir $0{,}75\cdot f_{ck}$; $W_a$ é o módulo resistente elástico do perfil e $W_{\text{ef}}$, o da seção mista com interação parcial, em relação à face inferior. A sobrecarga de construção não entra em $M_{Ga,S}$, porque é retirada antes de a viga passar a trabalhar como mista (Seção~9.1).
+
+\caixaexemplo{Exemplo $\cdot$ tensão em serviço}{%
+Unidades: kN e cm. Alma compacta ($h/t_w = 53{,}2 \le 90{,}5$) $\rightarrow$ item L.2.3.2-b.\par
+\textbf{1. Momentos de cada fase:} antes da cura $M_{Ga,S} = 7{,}94 \times 9{,}00^2/8 = 80{,}4\text{ kN}\cdot\text{m} = 8\,040\text{ kN}\cdot\text{cm}$; depois da cura $g_2$: $43{,}9\text{ kN}\cdot\text{m} = 4\,394\text{ kN}\cdot\text{cm}$; $q$: $92{,}1\text{ kN}\cdot\text{m} = 9\,214\text{ kN}\cdot\text{cm}$.\par
+\textbf{2. Módulos resistentes:} $W_a = 949{,}8\text{ cm}^3$; $(W_{tr})_i = 76\,609/47{,}14 = 1\,625\text{ cm}^3$ (curta) e $57\,546/38{,}74 = 1\,485\text{ cm}^3$ (longa); $W_{\text{ef},s} = 949{,}8 + 0{,}735(1\,625 - 949{,}8) = 1\,446\text{ cm}^3$; $W_{\text{ef},l} = 949{,}8 + 0{,}735(1\,485 - 949{,}8) = 1\,344\text{ cm}^3$.\par
+\textbf{3. Tensões na mesa inferior:} $\sigma_1 = 8\,040/949{,}8 = 84{,}7\text{ MPa}$; $\sigma_{2,g2} = 4\,394/1\,344 = 32{,}7\text{ MPa}$; $\sigma_{2,q} = 9\,214/1\,446 = 63{,}7\text{ MPa} \rightarrow \sigma = 181{,}1\text{ MPa} \le f_y = 345\text{ MPa}$ ($52\%$). Atende.}
+
+\subsection{Vibração do piso pelo caminhar de pessoas}
+
+O Anexo I é novo na edição 2024. A edição de 2008 tratava o tema no seu Anexo L, de forma bem mais simples: a frequência natural do piso nunca podia ser inferior a $3\text{ Hz}$ e, na avaliação simplificada, pisos em que as pessoas caminham deviam ter frequência de pelo menos $4\text{ Hz}$, condição considerada atendida se a flecha das permanentes (sem a parcela dependente do tempo) mais as variáveis, na combinação frequente e com as vigas biapoiadas, não passasse de $20\text{ mm}$ (ABNT, 2008, itens L.1.2 e L.3.2). Não havia cálculo de aceleração. O método simplificado se aplica a pisos regulares com carga distribuída, excitados pelo caminhar de pessoas, com frequência natural entre $3\text{ Hz}$ e $9\text{ Hz}$. Abaixo de $3\text{ Hz}$, exige-se uma avaliação mais precisa (ABNT, 2024, itens I.2 e I.3).
+
+\begin{figure}[!htbp]
+  \centering
+  \figuraplaceholder{Figura 17}{(a) Planta do piso com vigas principais e secundárias, a viga V1 destacada e o modo de vibração A; (b) roteiro do método simplificado com os valores da V1.}
+  % \includegraphics[width=\linewidth]{figuras/figura_17.png}
+  \caption{Planta do piso, modo de vibração A e roteiro do método simplificado com os valores da V1. Fonte: elaborado pelo autor, com base na ABNT NBR 8800:2024, Anexo I, Figuras I.1 e I.2.}
+  \label{fig:vibracao}
+\end{figure}
+
+O roteiro tem quatro passos:
+\begin{enumerate}
+  \item \textbf{Frequência fundamental}, obtida do deslocamento $\delta$ do piso sob o próprio peso, em milímetros (itens I.2.2 e Tabela I.1):
+  \begin{equation}
+    f_0 = \frac{18}{\sqrt{\delta}}
+    \label{eq:f0}
+  \end{equation}
+  \item \textbf{Massa modal}, com a largura colaborante $B_b$ limitada a $2/3$ da largura do piso e $k_b = 2{,}0$ para vigas internas (item I.2.3):
+  \begin{equation}
+    M = 0{,}5\, m\, L_b\, B_b \quad ; \quad B_b = k_b\, L_b \left(\frac{D_s}{D_b}\right)^{0{,}25}
+    \label{eq:massa-modal}
+  \end{equation}
+  onde $m$ é a massa por área; $L_b$ o vão da viga; $D_s$ e $D_b$ as rigidezes à flexão da laje e da viga por unidade de largura.
+  \item \textbf{Resposta do piso}, pela aceleração de pico ou pelo valor eficaz, a critério do responsável técnico (item I.2.4), com $P_0 = 750\text{ N}$ e $\beta$ o coeficiente de amortecimento:
+  \begin{equation}
+    a_p = \frac{0{,}55\, P_0\, e^{-0{,}35 f_0}}{2 \beta M}
+    \label{eq:ap}
+  \end{equation}
+  \begin{equation}
+    a_{w,\text{rms}} = \frac{W \zeta P_0}{2\sqrt{2}\beta M} \quad ; \quad R = \frac{a_{w,\text{rms}}}{0{,}005}
+    \label{eq:awrms}
+  \end{equation}
+  \item \textbf{Comparação} com os limites da Tabela I.3, que dependem da ocupação.
+\end{enumerate}
+
+As hipóteses do item I.1.7 são importantes: as vigas podem ser consideradas mistas mesmo que tenham sido calculadas como não mistas, o concreto é considerado não fissurado e usa-se um módulo de elasticidade dinâmico de $38\text{ GPa}$. A massa é calculada com a combinação frequente e $\psi_1 = \psi_2 = 0{,}1$ (item I.1.5). A norma distingue dois modos de vibrar (Figura I.1): o modo A, controlado pelas vigas secundárias, e o modo B, controlado pelo conjunto de vigas principais e secundárias. O modo B depende dos dados da viga principal e fica fora deste exemplo.
+
+\caixaexemplo{Exemplo $\cdot$ vibração}{%
+Modo A, viga V1 interna ($k_b = 2{,}0$). Unidades: N e mm, salvo indicação.\par\vspace{3pt}
+\textbf{1. Massa por área ($\psi_1 = 0{,}1$):} laje $2{,}56$ + fôrma $0{,}09$ + $g_2$ $1{,}55$ + $0{,}1 \times 3{,}25$ ($0{,}33$) + perfil $0{,}18 = 4{,}71\text{ kN/m}^2 \rightarrow m = 4\,707/9{,}81 = 480\text{ kg/m}^2$.\par
+\textbf{2. Inércia da viga para vibração:} $\alpha_{E,\text{din}} = 200/38 = 5{,}26 \rightarrow$ largura eq.\ $42{,}75\text{ cm}$, área eq.\ $277{,}9\text{ cm}^2$. Linha neutra a $49{,}32\text{ cm}$; $I_b = 81\,743\text{ cm}^4 = 8{,}174\cdot 10^8\text{ mm}^4$. Laje: $I_s = 13\,170\text{ mm}^4/\text{mm}$.\par
+\textbf{3. Deslocamento e frequência:} $\delta = \frac{m g b}{384 E}\left(\frac{5 L_b^4}{I_b} + \frac{b^3}{I_s}\right) = 1{,}717\cdot 10^{-7}(4{,}013\cdot 10^7 + 0{,}167\cdot 10^7) = 7{,}18\text{ mm}$. $f_0 = 18/\sqrt{7{,}18} = 6{,}72\text{ Hz}$ (entre $3$ e $9\text{ Hz}$).\par
+\textbf{4. Massa modal:} $D_s/D_b = 13\,170/(8{,}174\cdot 10^8/2\,800) = 0{,}0451 \rightarrow 0{,}0451^{0{,}25} = 0{,}461$; $B_b = 2{,}0 \times 9{,}00 \times 0{,}461 = 8{,}30\text{ m} \le 13{,}3\text{ m}$; $M = 0{,}5 \times 480 \times 9{,}00 \times 8{,}30 = 17\,928\text{ kg}$.\par
+\textbf{5. Amortecimento:} $\beta = 0{,}010 + 0{,}010 + 0{,}010 = 0{,}030$.\par
+\textbf{6. Aceleração de pico (Equação~\ref{eq:ap}):} $a_p = 0{,}55 \times 750 \times e^{-0{,}35 \times 6{,}72}/(2 \times 0{,}030 \times 17\,928) = 0{,}0365\text{ m/s}^2 \le 0{,}050\text{ m/s}^2$ ($73\%$). Atende.\par
+\textbf{7. Valor eficaz (Equação~\ref{eq:awrms}):} $W = 1{,}0$, $\zeta = 0{,}10 \rightarrow a_{w,\text{rms}} = 0{,}0493\text{ m/s}^2 \rightarrow R = 9{,}9 > 8$ (não atenderia por esse critério).}
+
+Os dois critérios não são equivalentes, e neste exemplo levam a conclusões diferentes. A norma deixa a escolha ao responsável técnico. O resultado mostra que o piso está próximo do limite. Divisórias de piso a teto acrescentariam de $0{,}02$ a $0{,}05$ ao amortecimento, e com elas o piso atenderia aos dois critérios.
+
+% ==============================================================================
+\section{Síntese do exemplo}
+% ==============================================================================
+
+\begin{table}[!htbp]
+  \centering
+  \caption{Resumo das verificações da viga V1. Fonte: planilha didática, aba Resumo e Memorial 1 a 13, com os itens da ABNT NBR 8800:2024 indicados.}
+  \label{tab:sintese}
+  \small
+  \begin{tabularx}{\linewidth}{Xlrl}
+    \toprule
+    \textbf{Verificação} & \textbf{Item} & \textbf{Resultado} & \textbf{Situação} \\
+    \midrule
+    Perfil na concretagem & L.2.3.2-a & $136{,}6 \le 343{,}7\text{ kN}\cdot\text{m}$ ($40\%$) & Atende \\
+    Flexão da viga mista & L.2.3.1.1 & $311{,}9 \le 607{,}7\text{ kN}\cdot\text{m}$ ($51\%$) & Atende \\
+    Grau de interação & L.2.3.1.1.2 & $\eta = 0{,}54 \ge \eta_i = 0{,}28$ & Atende \\
+    Força cortante & L.3.1 e 5.4.3 & $138{,}6 \le 643{,}6\text{ kN}$ ($22\%$) & Atende \\
+    Conectores: geometria e espaçamento & L.4.1, L.4.3, L.4.4 & $\varnothing 19 \times 125\text{ mm}$, $s = 274\text{ mm}$ & Atende \\
+    Flecha máxima $\delta_{\max}$ & Anexo B & $12{,}5 \le 25{,}7\text{ mm}$ ($49\%$) & Atende \\
+    Flecha $\delta_2 + \delta_3$ (rara) & B.3.3 & $12{,}4 \le 25{,}7\text{ mm}$ ($48\%$) & Atende \\
+    Tensão em serviço & L.2.3.2-b & $181{,}1 \le 345\text{ MPa}$ ($52\%$) & Atende \\
+    Vibração: $f_0$ e $a_p$ & Anexo I & $6{,}72\text{ Hz}$; $0{,}037 \le 0{,}050\text{ m/s}^2$ ($73\%$) & Atende \\
+    Laje \textit{steel deck} & Catálogo Metform & Sem escoras; $4{,}80 \le 5{,}51\text{ kN/m}^2$ ($87\%$) & Atende \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+A viga W460x52,0 atende a todas as verificações com $32$ pinos $\varnothing 19 \times 125\text{ mm}$, um por nervura, e contraflecha de $15\text{ mm}$. As utilizações mostram onde está a folga. A flexão está em $51\%$ e o cortante em $22\%$, mas o perfil não poderia ser reduzido por causa dos estados-limite de serviço: sem a contraflecha, a flecha máxima seria de $27{,}5\text{ mm}$, acima do limite de $25{,}7\text{ mm}$ ($107\%$); a vibração está em $73\%$ pela aceleração de pico e não atende pelo fator de resposta $R$; e a laje usa $87\%$ da carga sobreposta do catálogo. Esse é o comportamento típico de vigas mistas de piso: os estados-limite de serviço governam.
+
+% ==============================================================================
+\section{O que mudou da edição 2008 para a 2024}
+% ==============================================================================
+
+\begin{table}[!htbp]
+  \centering
+  \caption{Principais mudanças da NBR 8800 que afetam vigas mistas. Fonte: ABNT NBR 8800:2008 e ABNT NBR 8800:2024, itens indicados.}
+  \label{tab:mudancas-2024}
+  \footnotesize
+  \begin{tabularx}{\linewidth}{lXX}
+    \toprule
+    \textbf{Tema} & \textbf{NBR 8800:2008} & \textbf{NBR 8800:2024} \\
+    \midrule
+    Anexo de vigas mistas & Anexo O & Anexo L \\
+    \addlinespace
+    Módulo do concreto & $E_{ci} = 5\,600\sqrt{f_{ck}}$; $E_c = E_{cs} = 0{,}85 E_{ci} = 4\,760\sqrt{f_{ck}}$, sem efeito do agregado (4.5.3.1) & $E_{ci} = \alpha_{ag}\cdot 5\,600\sqrt{f_{ck}}$; $E_c = 0{,}85 E_{ci}$: entra o tipo de agregado (4.6.3.1) \\
+    \addlinespace
+    Bloco de compressão do concreto & $0{,}85 f_{cd}$ (O.2.3.1.1.1) & $0{,}85\,\eta_c\,f_{cd}$, $\eta_c = (40/f_{ck})^{1/3} \le 1$, reduz o bloco para $f_{ck} > 40\text{ MPa}$ (L.1.3.4) \\
+    \addlinespace
+    $M_{Rd}$, caso (b): LNP no perfil & $\beta_{vm}[C_{ad}(d - y_t - y_c) + C_{cd}(t_c/2 + h_F + d - y_t)]$ (O.2.3.1.1.1-b) & Mesma expressão, mas o texto impresso traz $\Sigma Q_{Rd}$ no lugar de $C_{ad}$ no primeiro termo; ver Seção~12.2 (L.2.3.1.1.1-b) \\
+    \addlinespace
+    $R_p$, pino soldado direto no perfil, sem fôrma & $1{,}00$ (O.4.2.1.3-a) & $0{,}75$ (L.4.2.1.3-a). Com \textit{steel deck} perpendicular e $e_{mh} \ge 50\text{ mm}$, $0{,}75$ nas duas edições \\
+    \addlinespace
+    Grau de interação mínimo & Mesas iguais: $1 - \frac{E}{578 f_y}(0{,}75 - 0{,}03 L_e) \ge 0{,}40$ ($L_e \le 25\text{ m}$). Mesas diferentes ($A_{fi} \le 3 A_{fs}$): $1 - \frac{E}{578 f_y}(0{,}30 - 0{,}015 L_e) \ge 0{,}40$ ($L_e \le 20\text{ m}$) (O.2.3.1.1.2) & $\eta_i = c_p c_r^2 \eta_0 \ge \eta_{\text{lim}} = 0{,}4 c_r(1 + 0{,}8\rho)$, com $\eta_0 = 1 - \frac{E}{580 f_y}[0{,}75 - 0{,}45\rho - (0{,}030 - 0{,}015\rho)L_e]$: assimetria contínua por $\rho$, $c_p$ e $c_r$ (L.2.3.1.1.2) \\
+    \addlinespace
+    Cortante, alma sem enrijecedores & $k_v = 5{,}0$ (5.4.3.1.1) & $k_v = 5{,}34$ (5.4.3.1.1) \\
+    \addlinespace
+    Vibração de pisos & Anexo L: $f \ge 3\text{ Hz}$ sempre; método simplificado por limite de flecha ($20\text{ mm}$ para caminhar, $9\text{ mm}$ e $5\text{ mm}$ para atividades rítmicas) & Anexo I: $f_0$ pela Tabela I.1, massa modal, amortecimento da Tabela I.2 e aceleração de pico ou valor eficaz comparados com a Tabela I.3 \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+Na prática, projetos e memoriais feitos pela edição de 2008 tendem a usar resistências de conector maiores, por causa do $R_p = 1{,}00$ para pinos soldados diretamente no perfil, e um grau de interação mínimo diferente. Ao comparar resultados com um projeto antigo, essas são as diferenças a procurar. A FLT de perfis isolados também teve as expressões reorganizadas (Tabela G.1 na edição de 2008, Tabela D.1 na de 2024): ao comparar com um cálculo antigo, confira as duas.
+
+% ==============================================================================
+\section{Considerações finais e exercícios propostos}
+% ==============================================================================
+
+Cinco ideias resumem o capítulo:
+\begin{itemize}
+  \item perfil, laje e conectores trabalham juntos, e o grau de interação define a resistência e a rigidez da viga;
+  \item a força que os conectores precisam transmitir é $F_{hd} = \min(A_a f_{yd};\, 0{,}85\,\eta_c\,f_{cd}\,b\,t_c)$, e o grau de interação $\eta = \Sigma Q_{Rd}/F_{hd}$ não pode ser menor que $\eta_i$;
+  \item com alma compacta, o momento resistente vem da distribuição plástica de tensões, em um de três casos de posição da linha neutra;
+  \item na construção não escorada, é preciso verificar o perfil isolado na concretagem e a tensão em serviço na mesa inferior;
+  \item em pisos, as flechas e a vibração costumam governar o dimensionamento.
+\end{itemize}
+
+Ficam fora do escopo deste capítulo, e são bons temas para aprofundamento, as vigas contínuas e semicontínuas, com momento negativo, flambagem lateral com distorção e ligações mistas do Anexo O, a armadura de costura da laje (ABNT, 2024, item L.1.3.4), que é a armadura transversal colocada na laje sobre a viga para impedir que a laje se rompa por cisalhamento ao longo da linha dos conectores, onde a força transmitida pelos pinos se espalha pela largura efetiva, e o detalhamento das lajes alveolares e com pré-laje.
+
+\subsection{Exercícios com a planilha}
+
+Cada exercício parte do exemplo original. Para cada um, anote qual verificação passa a governar e confira pelo menos uma conta à mão com o Memorial da planilha.
+\begin{enumerate}
+  \item \textbf{Construção.} Troque a laje para maciça de $120\text{ mm}$, com comprimento destravado $L_b = 9\text{ m}$ na concretagem. Observe a FLT do perfil isolado e discuta a necessidade de travamentos provisórios ou de escoramento.
+  \item \textbf{Escoramento.} Mude o exemplo para construção escorada. Compare $\delta_{\max}$, a tensão em serviço e o coeficiente $c_p$ do grau de interação mínimo.
+  \item \textbf{Conectores.} Use dois pinos por nervura. Compare $Q_{Rd}$ (com $R_g = 0{,}85$), $\eta$, $M_{Rd}$ e as flechas, e confira o espaçamento transversal mínimo de $4$ diâmetros.
+  \item \textbf{Perfil.} Teste o W410x46,1 no lugar do W460x52,0. Qual verificação falha primeiro, e por quê?
+  \item \textbf{Uso.} Mude o uso para lojas e shopping centers. Veja a nova carga de uso de $4{,}0\text{ kN/m}^2$, a dispensa da carga de divisórias e a verificação da laje pelo catálogo.
+  \item \textbf{Vibração.} Some $\beta_{\text{div}} = 0{,}02$ de divisórias de piso a teto. Recalcule $a_p$ e $R$ e discuta o critério de aceitação.
+\end{enumerate}
+
+% ==============================================================================
+\begin{thebibliography}{9}
+% ==============================================================================
+
+\bibitem{aws2020}
+AMERICAN WELDING SOCIETY. \textbf{AWS D1.1/D1.1M:} Structural welding code -- steel. Miami: AWS, 2020.
+
+\bibitem{aisc2016}
+AMERICAN INSTITUTE OF STEEL CONSTRUCTION. \textbf{ANSI/AISC 360-16:} Specification for structural steel buildings. Chicago: AISC, 2016.
+
+\bibitem{nbr6120}
+ASSOCIAÇÃO BRASILEIRA DE NORMAS TÉCNICAS. \textbf{ABNT NBR 6120:} Ações para o cálculo de estruturas de edificações. Rio de Janeiro: ABNT, 2019.
+
+\bibitem{nbr8800_2008}
+ASSOCIAÇÃO BRASILEIRA DE NORMAS TÉCNICAS. \textbf{ABNT NBR 8800:} Projeto de estruturas de aço e de estruturas mistas de aço e concreto de edificações. Rio de Janeiro: ABNT, 2008.
+
+\bibitem{nbr8800_2024}
+ASSOCIAÇÃO BRASILEIRA DE NORMAS TÉCNICAS. \textbf{ABNT NBR 8800:} Projeto de estruturas de aço e de estruturas mistas de aço e concreto de edificações. Rio de Janeiro: ABNT, 2024.
+
+\bibitem{gerdau}
+GERDAU. \textbf{Perfis estruturais Gerdau:} tabela de bitolas. [S.l.]: Gerdau, [s.d.].
+
+\bibitem{metform}
+METFORM. \textbf{Steel Deck:} catálogo técnico de fôrmas de aço para lajes mistas MF-50 e MF-75. [S.l.]: Metform, [s.d.].
+
+\bibitem{murray2016}
+MURRAY, T. M. et al. \textbf{Vibrations of steel-framed structural systems due to human activity}. 2. ed. Chicago: AISC, 2016. (Steel Design Guide 11).
+
+\end{thebibliography}
+
+\end{document}

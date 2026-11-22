@@ -1,6 +1,34 @@
 #pragma once
 #include "modelos.h"
 
+inline PerfilI perfil_w360x51() {
+    PerfilI p;
+    p.nome = "W 360 x 51,0";
+    p.tipo = LAMINADO;
+    p.d = 355.0;
+    p.bf = 171.0;
+    p.tw = 7.2;
+    p.tf = 11.6;
+    p.r = 0.0;
+    p.h = 331.8;
+    p.d1 = 308.0;
+    p.Ag = 6356.0;          // 63.56 cm²
+    p.Ix = 14222e4;         // 14222 cm⁴
+    p.Wx = 801.2e3;         // 801.2 cm³
+    p.rx = 149.6;           // 14.96 cm
+    p.Zx = 897.4e3;         // 897.4 cm³
+    p.Iy = 967e4;           // 967 cm⁴
+    p.Wy = 113.1e3;         // 113.1 cm³
+    p.ry = 39.0;            // 3.90 cm
+    p.Zy = 174.5e3;         // 174.5 cm³
+    p.rt = 44.5;            // cm
+    p.It = 22.1e4;          // 22.1 cm⁴
+    p.lbf = 7.37;           // esbeltez mesa
+    p.lbw = 46.08;          // esbeltez alma
+    p.Cw = 2.85e11;         // 285.000 cm⁶
+    return p;
+}
+
 inline PerfilI perfil_w360x57_8() {
     PerfilI p;
     p.nome = "W 360 x 57,8";
