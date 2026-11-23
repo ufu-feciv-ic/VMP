@@ -10,12 +10,11 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-# Arquivos de implementação do motor de cálculo
+# Arquivos de implementação do motor de cálculo (reutilizando rotinas_nbr8800 e rotinas_vmp no verificador)
 set(MOTOR_SOURCES
     src/geometria.cpp
     src/rotinas_nbr8800.cpp
     src/rotinas_vmp.cpp
-    src/rotinas_viga_mista.cpp
     src/verificador.cpp
 )
 

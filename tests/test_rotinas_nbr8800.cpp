@@ -156,3 +156,62 @@ TEST_CASE("Rotina D - NBR 8800:2008: Cortante resistente perfil W360X57.8")
     ASSERT_PERCENT(res.Vpl_kN, 585.43, 0.1);
     ASSERT_PERCENT(res.VRd_kN, 532.21, 0.1);
 }
+
+TEST_CASE("Geometria Perfil I - calcular_propriedades_secao_i vs Catalogo Gerdau (W360x57.8 e W460x89)")
+{
+    // 1. Aferição contra W360x57.8 do catalogo.h fornecendo apenas dimensões nominais (d, bf, tf, tw, r)
+    PerfilI cat_w360 = perfil_w360x57_8();
+    PerfilI calc_w360;
+    calc_w360.tipo = LAMINADO;
+    calc_w360.d = cat_w360.d;       // 358.0 mm
+    calc_w360.bf = cat_w360.bf;     // 172.0 mm
+    calc_w360.tf = cat_w360.tf;     // 13.1 mm
+    calc_w360.tw = cat_w360.tw;     // 7.9 mm
+    calc_w360.r = 11.9;             // Raio de concordância laminado Gerdau (d1 = 308 mm)
+
+    calcular_propriedades_secao_i(calc_w360);
+
+    ASSERT_PERCENT(calc_w360.h, cat_w360.h, 0.1);
+    ASSERT_PERCENT(calc_w360.d1, cat_w360.d1, 0.1);
+    ASSERT_PERCENT(calc_w360.Ag, cat_w360.Ag, 0.05);
+    ASSERT_PERCENT(calc_w360.Ix, cat_w360.Ix, 0.05);
+    ASSERT_PERCENT(calc_w360.Wx, cat_w360.Wx, 0.05);
+    ASSERT_PERCENT(calc_w360.Zx, cat_w360.Zx, 0.05);
+    ASSERT_PERCENT(calc_w360.Iy, cat_w360.Iy, 0.1);
+    ASSERT_PERCENT(calc_w360.Wy, cat_w360.Wy, 0.1);
+    ASSERT_PERCENT(calc_w360.ry, cat_w360.ry, 0.1);
+    ASSERT_PERCENT(calc_w360.Zy, cat_w360.Zy, 0.05);
+    ASSERT_PERCENT(calc_w360.rt, cat_w360.rt, 1.0);
+    ASSERT_PERCENT(calc_w360.It, cat_w360.It, 1.0);
+    ASSERT_PERCENT(calc_w360.lbf, cat_w360.lbf, 0.1);
+    ASSERT_PERCENT(calc_w360.lbw, cat_w360.lbw, 0.1);
+    ASSERT_PERCENT(calc_w360.Cw, cat_w360.Cw, 0.05);
+
+    // 2. Aferição contra W460x89 do catalogo.h fornecendo apenas dimensões nominais (d, bf, tf, tw, r)
+    PerfilI cat_w460 = perfil_w460x89();
+    PerfilI calc_w460;
+    calc_w460.tipo = LAMINADO;
+    calc_w460.d = cat_w460.d;       // 463.0 mm
+    calc_w460.bf = cat_w460.bf;     // 192.0 mm
+    calc_w460.tf = cat_w460.tf;     // 17.7 mm
+    calc_w460.tw = cat_w460.tw;     // 10.5 mm
+    calc_w460.r = 11.8;             // Raio de concordância laminado Gerdau (d1 = 404 mm)
+
+    calcular_propriedades_secao_i(calc_w460);
+
+    ASSERT_PERCENT(calc_w460.h, cat_w460.h, 0.1);
+    ASSERT_PERCENT(calc_w460.d1, cat_w460.d1, 0.1);
+    ASSERT_PERCENT(calc_w460.Ag, cat_w460.Ag, 0.05);
+    ASSERT_PERCENT(calc_w460.Ix, cat_w460.Ix, 0.2);
+    ASSERT_PERCENT(calc_w460.Wx, cat_w460.Wx, 0.2);
+    ASSERT_PERCENT(calc_w460.rx, cat_w460.rx, 0.1);
+    ASSERT_PERCENT(calc_w460.Zx, cat_w460.Zx, 0.2);
+    ASSERT_PERCENT(calc_w460.Iy, cat_w460.Iy, 0.3);
+    ASSERT_PERCENT(calc_w460.Wy, cat_w460.Wy, 0.3);
+    ASSERT_PERCENT(calc_w460.ry, cat_w460.ry, 0.1);
+    ASSERT_PERCENT(calc_w460.Zy, cat_w460.Zy, 0.25);
+    ASSERT_PERCENT(calc_w460.rt, cat_w460.rt, 0.5);
+    ASSERT_PERCENT(calc_w460.It, cat_w460.It, 1.2);
+    ASSERT_PERCENT(calc_w460.lbf, cat_w460.lbf, 0.1);
+    ASSERT_PERCENT(calc_w460.Cw, cat_w460.Cw, 0.05);
+}
