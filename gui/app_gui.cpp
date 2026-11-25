@@ -2,6 +2,8 @@
 #include "rotinas_nbr8800.h"
 #include "verificador.h"
 #include "catalogo.h"
+#include "catalogo_completo.h"
+#include "calculadora_cargas.h"
 #include "geometria.h"
 
 #include "raylib.h"
@@ -593,11 +595,18 @@ int main() {
     cfg.acoes.psi2 = 0.40;
 
     int norma_idx = 0;        // 0 = 2024 (nbr8800::v2024), 1 = 2008 (nbr8800::v2008)
-    int perfil_idx = 0;       // 0 = W360x51, 1 = W360x57.8, 2 = W460x89, 3 = Customizado
+    int perfil_modo_idx = 0;  // 0 = Perfis Rápidos (Caso de Estudo), 1 = Catálogo Completo Gerdau (W) / Soldado (VS), 2 = Personalizado
+    int perfil_idx = 0;       // 0 = W360x51, 1 = W360x57.8, 2 = W460x89
+    int perfil_cat_idx = 0;   // Índice na lista completa de 157 perfis
+    int deck_cat_idx = 0;     // Índice na lista de fôrmas Steel Deck Metform
     int laje_idx = 0;         // 0 = Maciça, 1 = Steel Deck
     int orient_deck_idx = 0;  // 0 = Perpendicular, 1 = Paralela
     int modo_conexao_idx = 0; // 0 = Interação Completa Automática, 1 = Interação Parcial por Grau Alvo, 2 = Espaçamento Manual
     float grau_alvo_slider = 0.65f;
+
+    // Estado do Assistente de Cargas (NBR 6120:2019)
+    bool usar_assistente_cargas = true;
+    nbr6120::AssistenteCargasConfig assist_cfg;
 
     while (!WindowShouldClose()) {
         int cur_w = GetScreenWidth();
@@ -617,7 +626,7 @@ int main() {
             cfg.conector.espacamento_adotado_mm = cfg.geometria.L_vao_mm / (n_linhas - 1);
         }
 
-        if (perfil_idx == 3) {
+        if (perfil_modo_idx == 2) {
             calcular_propriedades_secao_i(cfg.perfil);
         }
 
@@ -708,17 +717,49 @@ int main() {
             // ABA 1: PERFIL I DE AÇO
             if (ImGui::BeginTabItem("Perfil de Aço")) {
                 ImGui::Spacing();
-                const char* perfis[] = { "W 360 x 51,0 (Caso Estudo)", "W 360 x 57,8", "W 460 x 89,0", "Perfil Customizado / Soldado" };
-                ImGui::Text("Catálogo de Perfis:");
+                const char* modos_perfil[] = {
+                    "Perfis Rápidos (Estudo / Padrão)",
+                    "Catálogo Completo (Gerdau W & Soldados VS)",
+                    "Perfil Paramétrico Customizado"
+                };
+                ImGui::Text("Seleção do Perfil:");
                 ImGui::SetNextItemWidth(-1.0f);
-                if (ImGui::Combo("##PerfilCombo", &perfil_idx, perfis, 4)) {
-                    if (perfil_idx == 0) cfg.perfil = perfil_w360x51();
-                    else if (perfil_idx == 1) cfg.perfil = perfil_w360x57_8();
-                    else if (perfil_idx == 2) cfg.perfil = perfil_w460x89();
-                }
-
+                ImGui::Combo("##ModoPerfilCombo", &perfil_modo_idx, modos_perfil, 3);
                 ImGui::Spacing();
-                if (perfil_idx == 3) {
+
+                if (perfil_modo_idx == 0) {
+                    const char* perfis[] = { "W 360 x 51,0 (Caso Estudo)", "W 360 x 57,8", "W 460 x 89,0" };
+                    ImGui::Text("Perfil Rápido:");
+                    ImGui::SetNextItemWidth(-1.0f);
+                    if (ImGui::Combo("##PerfilComboRapido", &perfil_idx, perfis, 3)) {
+                        if (perfil_idx == 0) cfg.perfil = perfil_w360x51();
+                        else if (perfil_idx == 1) cfg.perfil = perfil_w360x57_8();
+                        else if (perfil_idx == 2) cfg.perfil = perfil_w460x89();
+                    }
+                } else if (perfil_modo_idx == 1) {
+                    const auto& lista_cat = obter_catalogo_perfis_completo();
+                    static std::vector<std::string> nomes_cat;
+                    if (nomes_cat.empty()) {
+                        nomes_cat.reserve(lista_cat.size());
+                        for (const auto& item : lista_cat) {
+                            nomes_cat.push_back(std::string(item.nome) + " (" + (item.tipo == LAMINADO ? "Gerdau W" : "Soldado VS") + ")");
+                        }
+                    }
+
+                    ImGui::Text("Catálogo Normativo (%d perfis disponíveis):", (int)lista_cat.size());
+                    ImGui::SetNextItemWidth(-1.0f);
+                    if (ImGui::BeginCombo("##CatalogoCompletoCombo", nomes_cat[perfil_cat_idx].c_str(), ImGuiComboFlags_HeightLarge)) {
+                        for (int n = 0; n < (int)nomes_cat.size(); n++) {
+                            const bool is_selected = (perfil_cat_idx == n);
+                            if (ImGui::Selectable(nomes_cat[n].c_str(), is_selected)) {
+                                perfil_cat_idx = n;
+                                cfg.perfil = criar_perfil_do_catalogo(lista_cat[n]);
+                            }
+                            if (is_selected) ImGui::SetItemDefaultFocus();
+                        }
+                        ImGui::EndCombo();
+                    }
+                } else {
                     ImGui::TextColored(ImVec4(0.9f, 0.7f, 0.2f, 1.0f), "Edição Paramétrica:");
                     ImGui::SetNextItemWidth(input_w); ImGui::InputDouble("Altura d (mm)", &cfg.perfil.d, 5.0, 20.0, "%.1f");
                     ImGui::SetNextItemWidth(input_w); ImGui::InputDouble("Largura mesa bf (mm)", &cfg.perfil.bf, 5.0, 20.0, "%.1f");
@@ -729,13 +770,15 @@ int main() {
                     cfg.perfil.Wx = 0.0; cfg.perfil.Wy = 0.0; cfg.perfil.Zx = 0.0; cfg.perfil.Zy = 0.0;
                     cfg.perfil.rx = 0.0; cfg.perfil.ry = 0.0; cfg.perfil.lbf = 0.0; cfg.perfil.lbw = 0.0;
                     cfg.perfil.It = 0.0; cfg.perfil.Cw = 0.0;
-                } else {
-                    ImGui::TextColored(ImVec4(0.2f, 0.8f, 0.4f, 1.0f), "Propriedades Nominais:");
-                    ImGui::BulletText("d = %.1f mm  |  bf = %.1f mm", cfg.perfil.d, cfg.perfil.bf);
-                    ImGui::BulletText("tf = %.2f mm  |  tw = %.2f mm", cfg.perfil.tf, cfg.perfil.tw);
-                    ImGui::BulletText("Área Ag = %.2f cm²  |  Inércia Ix = %.0f cm⁴", cfg.perfil.Ag / 100.0, cfg.perfil.Ix / 1e4);
-                    ImGui::BulletText("Módulo Elástico Wx = %.1f cm³  |  Plástico Zx = %.1f cm³", cfg.perfil.Wx / 1e3, cfg.perfil.Zx / 1e3);
                 }
+
+                ImGui::Spacing();
+                ImGui::TextColored(ImVec4(0.2f, 0.8f, 0.4f, 1.0f), "Propriedades Nominais da Seção:");
+                ImGui::BulletText("Nome: %s", cfg.perfil.nome.c_str());
+                ImGui::BulletText("d = %.1f mm  |  bf = %.1f mm", cfg.perfil.d, cfg.perfil.bf);
+                ImGui::BulletText("tf = %.2f mm  |  tw = %.2f mm", cfg.perfil.tf, cfg.perfil.tw);
+                ImGui::BulletText("Área Ag = %.2f cm²  |  Inércia Ix = %.0f cm⁴", cfg.perfil.Ag / 100.0, cfg.perfil.Ix / 1e4);
+                ImGui::BulletText("Módulo Elástico Wx = %.1f cm³  |  Plástico Zx = %.1f cm³", cfg.perfil.Wx / 1e3, cfg.perfil.Zx / 1e3);
 
                 ImGui::Spacing();
                 ImGui::Separator();
@@ -754,16 +797,48 @@ int main() {
                 ImGui::SetNextItemWidth(-1.0f);
                 if (ImGui::Combo("##TipoLajeCombo", &laje_idx, tipos_laje, 2)) {
                     if (laje_idx == 1 && cfg.laje.hF_mm <= 0.0) {
-                        cfg.laje.hF_mm = 50.0;
-                        cfg.laje.bF_mm = 120.0;
-                        cfg.laje.eF_mm = 200.0;
-                        if (cfg.laje.tc_mm > 100.0) cfg.laje.tc_mm = 80.0;
+                        cfg.laje.hF_mm = 75.0;
+                        cfg.laje.bF_mm = 137.0;
+                        cfg.laje.eF_mm = 274.0;
+                        if (cfg.laje.tc_mm > 100.0) cfg.laje.tc_mm = 65.0;
                     } else if (laje_idx == 0) {
                         cfg.laje.hF_mm = 0.0;
                     }
                 }
 
                 ImGui::Spacing();
+                if (laje_idx == 1) {
+                    const auto& lista_decks = obter_catalogo_steel_deck();
+                    static std::vector<std::string> nomes_deck;
+                    if (nomes_deck.empty()) {
+                        nomes_deck.reserve(lista_decks.size());
+                        for (const auto& item : lista_decks) {
+                            nomes_deck.push_back(std::string(item.chave) + " (h=" + std::to_string((int)item.h_total_mm) + "mm, t=" + std::to_string(item.espessura_mm).substr(0, 4) + "mm)");
+                        }
+                    }
+
+                    ImGui::TextColored(ImVec4(0.2f, 0.8f, 0.8f, 1.0f), "Catálogo Metform (%d opções de fôrma):", (int)lista_decks.size());
+                    ImGui::SetNextItemWidth(-1.0f);
+                    if (ImGui::BeginCombo("##DeckCatalogoCombo", nomes_deck[deck_cat_idx].c_str(), ImGuiComboFlags_HeightLarge)) {
+                        for (int n = 0; n < (int)nomes_deck.size(); n++) {
+                            const bool is_selected = (deck_cat_idx == n);
+                            if (ImGui::Selectable(nomes_deck[n].c_str(), is_selected)) {
+                                deck_cat_idx = n;
+                                const auto& d = lista_decks[n];
+                                cfg.laje.hF_mm = d.hF_mm;
+                                cfg.laje.eF_mm = d.passo_eF_mm;
+                                cfg.laje.bF_mm = d.bF_medio_mm;
+                                cfg.laje.tf_deck_mm = d.espessura_mm;
+                                cfg.laje.tc_mm = d.h_total_mm - d.hF_mm;
+                            }
+                            if (is_selected) ImGui::SetItemDefaultFocus();
+                        }
+                        ImGui::EndCombo();
+                    }
+
+                    ImGui::Spacing();
+                }
+
                 ImGui::SetNextItemWidth(input_w);
                 if (laje_idx == 0) {
                     ImGui::InputDouble("Espessura da Laje tc (mm)", &cfg.laje.tc_mm, 5.0, 10.0, "%.1f");
@@ -773,7 +848,7 @@ int main() {
 
                 if (laje_idx == 1) {
                     ImGui::Spacing();
-                    ImGui::TextColored(ImVec4(0.2f, 0.8f, 0.8f, 1.0f), "Fôrma Nervurada de Aço (Steel Deck):");
+                    ImGui::TextColored(ImVec4(0.2f, 0.8f, 0.8f, 1.0f), "Geometria da Fôrma Nervurada de Aço:");
                     ImGui::SetNextItemWidth(input_w); ImGui::InputDouble("Altura da Fôrma hF (mm)", &cfg.laje.hF_mm, 5.0, 10.0, "%.1f");
                     ImGui::SetNextItemWidth(input_w); ImGui::InputDouble("Largura da Nervura bF (mm)", &cfg.laje.bF_mm, 5.0, 10.0, "%.1f");
                     ImGui::SetNextItemWidth(input_w); ImGui::InputDouble("Passo entre Nervuras eF (mm)", &cfg.laje.eF_mm, 10.0, 50.0, "%.1f");
@@ -878,11 +953,137 @@ int main() {
                 ImGui::Spacing();
                 ImGui::Separator();
                 ImGui::Spacing();
-                ImGui::TextColored(ImVec4(0.9f, 0.7f, 0.2f, 1.0f), "Ações Lineares Diretas (kN/m):");
-                ImGui::SetNextItemWidth(input_w); ImGui::InputDouble("Permanente Fase 1 g1 (kN/m)", &cfg.acoes.g1_kN_m, 0.5, 1.0, "%.3f");
-                ImGui::SetNextItemWidth(input_w); ImGui::InputDouble("Variável Construção q1 (kN/m)", &cfg.acoes.q1_kN_m, 0.5, 1.0, "%.3f");
-                ImGui::SetNextItemWidth(input_w); ImGui::InputDouble("Permanente Fase 2 g2 (kN/m)", &cfg.acoes.g2_kN_m, 0.5, 1.0, "%.3f");
-                ImGui::SetNextItemWidth(input_w); ImGui::InputDouble("Variável de Uso q2 (kN/m)", &cfg.acoes.q2_kN_m, 0.5, 1.0, "%.3f");
+
+                ImGui::Checkbox("Usar Assistente / Calculadora de Cargas (NBR 6120:2019)", &usar_assistente_cargas);
+                if (usar_assistente_cargas) {
+                    ImGui::Spacing();
+                    ImGui::TextColored(ImVec4(0.2f, 0.8f, 0.4f, 1.0f), "Configuração de Uso e Sobrecargas (NBR 6120):");
+
+                    // 1. Ocupação
+                    const auto& ocups = nbr6120::obter_tabela_ocupacoes();
+                    static std::vector<const char*> nomes_ocups;
+                    if (nomes_ocups.empty()) {
+                        nomes_ocups.reserve(ocups.size());
+                        for (const auto& item : ocups) nomes_ocups.push_back(item.descricao);
+                    }
+                    ImGui::Text("Uso e Ocupação (Tabela 10):");
+                    ImGui::SetNextItemWidth(-1.0f);
+                    ImGui::Combo("##OcupacaoCombo", &assist_cfg.idx_ocupacao, nomes_ocups.data(), (int)nomes_ocups.size());
+
+                    if (assist_cfg.idx_ocupacao == (int)ocups.size() - 1) {
+                        ImGui::SetNextItemWidth(input_w);
+                        ImGui::InputDouble("Carga de Uso Custom (kN/m²)", &assist_cfg.q_custom_kN_m2, 0.5, 1.0, "%.2f");
+                    }
+
+                    // 2. Divisórias
+                    const auto& divs = nbr6120::obter_tabela_divisorias();
+                    static std::vector<const char*> nomes_divs;
+                    if (nomes_divs.empty()) {
+                        nomes_divs.reserve(divs.size());
+                        for (const auto& item : divs) nomes_divs.push_back(item.descricao);
+                    }
+                    ImGui::Text("Divisórias sem posição definida (Tabela 11):");
+                    ImGui::SetNextItemWidth(-1.0f);
+                    ImGui::Combo("##DivisoriaCombo", &assist_cfg.idx_divisoria, nomes_divs.data(), (int)nomes_divs.size());
+
+                    // 3. Revestimento
+                    const auto& revs = nbr6120::obter_tabela_revestimentos();
+                    static std::vector<const char*> nomes_revs;
+                    if (nomes_revs.empty()) {
+                        nomes_revs.reserve(revs.size());
+                        for (const auto& item : revs) nomes_revs.push_back(item.descricao);
+                    }
+                    ImGui::Text("Revestimento do Piso (Tabela 4):");
+                    ImGui::SetNextItemWidth(-1.0f);
+                    ImGui::Combo("##RevestimentoCombo", &assist_cfg.idx_revestimento, nomes_revs.data(), (int)nomes_revs.size());
+
+                    // 4. Forro
+                    const auto& forros = nbr6120::obter_tabela_forros();
+                    static std::vector<const char*> nomes_forros;
+                    if (nomes_forros.empty()) {
+                        nomes_forros.reserve(forros.size());
+                        for (const auto& item : forros) nomes_forros.push_back(item.descricao);
+                    }
+                    ImGui::Text("Forro do Teto (Tabela 8):");
+                    ImGui::SetNextItemWidth(-1.0f);
+                    ImGui::Combo("##ForroCombo", &assist_cfg.idx_forro, nomes_forros.data(), (int)nomes_forros.size());
+
+                    // 5. Instalações
+                    const auto& insts = nbr6120::obter_tabela_instalacoes();
+                    static std::vector<const char*> nomes_insts;
+                    if (nomes_insts.empty()) {
+                        nomes_insts.reserve(insts.size());
+                        for (const auto& item : insts) nomes_insts.push_back(item.descricao);
+                    }
+                    ImGui::Text("Instalações Suspensas / Dutos (Tabela 8):");
+                    ImGui::SetNextItemWidth(-1.0f);
+                    ImGui::Combo("##InstalacaoCombo", &assist_cfg.idx_instalacao, nomes_insts.data(), (int)nomes_insts.size());
+
+                    // 6. Paredes
+                    const auto& paredes = nbr6120::obter_tabela_paredes();
+                    static std::vector<const char*> nomes_paredes;
+                    if (nomes_paredes.empty()) {
+                        nomes_paredes.reserve(paredes.size());
+                        for (const auto& item : paredes) nomes_paredes.push_back(item.descricao);
+                    }
+                    ImGui::Text("Parede Apoiada sobre a Viga (Tabelas 2 e 3):");
+                    ImGui::SetNextItemWidth(-1.0f);
+                    ImGui::Combo("##ParedeCombo", &assist_cfg.idx_parede, nomes_paredes.data(), (int)nomes_paredes.size());
+
+                    if (assist_cfg.idx_parede > 0) {
+                        ImGui::SetNextItemWidth(input_w);
+                        ImGui::InputDouble("Altura da Parede (m)", &assist_cfg.altura_parede_m, 0.1, 0.5, "%.2f");
+                    }
+
+                    // Calcula automaticamente com base na largura de influência
+                    double binf_calc = (cfg.geometria.dist_esq_mm + cfg.geometria.dist_dir_mm) / 2000.0;
+                    if (binf_calc <= 0.0) binf_calc = 2.0;
+
+                    const auto& decks = obter_catalogo_steel_deck();
+                    double peso_deck_laje = (deck_cat_idx >= 0 && deck_cat_idx < (int)decks.size()) ? decks[deck_cat_idx].peso_proprio_laje_kN_m2 : 2.50;
+                    double consumo_c = (deck_cat_idx >= 0 && deck_cat_idx < (int)decks.size()) ? decks[deck_cat_idx].consumo_concreto_m3_m2 : 0.10;
+
+                    // Estima massa do perfil
+                    double massa_p = (cfg.perfil.Ag > 0.0) ? (cfg.perfil.Ag * 1e-6 * 7850.0) : 52.0;
+
+                    auto res_cargas = nbr6120::calcular_cargas_assistente(
+                        assist_cfg,
+                        binf_calc,
+                        massa_p,
+                        cfg.laje.tipo == LAJE_STEEL_DECK,
+                        peso_deck_laje,
+                        consumo_c,
+                        cfg.laje.tc_mm
+                    );
+
+                    // Atualiza cargas da viga
+                    cfg.acoes.g1_kN_m = res_cargas.g1_linear_kN_m;
+                    cfg.acoes.q1_kN_m = res_cargas.q1_linear_kN_m;
+                    cfg.acoes.g2_kN_m = res_cargas.g2_linear_kN_m;
+                    cfg.acoes.q2_kN_m = res_cargas.q2_linear_kN_m;
+                    cfg.acoes.psi1 = res_cargas.psi1;
+                    cfg.acoes.psi2 = res_cargas.psi2;
+
+                    ImGui::Spacing();
+                    ImGui::TextColored(ImVec4(0.2f, 0.8f, 0.4f, 1.0f), "Resultados Calculados pela NBR 6120 (binf = %.2f m):", binf_calc);
+                    ImGui::BulletText("g1 (Fase 1 - Laje + Perfil): %.3f kN/m", cfg.acoes.g1_kN_m);
+                    ImGui::BulletText("q1 (Fase 1 - Sobrecarga Construtiva): %.3f kN/m", cfg.acoes.q1_kN_m);
+                    ImGui::BulletText("g2 (Fase 2 - Permanentes Pós-Cura): %.3f kN/m", cfg.acoes.g2_kN_m);
+                    ImGui::BulletText("q2 (Fase 2 - Uso e Ocupação Total): %.3f kN/m", cfg.acoes.q2_kN_m);
+                    ImGui::BulletText("Fatores: psi0 = %.2f | psi1 = %.2f | psi2 = %.2f (Cat. %c)",
+                        res_cargas.psi0, res_cargas.psi1, res_cargas.psi2, res_cargas.categoria_psi);
+                } else {
+                    ImGui::Spacing();
+                    ImGui::TextColored(ImVec4(0.9f, 0.7f, 0.2f, 1.0f), "Ações Lineares Diretas (kN/m):");
+                    ImGui::SetNextItemWidth(input_w); ImGui::InputDouble("Permanente Fase 1 g1 (kN/m)", &cfg.acoes.g1_kN_m, 0.5, 1.0, "%.3f");
+                    ImGui::SetNextItemWidth(input_w); ImGui::InputDouble("Variável Construção q1 (kN/m)", &cfg.acoes.q1_kN_m, 0.5, 1.0, "%.3f");
+                    ImGui::SetNextItemWidth(input_w); ImGui::InputDouble("Permanente Fase 2 g2 (kN/m)", &cfg.acoes.g2_kN_m, 0.5, 1.0, "%.3f");
+                    ImGui::SetNextItemWidth(input_w); ImGui::InputDouble("Variável de Uso q2 (kN/m)", &cfg.acoes.q2_kN_m, 0.5, 1.0, "%.3f");
+                    ImGui::SetNextItemWidth(input_w); ImGui::InputDouble("Fator psi1", &cfg.acoes.psi1, 0.05, 0.1, "%.2f");
+                    ImGui::SetNextItemWidth(input_w); ImGui::InputDouble("Fator psi2", &cfg.acoes.psi2, 0.05, 0.1, "%.2f");
+                }
+
+                ImGui::Spacing();
                 ImGui::SetNextItemWidth(input_w); ImGui::InputDouble("Contraflecha (mm)", &cfg.acoes.contraflecha_mm, 1.0, 5.0, "%.1f");
                 ImGui::EndTabItem();
             }

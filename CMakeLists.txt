@@ -36,6 +36,7 @@ add_executable(vmp_tests
     tests/test_rotinas_nbr8800.cpp
     tests/test_rotinas_vmp.cpp
     tests/test_viga_mista.cpp
+    tests/test_calculadora_cargas.cpp
     ${MOTOR_SOURCES}
 )
 
