@@ -578,7 +578,8 @@ int main() {
     cfg.conector.h = 100.0;
     cfg.conector.fu = 420.0;
     cfg.conector.nt = 1;
-    cfg.conector.espacamento_adotado_mm = 150.0;
+    cfg.conector.k_nervuras = 1;
+    cfg.conector.espacamento_adotado_mm = 200.0;
 
     cfg.geometria.L_vao_mm = 7000.0;
     cfg.geometria.Lb_mm = 3500.0;
@@ -601,8 +602,6 @@ int main() {
     int deck_cat_idx = 0;     // Índice na lista de fôrmas Steel Deck Metform
     int laje_idx = 0;         // 0 = Maciça, 1 = Steel Deck
     int orient_deck_idx = 0;  // 0 = Perpendicular, 1 = Paralela
-    int modo_conexao_idx = 0; // 0 = Interação Completa Automática, 1 = Interação Parcial por Grau Alvo, 2 = Espaçamento Manual
-    float grau_alvo_slider = 0.65f;
 
     // Estado do Assistente de Cargas (NBR 6120:2019)
     bool usar_assistente_cargas = true;
@@ -615,16 +614,6 @@ int main() {
         cfg.norma = (norma_idx == 0) ? NormaEdicao::NBR8800_2024 : NormaEdicao::NBR8800_2008;
         cfg.laje.tipo = (laje_idx == 0) ? LAJE_MACICA : LAJE_STEEL_DECK;
         cfg.laje.nervura_paralela = (orient_deck_idx == 1);
-
-        if (modo_conexao_idx == 0) {
-            cfg.conector.espacamento_adotado_mm = 0.0;
-        } else if (modo_conexao_idx == 1) {
-            double bef_est = nbr8800::calcularLarguraEfetiva(cfg.geometria);
-            auto conn_pre = calcularConectoresVigaMista(cfg, bef_est);
-            int n_semi_alvo = static_cast<int>(std::ceil(grau_alvo_slider * conn_pre.Fhd_kN / std::max(1.0, conn_pre.QRd_kN)));
-            int n_linhas = std::max(2, (2 * n_semi_alvo) / std::max(1, cfg.conector.nt));
-            cfg.conector.espacamento_adotado_mm = cfg.geometria.L_vao_mm / (n_linhas - 1);
-        }
 
         if (perfil_modo_idx == 2) {
             calcular_propriedades_secao_i(cfg.perfil);
@@ -878,62 +867,97 @@ int main() {
             // ABA 3: CONECTORES STUD BOLT
             if (ImGui::BeginTabItem("Stud Bolts")) {
                 ImGui::Spacing();
-                ImGui::TextColored(ImVec4(0.9f, 0.7f, 0.2f, 1.0f), "Parâmetros do Stud Bolt (ConectorCisalhamento):");
+                ImGui::TextColored(ImVec4(0.9f, 0.7f, 0.2f, 1.0f), "Propriedades do Stud Bolt (Pino com Cabeça):");
                 ImGui::SetNextItemWidth(input_w); ImGui::InputDouble("Diâmetro do Pino d (mm)", &cfg.conector.d, 1.0, 3.0, "%.1f");
                 ImGui::SetNextItemWidth(input_w); ImGui::InputDouble("Altura do Pino h (mm)", &cfg.conector.h, 5.0, 10.0, "%.1f");
                 ImGui::SetNextItemWidth(input_w); ImGui::InputDouble("Resistência fu (MPa)", &cfg.conector.fu, 10.0, 50.0, "%.1f");
-                ImGui::SetNextItemWidth(input_w); ImGui::InputInt("Pinos por Linha/Nervura (nt)", &cfg.conector.nt);
-                if (cfg.conector.nt < 1) cfg.conector.nt = 1;
 
                 ImGui::Spacing();
                 ImGui::Separator();
                 ImGui::Spacing();
 
-                const char* modos_conexao[] = {
-                    "Interação Completa Automática (eta = 100%)",
-                    "Interação Parcial por Grau Alvo (eta desejado)",
-                    "Espaçamento Manual Adotado (mm)"
-                };
-                ImGui::TextColored(ImVec4(0.3f, 0.7f, 1.0f, 1.0f), "Modo de Dimensionamento da Conexão:");
-                ImGui::SetNextItemWidth(-1.0f);
-                ImGui::Combo("##ModoConexaoCombo", &modo_conexao_idx, modos_conexao, 3);
+                bool eh_deck_perp = (cfg.laje.tipo == LAJE_STEEL_DECK && !cfg.laje.nervura_paralela);
 
-                if (modo_conexao_idx == 1) {
-                    ImGui::Spacing();
-                    ImGui::Text("Grau de Interação Alvo (eta):");
+                if (eh_deck_perp) {
+                    ImGui::TextColored(ImVec4(0.3f, 0.7f, 1.0f, 1.0f), "Disposição em Steel Deck com Nervuras Perpendiculares:");
                     ImGui::SetNextItemWidth(input_w);
-                    ImGui::SliderFloat("##GrauAlvoSlider", &grau_alvo_slider, (float)rel.conectores.grau_interacao_minimo, 1.00f, "%.2f");
-                    ImGui::SameLine();
-                    ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.2f, 1.0f), "(Mínimo normativo: %.2f)", rel.conectores.grau_interacao_minimo);
-                } else if (modo_conexao_idx == 2) {
+                    ImGui::InputInt("Pinos por Nervura (nt)", &cfg.conector.nt);
+                    if (cfg.conector.nt < 1) cfg.conector.nt = 1;
+
+                    ImGui::TextDisabled("Capacidade transversal da mesa bf: até %d pinos lado a lado", rel.conectores.nt_max_mesa);
+                    if (cfg.conector.nt > rel.conectores.nt_max_mesa) {
+                        ImGui::TextColored(ImVec4(1.0f, 0.35f, 0.35f, 1.0f), "ATENÇÃO: nt = %d excede a largura da mesa bf (máximo %d pinos)!", cfg.conector.nt, rel.conectores.nt_max_mesa);
+                    }
+
                     ImGui::Spacing();
                     ImGui::SetNextItemWidth(input_w);
-                    ImGui::InputDouble("Espaçamento Adotado (mm)", &cfg.conector.espacamento_adotado_mm, 10.0, 50.0, "%.1f");
+                    ImGui::InputInt("Conector a cada k nervuras", &cfg.conector.k_nervuras);
+                    if (cfg.conector.k_nervuras < 1) cfg.conector.k_nervuras = 1;
+
+                    double passo_onda = (cfg.laje.eF_mm > 0.0) ? cfg.laje.eF_mm : 200.0;
+                    ImGui::BulletText("Passo da onda da fôrma: eF = %.1f mm", passo_onda);
+                    ImGui::BulletText("Espaçamento longitudinal resultante: s = k * eF = %.1f mm", rel.conectores.el_espacamento_mm);
+                } else {
+                    ImGui::TextColored(ImVec4(0.3f, 0.7f, 1.0f, 1.0f), "Disposição dos Conectores (Laje Maciça ou Nervuras Paralelas):");
+                    ImGui::SetNextItemWidth(input_w);
+                    ImGui::InputInt("Pinos por Linha Transversal (nt)", &cfg.conector.nt);
+                    if (cfg.conector.nt < 1) cfg.conector.nt = 1;
+
+                    ImGui::TextDisabled("Capacidade transversal da mesa bf: até %d pinos lado a lado", rel.conectores.nt_max_mesa);
+                    if (cfg.conector.nt > rel.conectores.nt_max_mesa) {
+                        ImGui::TextColored(ImVec4(1.0f, 0.35f, 0.35f, 1.0f), "ATENÇÃO: nt = %d excede a largura da mesa bf (máximo %d pinos)!", cfg.conector.nt, rel.conectores.nt_max_mesa);
+                    }
+
+                    ImGui::Spacing();
+                    ImGui::SetNextItemWidth(input_w);
+                    ImGui::InputDouble("Espaçamento Longitudinal s (mm)", &cfg.conector.espacamento_adotado_mm, 10.0, 50.0, "%.1f");
                 }
 
                 ImGui::Spacing();
                 ImGui::Separator();
                 ImGui::Spacing();
-                ImGui::TextColored(ImVec4(0.2f, 0.8f, 0.4f, 1.0f), "Diagnóstico da Conexão (Rotina E):");
 
+                ImGui::TextColored(ImVec4(0.2f, 0.8f, 0.4f, 1.0f), "Diagnóstico da Conexão e Grau de Interação (Rotina E):");
+
+                // Tipo e Grau de Interação
                 if (rel.conectores.grau_interacao_eta >= 0.999) {
                     ImGui::BulletText("Tipo de Interação: INTERAÇÃO COMPLETA (eta = 100 %%)");
                 } else {
                     ImGui::BulletText("Tipo de Interação: INTERAÇÃO PARCIAL (eta = %.1f %%)", rel.conectores.grau_interacao_eta * 100.0f);
                 }
-                ImGui::BulletText("Coeficientes: Rg = %.2f  |  Rp = %.2f", rel.conectores.Rg, rel.conectores.Rp);
-                ImGui::BulletText("Grau Mínimo: eta_min = %.2f %s", rel.conectores.grau_interacao_minimo, rel.conectores.grau_interacao_atende ? "[OK]" : "[NÃO ATENDE]");
-                ImGui::BulletText("Capacidade Unitária QRd: %.2f kN  |  Força Rasante Fhd: %.2f kN", rel.conectores.QRd_kN, rel.conectores.Fhd_kN);
-                ImGui::BulletText("Total de Pinos: %d adotados (mínimo p/ 100%%: %d)", rel.conectores.n_total_adotado, rel.conectores.nl_conectores);
-                ImGui::BulletText("Espaçamento: %.0f mm (Limites: %.0f a %.0f mm) %s", rel.conectores.el_espacamento_mm, rel.conectores.s_min_long_mm, rel.conectores.s_max_long_mm, rel.conectores.espacamento_atende ? "[OK]" : "[FORA DOS LIMITES]");
+
+                // Grau mínimo
+                if (rel.conectores.grau_interacao_atende) {
+                    ImGui::TextColored(ImVec4(0.3f, 0.9f, 0.4f, 1.0f), "  -> Grau Mínimo Normativo: eta_min = %.2f [ATENDE: eta >= eta_min]", rel.conectores.grau_interacao_minimo);
+                } else {
+                    ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f), "  -> Grau Mínimo Normativo: eta_min = %.2f [NÃO ATENDE: eta < eta_min]", rel.conectores.grau_interacao_minimo);
+                    ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f), "     Reduza o espaçamento k ou aumente pinos/nervura para atingir o mínimo!");
+                }
 
                 ImGui::Spacing();
-                ImGui::TextColored(ImVec4(0.9f, 0.7f, 0.2f, 1.0f), "Verificações Geométricas do Pino:");
+                ImGui::TextColored(ImVec4(0.9f, 0.7f, 0.2f, 1.0f), "Quantitativo de Conectores (Meio Vão / Vão Total):");
+                ImGui::BulletText("Linhas no meio vão: %d linhas [nlin = floor((L/2)/s)]", rel.conectores.n_linhas_meio_vao);
+                ImGui::BulletText("Conectores Adotados: %d por meio vão (%d no total da viga)", rel.conectores.n_semi_vao_adotado, rel.conectores.n_total_adotado);
+                ImGui::BulletText("Necessários p/ Interação Completa (100%%): %d por meio vão (%d no total da viga)", rel.conectores.n_semi_vao_calculado, rel.conectores.nl_conectores);
+                ImGui::BulletText("Necessários p/ Grau Mínimo (eta_min = %.2f): %d por meio vão (%d no total da viga)", rel.conectores.grau_interacao_minimo, rel.conectores.n_semi_vao_minimo, rel.conectores.n_total_minimo);
+
+                ImGui::Spacing();
+                ImGui::TextColored(ImVec4(0.3f, 0.7f, 1.0f, 1.0f), "Esforços e Capacidade Resistente:");
+                ImGui::BulletText("Capacidade Unitária QRd: %.2f kN (Concreto: %.2f kN | Aço: %.2f kN)", rel.conectores.QRd_kN, rel.conectores.QRd1_concreto_kN, rel.conectores.QRd2_aco_kN);
+                ImGui::BulletText("Força Rasante Fhd (100%%): %.2f kN  |  Força Transmitida: %.2f kN", rel.conectores.Fhd_kN, rel.conectores.n_semi_vao_adotado * rel.conectores.QRd_kN);
+                ImGui::BulletText("Coeficientes Normativos: Rg = %.2f  |  Rp = %.2f", rel.conectores.Rg, rel.conectores.Rp);
+
+                ImGui::Spacing();
+                ImGui::TextColored(ImVec4(0.9f, 0.7f, 0.2f, 1.0f), "Verificações Geométricas e Limites Normativos:");
+                ImGui::BulletText("Espaçamento Longitudinal: s = %.0f mm (Limites: %.0f a %.0f mm) %s", rel.conectores.el_espacamento_mm, rel.conectores.s_min_long_mm, rel.conectores.s_max_long_mm, rel.conectores.espacamento_atende ? "[OK]" : "[FORA DOS LIMITES]");
+                if (rel.conectores.alerta_ancoragem_deck) {
+                    ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f), "  [AVISO L.2.6.2-b] Espaçamento s > 450 mm: Prever fixação auxiliar da fôrma (soldas tampão) a cada 450 mm.");
+                }
                 ImGui::BulletText("Altura do Pino: h = %.0f mm (Mínimo exigido: %.0f mm) %s", cfg.conector.h, rel.conectores.h_min_normativo_mm, rel.conectores.altura_atende ? "[OK]" : "[INSUFICIENTE]");
                 ImGui::BulletText("Cobrimento Superior: c = %.1f mm (Mínimo da norma: %.1f mm) %s", rel.conectores.cobrimento_topo_mm, rel.conectores.cobrimento_min_mm, rel.conectores.cobrimento_atende ? "[OK]" : "[INSUFICIENTE]");
                 ImGui::BulletText("Diâmetro do Pino: d = %.1f mm (Máximo p/ mesa tf: %.1f mm) %s", cfg.conector.d, rel.conectores.d_max_mesa_mm, rel.conectores.diametro_mesa_atende ? "[OK]" : "[EXCESSIVO]");
                 ImGui::BulletText("Espaçamento Transversal: st_min = %.1f mm (4*d)", rel.conectores.s_transv_min_mm);
-                ImGui::BulletText("Largura da Mesa: bf = %.1f mm (Mínimo exigido: %.1f mm) %s", cfg.perfil.bf, rel.conectores.bf_min_necessario_mm, rel.conectores.largura_mesa_atende ? "[OK]" : "[INSUFICIENTE]");
+                ImGui::BulletText("Largura da Mesa: bf = %.1f mm (Necessário p/ %d pinos: %.1f mm) %s", cfg.perfil.bf, cfg.conector.nt, rel.conectores.bf_min_necessario_mm, rel.conectores.largura_mesa_atende ? "[OK]" : "[INSUFICIENTE]");
                 if (cfg.laje.tipo == LAJE_STEEL_DECK && cfg.laje.nervura_paralela) {
                     ImGui::BulletText("Calha Steel Deck: w_fundo = %.1f mm (Necessário: %.1f mm) %s", rel.conectores.largura_deck_disp_mm, rel.conectores.largura_deck_nec_mm, rel.conectores.nervura_deck_atende ? "[OK]" : "[COLISÃO]");
                 }

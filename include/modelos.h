@@ -175,10 +175,11 @@ struct ConectorCisalhamento {
     // Especificações do Stud Bolt (pino com cabeça)
     double d = 19.0;   // Diâmetro do pino (mm)
     int nt = 1;        // Número de conectores por linha transversal / por nervura
+    int k_nervuras = 1; // Para Steel Deck transversal: conector a cada k nervuras (1 = todas, 2 = a cada 2, etc.)
     double Rg = 0.0;   // Coeficiente de grupo (se <= 0, determinado pela norma)
     double Rp = 0.0;   // Coeficiente de posição (se <= 0, determinado pela norma)
     double emh_mm = 60.0; // Distância da borda do fuste do pino à alma da nervura a meia altura (mm)
-    double espacamento_adotado_mm = 0.0; // Espaçamento longitudinal adotado (mm). Se <= 0, calcula para interação completa.
+    double espacamento_adotado_mm = 200.0; // Espaçamento longitudinal adotado (mm) para laje maciça ou nervuras paralelas
 };
 
 // ----------------------------------------------------------------------------

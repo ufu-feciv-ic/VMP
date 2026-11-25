@@ -295,3 +295,89 @@ TEST_CASE("Verificacao de Geometria Transversal dos Conectores (Mesa e Steel Dec
     ASSERT_TRUE(!rel5.conectores.geometria_transversal_atende);
     ASSERT_TRUE(!rel5.aprovado_global);
 }
+
+TEST_CASE("Conectores - Calibracao com Planilha NBR8800-2024 (Steel Deck ⊥, Grau e Limites)")
+{
+    // Calibração fiel com os dados de Viga_Mista_NBR8800-2024.xlsx (V1 - viga secundária interna)
+    VigaMistaConfig cfg;
+    cfg.norma = NormaEdicao::NBR8800_2024;
+    cfg.geometria.L_vao_mm = 9000.0;
+    cfg.geometria.Lb_mm = 9000.0;
+    cfg.geometria.dist_esq_mm = 2500.0;
+    cfg.geometria.dist_dir_mm = 2500.0;
+    cfg.geometria.escorada = false;
+
+    // Perfil W460x52,0 (ASTM A572 Gr. 50)
+    cfg.aco = aco_a572_gr50();
+    cfg.perfil.nome = "W460x52,0";
+    cfg.perfil.d = 450.0;
+    cfg.perfil.bf = 152.0;
+    cfg.perfil.tf = 10.8;
+    cfg.perfil.tw = 7.6;
+    cfg.perfil.Ag = 6660.0;
+    cfg.perfil.Ix = 21370.0 * 1e4;
+    cfg.perfil.Wx = 950.0 * 1e3;
+    cfg.perfil.Zx = 1096.0 * 1e3;
+    cfg.perfil.Iy = 634.0 * 1e4;
+
+    // Concreto fck = 30 MPa
+    cfg.concreto = concreto_c30();
+
+    // Steel Deck MF-75: hF = 75 mm, tc = 65 mm (h_total = 140 mm), eF = 274 mm, bF = 137 mm
+    cfg.laje.tipo = LAJE_STEEL_DECK;
+    cfg.laje.hF_mm = 75.0;
+    cfg.laje.tc_mm = 65.0;
+    cfg.laje.eF_mm = 274.0;
+    cfg.laje.bF_mm = 137.0;
+    cfg.laje.nervura_paralela = false; // Perpendiculares
+
+    // Conectores: Stud Bolt d = 19 mm, h = 125 mm, fu = 415 MPa (conforme planilha)
+    cfg.conector.tipo = CONECTOR_STUD_BOLT;
+    cfg.conector.d = 19.0;
+    cfg.conector.h = 125.0;
+    cfg.conector.fu = 415.0;
+    cfg.conector.nt = 1;         // 1 conector por nervura
+    cfg.conector.k_nervuras = 1;  // a cada 1 nervura (todas)
+    cfg.conector.emh_mm = 59.0;
+
+    auto rel = verificar_viga_mista(cfg);
+
+    // 1. Espaçamento e número de conectores
+    ASSERT_NEAR(rel.conectores.el_espacamento_mm, 274.0, 0.01);
+    ASSERT_TRUE(rel.conectores.n_linhas_meio_vao == 16);
+    ASSERT_TRUE(rel.conectores.n_semi_vao_adotado == 16);
+    ASSERT_TRUE(rel.conectores.n_total_adotado == 32);
+
+    // 2. Capacidade dos conectores
+    ASSERT_NEAR(rel.conectores.Rg, 1.00, 0.001);
+    ASSERT_NEAR(rel.conectores.Rp, 0.75, 0.001);
+    ASSERT_PERCENT(rel.conectores.QRd_kN, 70.60, 0.5);
+    ASSERT_PERCENT(rel.conectores.Fhd_kN, 2088.82, 0.5);
+
+    // 3. Conectores necessários para interação completa (100%)
+    ASSERT_TRUE(rel.conectores.n_semi_vao_calculado == 30);
+    ASSERT_TRUE(rel.conectores.nl_conectores == 60);
+
+    // 4. Grau de interação obtido: 16 * 70.60 / 2088.82 = 0.5408 (54.1%)
+    ASSERT_PERCENT(rel.conectores.grau_interacao_eta, 0.5408, 0.8);
+
+    // 5. Grau de interação mínimo exigido: eta_i = 0.28
+    ASSERT_PERCENT(rel.conectores.grau_interacao_minimo, 0.28, 1.0);
+    ASSERT_TRUE(rel.conectores.n_semi_vao_minimo == 9);
+    ASSERT_TRUE(rel.conectores.n_total_minimo == 18);
+    ASSERT_TRUE(rel.conectores.grau_interacao_atende);
+
+    // 6. Limites de espaçamento (4*d = 76 mm a min(8*140, 915) = 915 mm)
+    ASSERT_NEAR(rel.conectores.s_min_long_mm, 76.0, 0.01);
+    ASSERT_NEAR(rel.conectores.s_max_long_mm, 915.0, 0.01);
+    ASSERT_TRUE(rel.conectores.espacamento_atende);
+    ASSERT_TRUE(!rel.conectores.alerta_ancoragem_deck); // 274 <= 450 mm
+
+    // 7. Verificação de k = 2 (a cada 2 nervuras: s = 548 mm > 450 mm)
+    cfg.conector.k_nervuras = 2;
+    auto rel_k2 = verificar_viga_mista(cfg);
+    ASSERT_NEAR(rel_k2.conectores.el_espacamento_mm, 548.0, 0.01);
+    ASSERT_TRUE(rel_k2.conectores.n_linhas_meio_vao == 8); // floor(4500 / 548) = 8
+    ASSERT_TRUE(rel_k2.conectores.n_total_adotado == 16);
+    ASSERT_TRUE(rel_k2.conectores.alerta_ancoragem_deck); // 548 > 450 mm -> alerta ativado!
+}

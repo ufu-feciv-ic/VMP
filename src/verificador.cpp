@@ -100,12 +100,17 @@ RelatorioVigaMista verificar_viga_mista(const VigaMistaConfig& cfg) {
             perfil, cfg.aco, cfg.geometria.L_vao_mm, cfg.geometria.escorada,
             rel.fase2.MSd2_kNm, rel.fase2.momento_misto.MRd_VM_kNm
         );
-        rel.conectores.grau_interacao_atende = (rel.conectores.grau_interacao_eta >= rel.conectores.grau_interacao_minimo);
+        rel.conectores.n_semi_vao_minimo = static_cast<int>(std::ceil(rel.conectores.grau_interacao_minimo * rel.conectores.Fhd_kN / std::max(1e-3, rel.conectores.QRd_kN)));
+        rel.conectores.n_total_minimo = 2 * rel.conectores.n_semi_vao_minimo;
+        rel.conectores.grau_interacao_atende = (rel.conectores.grau_interacao_eta >= rel.conectores.grau_interacao_minimo - 1e-5);
     } else {
         rel.fase2.momento_misto = nbr8800::v2008::calcularMomentoPositivoVM(
             perfil, cfg.aco, cfg.concreto, laje_calc, 1.10, 1.40, Fhd_conectores_kN
         );
         rel.fase2.cortante_misto = rel.fase1.cortante_aco;
+        rel.conectores.n_semi_vao_minimo = static_cast<int>(std::ceil(rel.conectores.grau_interacao_minimo * rel.conectores.Fhd_kN / std::max(1e-3, rel.conectores.QRd_kN)));
+        rel.conectores.n_total_minimo = 2 * rel.conectores.n_semi_vao_minimo;
+        rel.conectores.grau_interacao_atende = (rel.conectores.grau_interacao_eta >= rel.conectores.grau_interacao_minimo - 1e-5);
     }
 
     rel.fase2.taxa_flexao = rel.fase2.MSd2_kNm / std::max(1e-3, rel.fase2.momento_misto.MRd_VM_kNm);
@@ -172,12 +177,21 @@ RelatorioVigaMista verificar_viga_mista(const VigaMistaConfig& cfg) {
 
     rel.itens.push_back({
         "Conectores - Grau de Interação",
-        "Grau de interação eta atingido vs mínimo normativo (Rotina E)",
+        "Grau de interação eta adotado vs mínimo normativo exigido",
         rel.conectores.grau_interacao_minimo,
         rel.conectores.grau_interacao_eta,
         "-",
         rel.conectores.grau_interacao_minimo / std::max(0.001, rel.conectores.grau_interacao_eta),
-        rel.conectores.grau_interacao_atende && rel.conectores.espacamento_atende
+        rel.conectores.grau_interacao_atende
+    });
+    rel.itens.push_back({
+        "Conectores - Espaçamento Longitudinal",
+        "Espaçamento longitudinal adotado vs limites normativos (s_min a s_max)",
+        rel.conectores.el_espacamento_mm,
+        rel.conectores.s_max_long_mm,
+        "mm",
+        rel.conectores.el_espacamento_mm / std::max(1.0, rel.conectores.s_max_long_mm),
+        rel.conectores.espacamento_atende
     });
     rel.itens.push_back({
         "Conectores - Altura e Cobrimento",

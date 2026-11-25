@@ -545,46 +545,71 @@ ResultadoRotinaE calcularConectoresCisalhamento(
         res.s_max_long_mm = std::min(8.0 * h_total_laje, 800.0);
     }
 
-    int n_linha = std::max(1, conector.nt);
+    // Conectores necessários para interação completa (100%):
     res.n_semi_vao_calculado = static_cast<int>(std::ceil(res.Fhd_kN / std::max(1e-3, res.QRd_kN)));
     res.nl_conectores = 2 * res.n_semi_vao_calculado;
 
-    if (conector.espacamento_adotado_mm > 0.0) {
+    // Espaçamento longitudinal adotado:
+    bool is_perp_2008 = (laje.tipo == LAJE_STEEL_DECK && !laje.nervura_paralela);
+    int n_linha = std::max(1, conector.nt);
+
+    if (is_perp_2008) {
+        int k = std::max(1, conector.k_nervuras);
+        double passo = (laje.eF_mm > 0.0) ? laje.eF_mm : 200.0;
+        res.el_espacamento_mm = k * passo;
+        res.alerta_ancoragem_deck = (res.el_espacamento_mm > 450.0);
+        int nlin_2008 = static_cast<int>(std::floor((Lv_mm / 2.0) / std::max(1.0, res.el_espacamento_mm)));
+        res.n_linhas_meio_vao = nlin_2008;
+        res.n_semi_vao_adotado = nlin_2008 * n_linha;
+        res.n_total_adotado = 2 * res.n_semi_vao_adotado;
+    } else if (conector.espacamento_adotado_mm > 0.0) {
         res.el_espacamento_mm = conector.espacamento_adotado_mm;
-        int n_linhas = static_cast<int>(std::floor(Lv_mm / res.el_espacamento_mm)) + 1;
-        res.n_total_adotado = n_linhas * n_linha;
+        res.alerta_ancoragem_deck = false;
+        int nlin_2008 = static_cast<int>(std::floor((Lv_mm / 2.0) / std::max(1.0, res.el_espacamento_mm)));
+        res.n_linhas_meio_vao = nlin_2008;
+        res.n_semi_vao_adotado = nlin_2008 * n_linha;
+        res.n_total_adotado = 2 * res.n_semi_vao_adotado;
     } else {
+        // Se espacamento_adotado_mm <= 0.0, dimensiona para interação completa (100%)
+        res.alerta_ancoragem_deck = false;
+        res.n_semi_vao_adotado = res.n_semi_vao_calculado;
         res.n_total_adotado = res.nl_conectores;
-        int n_linhas = std::max(2, res.n_total_adotado / n_linha);
-        res.el_espacamento_mm = Lv_mm / (n_linhas - 1);
+        int nlin_2008 = std::max(1, static_cast<int>(std::ceil(static_cast<double>(res.n_semi_vao_calculado) / n_linha)));
+        res.n_linhas_meio_vao = nlin_2008;
+        res.el_espacamento_mm = (nlin_2008 > 0) ? ((Lv_mm / 2.0) / nlin_2008) : 200.0;
     }
 
-    double n_semi_adotado = res.n_total_adotado / 2.0;
-    res.grau_interacao_eta = std::min(1.00, (n_semi_adotado * res.QRd_kN) / std::max(1e-3, res.Fhd_kN));
+    // Grau de interação calculado:
+    res.grau_interacao_eta = std::min(1.00, (res.n_semi_vao_adotado * res.QRd_kN) / std::max(1e-3, res.Fhd_kN));
     res.grau_interacao_minimo = v2008::calcularGrauInteracaoMinimo(perfil, aco, Lv_mm, escorada);
+    res.n_semi_vao_minimo = static_cast<int>(std::ceil(res.grau_interacao_minimo * res.Fhd_kN / std::max(1e-3, res.QRd_kN)));
+    res.n_total_minimo = 2 * res.n_semi_vao_minimo;
 
-    res.espacamento_atende = (res.el_espacamento_mm >= res.s_min_long_mm && res.el_espacamento_mm <= res.s_max_long_mm);
-    res.grau_interacao_atende = (res.grau_interacao_eta >= res.grau_interacao_minimo);
+    res.espacamento_atende = (res.el_espacamento_mm >= res.s_min_long_mm - 1e-4 && res.el_espacamento_mm <= res.s_max_long_mm + 1e-4);
+    res.grau_interacao_atende = (res.grau_interacao_eta >= res.grau_interacao_minimo - 1e-5);
 
     // Verificações geométricas do pino (O.4.1, O.2.6.1, O.4.4.1)
     double h_total_laje = laje.tc_mm + laje.hF_mm;
     double h_min_base = 4.0 * conector.d;
     double h_min_deck = (laje.tipo == LAJE_STEEL_DECK) ? (laje.hF_mm + 40.0) : 0.0;
     res.h_min_normativo_mm = std::max(h_min_base, h_min_deck);
-    res.altura_atende = (conector.h >= res.h_min_normativo_mm);
+    res.altura_atende = (conector.h >= res.h_min_normativo_mm - 1e-4);
 
     res.cobrimento_topo_mm = h_total_laje - conector.h;
     res.cobrimento_min_mm = 10.0;
-    res.cobrimento_atende = (res.cobrimento_topo_mm >= res.cobrimento_min_mm);
+    res.cobrimento_atende = (res.cobrimento_topo_mm >= res.cobrimento_min_mm - 1e-4);
 
     res.d_max_mesa_mm = 2.5 * perfil.tf;
-    res.diametro_mesa_atende = (conector.d <= res.d_max_mesa_mm);
+    bool diam_deck_ok_2008 = (laje.tipo != LAJE_STEEL_DECK || conector.d <= 19.0 + 1e-4);
+    bool diam_mesa_ok_2008 = (n_linha == 1 || conector.d <= res.d_max_mesa_mm + 1e-4);
+    res.diametro_mesa_atende = diam_deck_ok_2008 && diam_mesa_ok_2008;
 
     // Verificações geométricas transversais (O.4.1.3 e O.4.4.2)
     if (conector.tipo == CONECTOR_PERFIL_U) {
         res.s_transv_min_mm = 0.0;
         res.dist_borda_min_mesa_mm = 25.0;
         res.bf_min_necessario_mm = conector.Lcs;
+        res.nt_max_mesa = 1;
         res.largura_mesa_atende = (perfil.bf >= res.bf_min_necessario_mm - 1e-4);
         res.largura_deck_disp_mm = perfil.bf;
         res.largura_deck_nec_mm = conector.Lcs;
@@ -593,16 +618,20 @@ ResultadoRotinaE calcularConectoresCisalhamento(
         // Stud Bolt (Pino com cabeça)
         res.s_transv_min_mm = 4.0 * conector.d;
         res.dist_borda_min_mesa_mm = 25.0;
-        int nt = std::max(1, conector.nt);
-        res.bf_min_necessario_mm = (nt - 1) * res.s_transv_min_mm + 2.0 * res.dist_borda_min_mesa_mm;
+        res.bf_min_necessario_mm = (n_linha - 1) * res.s_transv_min_mm + 2.0 * res.dist_borda_min_mesa_mm;
         res.largura_mesa_atende = (perfil.bf >= res.bf_min_necessario_mm - 1e-4);
+
+        double espaco_livre = perfil.bf - 2.0 * res.dist_borda_min_mesa_mm;
+        res.nt_max_mesa = (espaco_livre >= 0.0 && res.s_transv_min_mm > 0.0)
+            ? std::max(1, 1 + static_cast<int>(std::floor(espaco_livre / res.s_transv_min_mm)))
+            : 1;
 
         if (laje.tipo == LAJE_STEEL_DECK && laje.nervura_paralela) {
             double hF = std::max(0.0, laje.hF_mm);
             double bF = (laje.bF_mm > 0.0) ? laje.bF_mm : 120.0;
             double w_fundo = std::max(20.0, bF - 0.40 * hF);
             res.largura_deck_disp_mm = w_fundo;
-            res.largura_deck_nec_mm = (nt - 1) * res.s_transv_min_mm + 2.0 * res.dist_borda_min_mesa_mm;
+            res.largura_deck_nec_mm = (n_linha - 1) * res.s_transv_min_mm + 2.0 * res.dist_borda_min_mesa_mm;
             res.nervura_deck_atende = (res.largura_deck_disp_mm >= res.largura_deck_nec_mm - 1e-4);
         } else {
             res.largura_deck_disp_mm = perfil.bf;
@@ -1304,46 +1333,71 @@ ResultadoRotinaE calcularConectoresCisalhamento(
             : (8.0 * h_total_laje);
     }
 
-    int n_linha = std::max(1, conector.nt);
+    // Conectores necessários para interação completa (100%):
     res.n_semi_vao_calculado = static_cast<int>(std::ceil(res.Fhd_kN / std::max(1e-3, res.QRd_kN)));
     res.nl_conectores = 2 * res.n_semi_vao_calculado;
 
-    if (conector.espacamento_adotado_mm > 0.0) {
+    // Espaçamento longitudinal adotado:
+    bool is_perp_2024 = (laje.tipo == LAJE_STEEL_DECK && !laje.nervura_paralela);
+    int n_linha = std::max(1, conector.nt);
+
+    if (is_perp_2024) {
+        int k = std::max(1, conector.k_nervuras);
+        double passo = (laje.eF_mm > 0.0) ? laje.eF_mm : 200.0;
+        res.el_espacamento_mm = k * passo;
+        res.alerta_ancoragem_deck = (res.el_espacamento_mm > 450.0);
+        int nlin_2024 = static_cast<int>(std::floor((Lv_mm / 2.0) / std::max(1.0, res.el_espacamento_mm)));
+        res.n_linhas_meio_vao = nlin_2024;
+        res.n_semi_vao_adotado = nlin_2024 * n_linha;
+        res.n_total_adotado = 2 * res.n_semi_vao_adotado;
+    } else if (conector.espacamento_adotado_mm > 0.0) {
         res.el_espacamento_mm = conector.espacamento_adotado_mm;
-        int n_linhas = static_cast<int>(std::floor(Lv_mm / res.el_espacamento_mm)) + 1;
-        res.n_total_adotado = n_linhas * n_linha;
+        res.alerta_ancoragem_deck = false;
+        int nlin_2024 = static_cast<int>(std::floor((Lv_mm / 2.0) / std::max(1.0, res.el_espacamento_mm)));
+        res.n_linhas_meio_vao = nlin_2024;
+        res.n_semi_vao_adotado = nlin_2024 * n_linha;
+        res.n_total_adotado = 2 * res.n_semi_vao_adotado;
     } else {
+        // Se espacamento_adotado_mm <= 0.0, dimensiona para interação completa (100%)
+        res.alerta_ancoragem_deck = false;
+        res.n_semi_vao_adotado = res.n_semi_vao_calculado;
         res.n_total_adotado = res.nl_conectores;
-        int n_linhas = std::max(2, res.n_total_adotado / n_linha);
-        res.el_espacamento_mm = Lv_mm / (n_linhas - 1);
+        int nlin_2024 = std::max(1, static_cast<int>(std::ceil(static_cast<double>(res.n_semi_vao_calculado) / n_linha)));
+        res.n_linhas_meio_vao = nlin_2024;
+        res.el_espacamento_mm = (nlin_2024 > 0) ? ((Lv_mm / 2.0) / nlin_2024) : 200.0;
     }
 
-    double n_semi_adotado = res.n_total_adotado / 2.0;
-    res.grau_interacao_eta = std::min(1.00, (n_semi_adotado * res.QRd_kN) / std::max(1e-3, res.Fhd_kN));
+    // Grau de interação calculado:
+    res.grau_interacao_eta = std::min(1.00, (res.n_semi_vao_adotado * res.QRd_kN) / std::max(1e-3, res.Fhd_kN));
     res.grau_interacao_minimo = v2024::calcularGrauInteracaoMinimo(perfil, aco, Lv_mm, escorada);
+    res.n_semi_vao_minimo = static_cast<int>(std::ceil(res.grau_interacao_minimo * res.Fhd_kN / std::max(1e-3, res.QRd_kN)));
+    res.n_total_minimo = 2 * res.n_semi_vao_minimo;
 
-    res.espacamento_atende = (res.el_espacamento_mm >= res.s_min_long_mm && res.el_espacamento_mm <= res.s_max_long_mm);
-    res.grau_interacao_atende = (res.grau_interacao_eta >= res.grau_interacao_minimo);
+    res.espacamento_atende = (res.el_espacamento_mm >= res.s_min_long_mm - 1e-4 && res.el_espacamento_mm <= res.s_max_long_mm + 1e-4);
+    res.grau_interacao_atende = (res.grau_interacao_eta >= res.grau_interacao_minimo - 1e-5);
 
     // Verificações geométricas do pino (L.4.1, L.2.6.1, L.4.4.1)
     double h_total_laje = laje.tc_mm + laje.hF_mm;
     double h_min_base = 4.0 * conector.d;
     double h_min_deck = (laje.tipo == LAJE_STEEL_DECK) ? (laje.hF_mm + 40.0) : 0.0;
     res.h_min_normativo_mm = std::max(h_min_base, h_min_deck);
-    res.altura_atende = (conector.h >= res.h_min_normativo_mm);
+    res.altura_atende = (conector.h >= res.h_min_normativo_mm - 1e-4);
 
     res.cobrimento_topo_mm = h_total_laje - conector.h;
     res.cobrimento_min_mm = 10.0;
-    res.cobrimento_atende = (res.cobrimento_topo_mm >= res.cobrimento_min_mm);
+    res.cobrimento_atende = (res.cobrimento_topo_mm >= res.cobrimento_min_mm - 1e-4);
 
     res.d_max_mesa_mm = 2.5 * perfil.tf;
-    res.diametro_mesa_atende = (conector.d <= res.d_max_mesa_mm);
+    bool diam_deck_ok_2024 = (laje.tipo != LAJE_STEEL_DECK || conector.d <= 19.0 + 1e-4);
+    bool diam_mesa_ok_2024 = (n_linha == 1 || conector.d <= res.d_max_mesa_mm + 1e-4);
+    res.diametro_mesa_atende = diam_deck_ok_2024 && diam_mesa_ok_2024;
 
-    // Verificações geométricas transversais (O.4.1.3 e O.4.4.2)
+    // Verificações geométricas transversais (L.4.3.4 e L.2.6.3-c)
     if (conector.tipo == CONECTOR_PERFIL_U) {
         res.s_transv_min_mm = 0.0;
         res.dist_borda_min_mesa_mm = 25.0;
         res.bf_min_necessario_mm = conector.Lcs;
+        res.nt_max_mesa = 1;
         res.largura_mesa_atende = (perfil.bf >= res.bf_min_necessario_mm - 1e-4);
         res.largura_deck_disp_mm = perfil.bf;
         res.largura_deck_nec_mm = conector.Lcs;
@@ -1352,17 +1406,21 @@ ResultadoRotinaE calcularConectoresCisalhamento(
         // Stud Bolt (Pino com cabeça)
         res.s_transv_min_mm = 4.0 * conector.d;
         res.dist_borda_min_mesa_mm = 25.0;
-        int nt = std::max(1, conector.nt);
-        res.bf_min_necessario_mm = (nt - 1) * res.s_transv_min_mm + 2.0 * res.dist_borda_min_mesa_mm;
+        res.bf_min_necessario_mm = (n_linha - 1) * res.s_transv_min_mm + 2.0 * res.dist_borda_min_mesa_mm;
         res.largura_mesa_atende = (perfil.bf >= res.bf_min_necessario_mm - 1e-4);
+
+        double espaco_livre = perfil.bf - 2.0 * res.dist_borda_min_mesa_mm;
+        res.nt_max_mesa = (espaco_livre >= 0.0 && res.s_transv_min_mm > 0.0)
+            ? std::max(1, 1 + static_cast<int>(std::floor(espaco_livre / res.s_transv_min_mm)))
+            : 1;
 
         if (laje.tipo == LAJE_STEEL_DECK && laje.nervura_paralela) {
             double hF = std::max(0.0, laje.hF_mm);
             double bF = (laje.bF_mm > 0.0) ? laje.bF_mm : 120.0;
-            double w_fundo = std::max(20.0, bF - 0.40 * hF);
-            res.largura_deck_disp_mm = w_fundo;
-            res.largura_deck_nec_mm = (nt - 1) * res.s_transv_min_mm + 2.0 * res.dist_borda_min_mesa_mm;
-            res.nervura_deck_atende = (res.largura_deck_disp_mm >= res.largura_deck_nec_mm - 1e-4);
+            double nec = 50.0 + 4.0 * conector.d * (n_linha - 1);
+            res.largura_deck_disp_mm = bF;
+            res.largura_deck_nec_mm = nec;
+            res.nervura_deck_atende = (bF >= nec - 1e-4);
         } else {
             res.largura_deck_disp_mm = perfil.bf;
             res.largura_deck_nec_mm = res.bf_min_necessario_mm;

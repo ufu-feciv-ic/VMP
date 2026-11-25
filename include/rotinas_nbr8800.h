@@ -91,9 +91,15 @@ struct ResultadoRotinaE {
     double QRd_kN = 0.0;                // Resistência individual de cálculo de 1 conector
     double Fhd_kN = 0.0;                // Força horizontal rasante para interação completa (100%)
 
-    int n_semi_vao_calculado = 0;       // Conectores por trecho de momento máximo (meio vão) p/ 100%
-    int nl_conectores = 0;              // Total de conectores no vão p/ 100%
-    int n_total_adotado = 0;            // Total de conectores efetivamente adotados no vão
+    int n_linhas_meio_vao = 0;          // Número de linhas transversais de conectores por meio vão: floor((L/2) / s)
+    int n_semi_vao_adotado = 0;         // Conectores por meio vão adotados: n_linhas_meio_vao * nt
+    int n_total_adotado = 0;            // Total de conectores efetivamente adotados no vão: 2 * n_semi_vao_adotado
+    int n_semi_vao_calculado = 0;       // Conectores por meio vão necessários p/ 100% (interação completa): ceil(Fhd / QRd)
+    int nl_conectores = 0;              // Total de conectores no vão p/ 100%: 2 * n_semi_vao_calculado
+    int n_semi_vao_minimo = 0;          // Conectores por meio vão necessários p/ atender eta_i: ceil(eta_i * Fhd / QRd)
+    int n_total_minimo = 0;             // Total de conectores necessários p/ atender eta_i: 2 * n_semi_vao_minimo
+    int nt_max_mesa = 1;                // Número máximo de pinos por linha suportados pela largura da mesa do perfil
+    bool alerta_ancoragem_deck = false; // Se deck perp e s > 450 mm, requer fixação adicional da fôrma (solda tampão)
     double el_espacamento_mm = 0.0;     // Espaçamento longitudinal adotado (mm)
     double s_min_long_mm = 0.0;
     double s_max_long_mm = 0.0;
