@@ -212,7 +212,11 @@ Dimensiona a transferência de cisalhamento longitudinal entre o perfil de aço 
 4. **Verificações Geométricas**:
    - Altura mínima: $h \ge \max(4 \cdot d,\; h_F + 40\text{ mm})$;
    - Cobrimento da cabeça: $c = (t_c + h_F) - h \ge 10\text{ mm}$;
-   - Diâmetro máximo soldado à mesa: $d \le 2,5 \cdot t_f$.
+   - Diâmetro máximo soldado à mesa: $d \le 2,5 \cdot t_f$;
+   - Espaçamento transversal mínimo entre eixos de pinos (NBR 8800 L.4.3.4): $s_{t,min} = 4 \cdot d$;
+   - Distância mínima à borda livre da mesa (NBR 8800 L.4.4.2): $e_{borda,min} = 25\text{ mm}$;
+   - Largura mínima da mesa exigida: $b_{f,min} = (n_t - 1) \cdot s_{t,min} + 2 \cdot e_{borda,min}$;
+   - Interferência com calha do Steel Deck (nervuras paralelas): $w_{fundo} \ge (n_t - 1) \cdot s_{t,min} + 2 \cdot e_{borda,min}$.
 
 #### Assinatura C++
 ```cpp

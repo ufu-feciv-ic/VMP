@@ -230,3 +230,68 @@ TEST_CASE("Diferenciacao por Namespaces nbr8800::v2008 vs nbr8800::v2024")
     auto vm_pos_2024 = nbr8800::v2024::calcularMomentoPositivoVM(perfil, aco, conc50, laje);
     ASSERT_TRUE(vm_pos_2008.Cc_max_kN > vm_pos_2024.Cc_max_kN);
 }
+
+TEST_CASE("Verificacao de Geometria Transversal dos Conectores (Mesa e Steel Deck)")
+{
+    VigaMistaConfig cfg;
+    cfg.norma = NormaEdicao::NBR8800_2024;
+    cfg.perfil = perfil_w360x51(); // bf = 171.0 mm
+    cfg.aco = aco_a572_gr50();
+    cfg.concreto = concreto_c30();
+    cfg.laje.tipo = LAJE_MACICA;
+    cfg.laje.tc_mm = 120.0;
+
+    cfg.conector.tipo = CONECTOR_STUD_BOLT;
+    cfg.conector.d = 19.0;
+    cfg.conector.h = 100.0;
+    cfg.conector.nt = 1;
+
+    cfg.geometria.L_vao_mm = 7000.0;
+    cfg.geometria.Lb_mm = 3500.0;
+    cfg.geometria.dist_esq_mm = 1750.0;
+    cfg.geometria.dist_dir_mm = 1750.0;
+
+    // 1. nt = 1 conector de 19 mm: st_min = 76 mm, bf_min = 50 mm (atende bf = 171 mm)
+    auto rel1 = verificar_viga_mista(cfg);
+    ASSERT_NEAR(rel1.conectores.s_transv_min_mm, 76.0, 0.01);
+    ASSERT_NEAR(rel1.conectores.bf_min_necessario_mm, 50.0, 0.01);
+    ASSERT_TRUE(rel1.conectores.largura_mesa_atende);
+    ASSERT_TRUE(rel1.conectores.geometria_transversal_atende);
+
+    // 2. nt = 2 conectores de 19 mm em W360x51: bf_min = 76 + 50 = 126 mm (atende bf = 171 mm)
+    cfg.conector.nt = 2;
+    auto rel2 = verificar_viga_mista(cfg);
+    ASSERT_NEAR(rel2.conectores.bf_min_necessario_mm, 126.0, 0.01);
+    ASSERT_TRUE(rel2.conectores.largura_mesa_atende);
+    ASSERT_TRUE(rel2.conectores.geometria_transversal_atende);
+
+    // 3. nt = 2 conectores em perfil estreito (ex: mesa bf = 100 mm): deve falhar
+    cfg.perfil.bf = 100.0;
+    auto rel3 = verificar_viga_mista(cfg);
+    ASSERT_NEAR(rel3.conectores.bf_min_necessario_mm, 126.0, 0.01);
+    ASSERT_TRUE(!rel3.conectores.largura_mesa_atende);
+    ASSERT_TRUE(!rel3.conectores.geometria_transversal_atende);
+    ASSERT_TRUE(!rel3.aprovado_global);
+
+    // 4. nt = 3 conectores em perfil com mesa bf = 171 mm: bf_min = 2*76 + 50 = 202 mm > 171 mm -> deve falhar
+    cfg.perfil.bf = 171.0;
+    cfg.conector.nt = 3;
+    auto rel4 = verificar_viga_mista(cfg);
+    ASSERT_NEAR(rel4.conectores.bf_min_necessario_mm, 202.0, 0.01);
+    ASSERT_TRUE(!rel4.conectores.largura_mesa_atende);
+    ASSERT_TRUE(!rel4.conectores.geometria_transversal_atende);
+
+    // 5. Steel Deck com nervuras paralelas e calha estreita (nt = 2 pinos precisam de 126 mm, calha tem 70 mm)
+    cfg.perfil.bf = 205.0; // Mesa comporta 126 mm
+    cfg.conector.nt = 2;
+    cfg.laje.tipo = LAJE_STEEL_DECK;
+    cfg.laje.tc_mm = 65.0;
+    cfg.laje.hF_mm = 50.0;
+    cfg.laje.bF_mm = 90.0; // w_fundo = 90 - 0.4*50 = 70 mm < 126 mm
+    cfg.laje.nervura_paralela = true;
+    auto rel5 = verificar_viga_mista(cfg);
+    ASSERT_TRUE(rel5.conectores.largura_mesa_atende);
+    ASSERT_TRUE(!rel5.conectores.nervura_deck_atende);
+    ASSERT_TRUE(!rel5.conectores.geometria_transversal_atende);
+    ASSERT_TRUE(!rel5.aprovado_global);
+}

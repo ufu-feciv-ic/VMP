@@ -406,19 +406,32 @@ void desenhar_secao_viga_mista(
     if (h_stud < 10.0f) h_stud = 10.0f;
 
     int n_pinos = std::max(1, cfg.conector.nt);
-    float max_disp_pinos = (cfg.laje.tipo == LAJE_STEEL_DECK && cfg.laje.nervura_paralela)
-                           ? std::min(w_fundo * 0.70f, bf * 0.42f) : (bf * 0.42f);
-    float espacamento_transv = (n_pinos > 1) ? (max_disp_pinos / (n_pinos - 1)) : 0.0f;
+    float st_escala = (float)rel.conectores.s_transv_min_mm * escala;
+    if (st_escala < d_stud * 1.5f && n_pinos > 1) st_escala = d_stud * 1.5f;
+
+    float espacamento_transv = (n_pinos > 1) ? st_escala : 0.0f;
     float x_inicio_pinos = (float)centro_x - (n_pinos - 1) * espacamento_transv / 2.0f;
+
+    Color corStudAtual = rel.conectores.geometria_transversal_atende ? corStud : GetColor(0xEF4444FF);
+    Color corStudCabecaAtual = rel.conectores.geometria_transversal_atende ? corStudCabeca : GetColor(0xDC2626FF);
 
     for (int i = 0; i < n_pinos; ++i) {
         float px = x_inicio_pinos + i * espacamento_transv;
-        DrawRectangle((int)(px - d_stud / 2.0f), (int)(y_topo_aco - h_stud), (int)d_stud, (int)h_stud, corStud);
+        DrawRectangle((int)(px - d_stud / 2.0f), (int)(y_topo_aco - h_stud), (int)d_stud, (int)h_stud, corStudAtual);
         DrawRectangleLines((int)(px - d_stud / 2.0f), (int)(y_topo_aco - h_stud), (int)d_stud, (int)h_stud, DARKGRAY);
         float d_cabeca = d_stud * 1.6f;
         float h_cabeca = d_stud * 0.5f;
-        DrawRectangle((int)(px - d_cabeca / 2.0f), (int)(y_topo_aco - h_stud - h_cabeca), (int)d_cabeca, (int)h_cabeca, corStudCabeca);
+        DrawRectangle((int)(px - d_cabeca / 2.0f), (int)(y_topo_aco - h_stud - h_cabeca), (int)d_cabeca, (int)h_cabeca, corStudCabecaAtual);
         DrawRectangleLines((int)(px - d_cabeca / 2.0f), (int)(y_topo_aco - h_stud - h_cabeca), (int)d_cabeca, (int)h_cabeca, BLACK);
+    }
+
+    if (!rel.conectores.geometria_transversal_atende) {
+        const char* msg_alerta = (!rel.conectores.largura_mesa_atende)
+            ? "MESA INSUFICIENTE P/ PINOS"
+            : "COLISAO COM FORMA DECK";
+        float w_alerta = medir_largura_texto(font, msg_alerta, 14.0f);
+        DrawRectangle((int)((float)centro_x - w_alerta / 2.0f - 6.0f), (int)(y_topo_aco - h_stud - 24.0f), (int)w_alerta + 12, 18, GetColor(0xDC2626EE));
+        desenhar_texto_nitido(font, msg_alerta, (float)centro_x - w_alerta / 2.0f, y_topo_aco - h_stud - 22.0f, 14.0f, WHITE);
     }
 
     // 5. Linha Neutra Plástica (LNP) e Bloco de Compressão (usando ResultadoMomentoPositivoVM de rotinas_nbr8800)
@@ -844,6 +857,11 @@ int main() {
                 ImGui::BulletText("Altura do Pino: h = %.0f mm (Mínimo exigido: %.0f mm) %s", cfg.conector.h, rel.conectores.h_min_normativo_mm, rel.conectores.altura_atende ? "[OK]" : "[INSUFICIENTE]");
                 ImGui::BulletText("Cobrimento Superior: c = %.1f mm (Mínimo da norma: %.1f mm) %s", rel.conectores.cobrimento_topo_mm, rel.conectores.cobrimento_min_mm, rel.conectores.cobrimento_atende ? "[OK]" : "[INSUFICIENTE]");
                 ImGui::BulletText("Diâmetro do Pino: d = %.1f mm (Máximo p/ mesa tf: %.1f mm) %s", cfg.conector.d, rel.conectores.d_max_mesa_mm, rel.conectores.diametro_mesa_atende ? "[OK]" : "[EXCESSIVO]");
+                ImGui::BulletText("Espaçamento Transversal: st_min = %.1f mm (4*d)", rel.conectores.s_transv_min_mm);
+                ImGui::BulletText("Largura da Mesa: bf = %.1f mm (Mínimo exigido: %.1f mm) %s", cfg.perfil.bf, rel.conectores.bf_min_necessario_mm, rel.conectores.largura_mesa_atende ? "[OK]" : "[INSUFICIENTE]");
+                if (cfg.laje.tipo == LAJE_STEEL_DECK && cfg.laje.nervura_paralela) {
+                    ImGui::BulletText("Calha Steel Deck: w_fundo = %.1f mm (Necessário: %.1f mm) %s", rel.conectores.largura_deck_disp_mm, rel.conectores.largura_deck_nec_mm, rel.conectores.nervura_deck_atende ? "[OK]" : "[COLISÃO]");
+                }
                 ImGui::EndTabItem();
             }
 

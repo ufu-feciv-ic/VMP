@@ -580,6 +580,38 @@ ResultadoRotinaE calcularConectoresCisalhamento(
     res.d_max_mesa_mm = 2.5 * perfil.tf;
     res.diametro_mesa_atende = (conector.d <= res.d_max_mesa_mm);
 
+    // Verificações geométricas transversais (O.4.1.3 e O.4.4.2)
+    if (conector.tipo == CONECTOR_PERFIL_U) {
+        res.s_transv_min_mm = 0.0;
+        res.dist_borda_min_mesa_mm = 25.0;
+        res.bf_min_necessario_mm = conector.Lcs;
+        res.largura_mesa_atende = (perfil.bf >= res.bf_min_necessario_mm - 1e-4);
+        res.largura_deck_disp_mm = perfil.bf;
+        res.largura_deck_nec_mm = conector.Lcs;
+        res.nervura_deck_atende = (laje.tipo != LAJE_STEEL_DECK); // Perfil U não é permitido com steel deck
+    } else {
+        // Stud Bolt (Pino com cabeça)
+        res.s_transv_min_mm = 4.0 * conector.d;
+        res.dist_borda_min_mesa_mm = 25.0;
+        int nt = std::max(1, conector.nt);
+        res.bf_min_necessario_mm = (nt - 1) * res.s_transv_min_mm + 2.0 * res.dist_borda_min_mesa_mm;
+        res.largura_mesa_atende = (perfil.bf >= res.bf_min_necessario_mm - 1e-4);
+
+        if (laje.tipo == LAJE_STEEL_DECK && laje.nervura_paralela) {
+            double hF = std::max(0.0, laje.hF_mm);
+            double bF = (laje.bF_mm > 0.0) ? laje.bF_mm : 120.0;
+            double w_fundo = std::max(20.0, bF - 0.40 * hF);
+            res.largura_deck_disp_mm = w_fundo;
+            res.largura_deck_nec_mm = (nt - 1) * res.s_transv_min_mm + 2.0 * res.dist_borda_min_mesa_mm;
+            res.nervura_deck_atende = (res.largura_deck_disp_mm >= res.largura_deck_nec_mm - 1e-4);
+        } else {
+            res.largura_deck_disp_mm = perfil.bf;
+            res.largura_deck_nec_mm = res.bf_min_necessario_mm;
+            res.nervura_deck_atende = true;
+        }
+    }
+    res.geometria_transversal_atende = res.largura_mesa_atende && res.nervura_deck_atende;
+
     return res;
 }
 
@@ -1306,6 +1338,38 @@ ResultadoRotinaE calcularConectoresCisalhamento(
 
     res.d_max_mesa_mm = 2.5 * perfil.tf;
     res.diametro_mesa_atende = (conector.d <= res.d_max_mesa_mm);
+
+    // Verificações geométricas transversais (O.4.1.3 e O.4.4.2)
+    if (conector.tipo == CONECTOR_PERFIL_U) {
+        res.s_transv_min_mm = 0.0;
+        res.dist_borda_min_mesa_mm = 25.0;
+        res.bf_min_necessario_mm = conector.Lcs;
+        res.largura_mesa_atende = (perfil.bf >= res.bf_min_necessario_mm - 1e-4);
+        res.largura_deck_disp_mm = perfil.bf;
+        res.largura_deck_nec_mm = conector.Lcs;
+        res.nervura_deck_atende = (laje.tipo != LAJE_STEEL_DECK); // Perfil U não é permitido com steel deck
+    } else {
+        // Stud Bolt (Pino com cabeça)
+        res.s_transv_min_mm = 4.0 * conector.d;
+        res.dist_borda_min_mesa_mm = 25.0;
+        int nt = std::max(1, conector.nt);
+        res.bf_min_necessario_mm = (nt - 1) * res.s_transv_min_mm + 2.0 * res.dist_borda_min_mesa_mm;
+        res.largura_mesa_atende = (perfil.bf >= res.bf_min_necessario_mm - 1e-4);
+
+        if (laje.tipo == LAJE_STEEL_DECK && laje.nervura_paralela) {
+            double hF = std::max(0.0, laje.hF_mm);
+            double bF = (laje.bF_mm > 0.0) ? laje.bF_mm : 120.0;
+            double w_fundo = std::max(20.0, bF - 0.40 * hF);
+            res.largura_deck_disp_mm = w_fundo;
+            res.largura_deck_nec_mm = (nt - 1) * res.s_transv_min_mm + 2.0 * res.dist_borda_min_mesa_mm;
+            res.nervura_deck_atende = (res.largura_deck_disp_mm >= res.largura_deck_nec_mm - 1e-4);
+        } else {
+            res.largura_deck_disp_mm = perfil.bf;
+            res.largura_deck_nec_mm = res.bf_min_necessario_mm;
+            res.nervura_deck_atende = true;
+        }
+    }
+    res.geometria_transversal_atende = res.largura_mesa_atende && res.nervura_deck_atende;
 
     return res;
 }

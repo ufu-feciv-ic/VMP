@@ -111,6 +111,18 @@ struct ResultadoRotinaE {
     bool altura_atende = true;
     bool cobrimento_atende = true;
     bool diametro_mesa_atende = true;
+
+    // Verificações geométricas transversais (Stud Bolt / Mesa / Nervura)
+    double s_transv_min_mm = 0.0;          // Espaçamento transversal mínimo entre eixos (4 * d)
+    double dist_borda_min_mesa_mm = 25.0;  // Distância mínima ao bordo livre da mesa (25 mm conforme NBR 8800 L.4.4.2)
+    double bf_min_necessario_mm = 0.0;     // Largura mínima da mesa necessária: (nt - 1) * s_transv_min + 2 * dist_borda_min
+    bool largura_mesa_atende = true;       // perfil.bf >= bf_min_necessario_mm
+
+    // Verificação de interferência em Steel Deck com nervuras paralelas
+    double largura_deck_disp_mm = 0.0;     // Largura disponível na calha/fundo da fôrma
+    double largura_deck_nec_mm = 0.0;      // Largura necessária na calha da fôrma para nt pinos
+    bool nervura_deck_atende = true;       // Se atende na fôrma
+    bool geometria_transversal_atende = true; // Consolidado transversal: largura_mesa_atende && nervura_deck_atende
 };
 
 // ----------------------------------------------------------------------------

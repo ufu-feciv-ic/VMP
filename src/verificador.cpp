@@ -167,7 +167,9 @@ RelatorioVigaMista verificar_viga_mista(const VigaMistaConfig& cfg) {
         rel.fase1.aprovado_cortante
     });
 
-    bool conn_geom_ok = rel.conectores.altura_atende && rel.conectores.cobrimento_atende && rel.conectores.diametro_mesa_atende;
+    bool conn_geom_vert_ok = rel.conectores.altura_atende && rel.conectores.cobrimento_atende && rel.conectores.diametro_mesa_atende;
+    bool conn_geom_transv_ok = rel.conectores.geometria_transversal_atende;
+
     rel.itens.push_back({
         "Conectores - Grau de Interação",
         "Grau de interação eta atingido vs mínimo normativo (Rotina E)",
@@ -184,7 +186,20 @@ RelatorioVigaMista verificar_viga_mista(const VigaMistaConfig& cfg) {
         cfg.conector.h,
         "mm",
         rel.conectores.h_min_normativo_mm / std::max(1.0, cfg.conector.h),
-        conn_geom_ok
+        conn_geom_vert_ok
+    });
+    rel.itens.push_back({
+        "Conectores - Geometria Transversal",
+        (cfg.conector.tipo == CONECTOR_PERFIL_U)
+            ? "Largura da mesa do perfil vs comprimento do conector U"
+            : (cfg.laje.tipo == LAJE_STEEL_DECK && cfg.laje.nervura_paralela)
+                ? "Largura da mesa e calha da fôrma vs espaçamento transversal (st >= 4d)"
+                : "Largura da mesa do perfil vs espaçamento transversal de pinos (st >= 4d)",
+        rel.conectores.bf_min_necessario_mm,
+        cfg.perfil.bf,
+        "mm",
+        rel.conectores.bf_min_necessario_mm / std::max(1.0, cfg.perfil.bf),
+        conn_geom_transv_ok
     });
 
     rel.itens.push_back({
