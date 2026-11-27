@@ -16,6 +16,7 @@ set(MOTOR_SOURCES
     src/rotinas_nbr8800.cpp
     src/rotinas_vmp.cpp
     src/verificador.cpp
+    src/vibracao.cpp
 )
 
 # ============================================================================
@@ -23,6 +24,12 @@ set(MOTOR_SOURCES
 # ============================================================================
 add_executable(vmp_demo
     src/main.cpp
+    ${MOTOR_SOURCES}
+)
+
+# Gerador das tabelas numéricas do TCC (docs/DADOS_NUMERICOS_E_TABELAS_TCC.md)
+add_executable(vmp_tabelas
+    src/gerar_tabelas_tcc.cpp
     ${MOTOR_SOURCES}
 )
 
@@ -37,6 +44,7 @@ add_executable(vmp_tests
     tests/test_rotinas_vmp.cpp
     tests/test_viga_mista.cpp
     tests/test_calculadora_cargas.cpp
+    tests/test_estudo_caso.cpp
     ${MOTOR_SOURCES}
 )
 

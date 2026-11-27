@@ -1,0 +1,209 @@
+% Capítulo 3 -- convertido de docs/TCC_VIGA_MISTA_NBR8800_2024.md
+\chapter{Desenvolvimento da ferramenta computacional}\label{cap:3}
+
+\section{Arquitetura e Tecnologias}\label{sec:3.1}
+A ferramenta foi escrita em \textbf{C++20}, em precisão dupla, e é compilada com CMake (\ensuremath{\ge} 3.20) e Ninja, com os compiladores Clang ou GCC da distribuição MinGW-w64 para Windows. Os principais critérios de projeto foram:
+\begin{itemize}
+\item \textbf{motor de cálculo independente da interface:} as rotinas normativas não dependem de bibliotecas gráficas, o que permite usá-las na interface, nos testes automatizados e no gerador de tabelas;
+\item \textbf{edições da norma lado a lado:} as rotinas de 2008 e de 2024 ficam em \emph{namespaces} distintos (\texttt{nbr8800::v2008} e \texttt{nbr8800::v2024}), e o verificador escolhe a edição em tempo de execução;
+\item \textbf{resultados intermediários expostos:} cada rotina devolve uma estrutura com todas as grandezas intermediárias (por exemplo, $y_p$, $y_c$, $y_t$, $C_{ad}$, $R_g$, $R_p$, $\eta_i$), o que facilita a conferência manual e a geração de memoriais;
+\item \textbf{desempenho:} uma verificação completa do estudo de caso (Fase 1, conectores, Fase 2, flechas e vibração) leva cerca de 1,9 \ensuremath{\mu}s com otimização \texttt{-O2} (GCC 15.2) e cerca de 9 \ensuremath{\mu}s sem otimização, medidos no computador do autor como média de 20\,000 execuções. Isso permite recalcular a viga a cada quadro da interface (60 quadros por segundo) e torna viável, no futuro, a busca exaustiva em catálogos de perfis.
+\end{itemize}
+
+A interface usa \textbf{Dear ImGui} (interface em modo imediato) sobre \textbf{Raylib} (desenho 2D acelerado por OpenGL), integradas pela biblioteca rlImGui.
+
+\begin{figure}[htbp]
+  \centering
+  \caption{Arquitetura da ferramenta computacional}\label{fig:arquitetura}
+  \begin{tikzpicture}
+    % Interface grafica
+    \node[caixa=4.1cm] (u2) {Seleção da edição da norma e exemplos};
+    \node[caixa=4.1cm, left=4mm of u2] (u1) {Abas de entrada: perfil, laje, conectores, cargas, ELS e vibração};
+    \node[caixa=4.1cm, right=4mm of u2] (u3) {Desenho em escala da seção e quadro de verificações};
+    \coordinate (aux1) at (u1.south -| u2.south);
+    \node[titulogrupo, below=2mm of aux1] (uit) {Interface gráfica (Dear ImGui + Raylib)};
+    \node[grupo, fit=(u1)(u2)(u3)(uit)] (ui) {};
+    % Modelo de dados
+    \node[caixa=5cm, below=12mm of ui.south, xshift=-2.9cm] (s1) {PerfilI, Aco, Concreto, Laje, ConectorCisalhamento};
+    \node[caixa=5cm, right=5mm of s1] (s2) {GeometriaVigaMista, AcoesPiso, ParametrosVibracao};
+    \coordinate (aux2) at (s1.south -| ui.south);
+    \node[titulogrupo, below=2mm of aux2] (estt) {Modelo de dados: VigaMistaConfig};
+    \node[grupo, fit=(s1)(s2)(estt)] (est) {};
+    % Motor de calculo
+    \node[caixa=5.6cm, below=12mm of est.south, xshift=-3.2cm] (e0) {verificador.cpp: encadeamento e quadro de diagnóstico};
+    \node[caixa=3.4cm, below=6mm of e0.south, xshift=-1.85cm] (e1) {rotinas\_nbr8800.cpp: v2008 e v2024};
+    \node[caixa=3.4cm, right=4mm of e1] (e2) {vibracao.cpp: Anexo I};
+    \coordinate (aux3) at (e1.south -| e0.south);
+    \node[titulogrupo, below=2mm of aux3] (mot) {Motor de cálculo};
+    \node[grupo, fit=(e0)(e1)(e2)(mot)] (motor) {};
+    % Outros consumidores
+    \node[caixa=4.4cm, below=12mm of est.south, xshift=4cm] (t1) {Testes automatizados (vmp\_tests)};
+    \node[caixa=4.4cm, below=4mm of t1] (t2) {Gerador de tabelas do TCC (vmp\_tabelas)};
+    \node[titulogrupo, below=2mm of t2] (sat) {Outros consumidores do motor};
+    \node[grupo, fit=(t1)(t2)(sat)] (saidas) {};
+    % Setas
+    \draw[seta] (ui.south) -- (est.north);
+    \draw[seta] (est.south -| e0.north) -- (e0.north);
+    \draw[seta] (e0.south -| e1.north) -- (e1.north);
+    \draw[seta] (e0.south -| e2.north) -- (e2.north);
+    \coordinate (xleft) at ([xshift=-4mm]ui.west);
+    \draw[seta] (e0.west) -- (e0.west -| xleft) |- (ui.west);
+    \draw[seta] (est.south -| t1.north) -- (t1.north);
+    \coordinate (xright) at ([xshift=6mm]t1.east);
+    \draw[seta] (est.east) -- (est.east -| xright) |- (t2.east);
+  \end{tikzpicture}
+  \fonte{Elaborado pelo autor (2026).}
+\end{figure}
+
+\section{Organização do Código}\label{sec:3.2}
+
+\begin{table}[htbp]
+  \centering
+  \caption{Organização do código-fonte da ferramenta}\label{tab:organizacao-codigo}
+  {\small
+  \begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{5.4cm}L@{}}
+  \toprule
+  Arquivo & Responsabilidade \\
+  \midrule
+  \texttt{include/modelos.h} & Estruturas de dados de entrada: perfil, aço, concreto, laje, conector, geometria, ações e parâmetros de vibração \\
+  \texttt{include/catalogo.h}, \texttt{include/catalogo\_completo.h} & Perfis W e VS, aço A572 Gr. 50 e catálogo Metform MF-50/MF-75 (com a inércia da laje mista) \\
+  \texttt{include/calculadora\_cargas.h} & Assistente de cargas da NBR 6120:2019 (ocupação, revestimentos, forros, divisórias, paredes) \\
+  \texttt{src/geometria.cpp} & Propriedades geométricas de perfis I a partir das dimensões nominais \\
+  \texttt{src/rotinas\_nbr8800.cpp} & Rotinas normativas por edição: FLT/FLM/FLA, força cortante, conectores, momento positivo, seção homogeneizada de serviço e flechas \\
+  \texttt{src/vibracao.cpp} & Avaliação simplificada do Anexo I e tabela de ocupações (Tabelas I.2 e I.3) \\
+  \texttt{src/verificador.cpp} & Encadeamento Fase 1 \ensuremath{\rightarrow} conectores \ensuremath{\rightarrow} Fase 2 \ensuremath{\rightarrow} serviço e montagem do quadro de verificações \\
+  \texttt{include/estudo\_caso.h} & Dados do estudo de caso V1, usados nos testes, no gerador de tabelas e na interface \\
+  \texttt{src/gerar\_tabelas\_tcc.cpp} & Gera \texttt{docs/DADOS\_NUMERICOS\_E\_TABELAS\_TCC.md} com todas as tabelas numéricas deste trabalho \\
+  \texttt{gui/app\_gui.cpp} & Interface gráfica \\
+  \texttt{tests/} & Testes automatizados \\
+  \texttt{src/rotinas\_vmp.cpp} & Rotinas de vigas mistas protendidas (em desenvolvimento, fora do escopo deste trabalho) \\
+  \bottomrule
+  \end{tabularx}
+  }
+  \fonte{Elaborado pelo autor (2026).}
+\end{table}
+
+\section{Algoritmos}\label{sec:3.3}
+
+\subsection{Algoritmo 1 --- Conectores e grau de interação (edição de 2024)}
+\begin{lstlisting}[caption={Conectores e grau de interação (edição de 2024)},label={lst:alg-conectores}]
+ENTRADA: perfil, aço, concreto (fck, Ec), laje (tipo, nervura_paralela, tc, hF, bF, eF, bef),
+         conector (d, h, fu, nt, k, emh, s_informado), L, escorada
+SAÍDA:   QRd, Fhd, s, n, η, n_compl, ηi, n_min e verificações
+
+1. ηc ← min(1; (40/fck)^(1/3))
+   Fhd ← min(Aa·fy/1,10 ; 0,85·ηc·(fck/1,40)·bef·tc)
+
+2. Acs ← π·d²/4
+   SE laje maciça:                Rg ← 1,00 ; Rp ← 0,75
+   SENÃO SE nervuras perpendiculares:
+       Rg ← 1,00 (nt = 1) | 0,85 (nt = 2) | 0,70 (nt ≥ 3)
+       Rp ← 0,75 se emh ≥ 50 mm, senão 0,60
+   SENÃO (nervuras paralelas):
+       Rg ← 1,00 se bF/hF ≥ 1,5, senão 0,85 ; Rp ← 0,75
+
+3. QRd ← min( Acs·√(fck·Ec)/(2·1,25) ; Rg·Rp·Acs·fu/1,25 )
+
+4. SE steel deck perpendicular:  s ← k·eF
+   SENÃO SE s_informado > 0:     s ← s_informado
+   SENÃO:                        dimensiona para interação completa
+   n ← ⌊(L/2)/s⌋ · nt
+
+5. η ← min(1; n·QRd/Fhd) ;  n_compl ← ⌈Fhd/QRd⌉
+
+6. (após o cálculo de MRd — Algoritmo 2)
+   cp ← 1,00 se escorada, senão 0,85 ;  cr ← max(0,70; MSd/MRd)
+   η0 ← 1 − Ea/(580·fy)·(0,75 − 0,030·L[m])          (ρ = 0)
+   ηi ← min(1; max(cp·cr²·η0 ; 0,40·cr)) ;  n_min ← ⌈ηi·Fhd/QRd⌉
+
+7. s_min ← 4d (steel deck) ou 6d (maciça)
+   s_max ← min(8·(tc+hF); 915) (deck perpendicular) ou 8·(tc+hF)
+   h_min ← max(4d; hF + 40 se steel deck) ; cobrimento ← tc + hF − h ≥ 10 mm
+   alerta de ancoragem da fôrma ← deck perpendicular E s > 450 mm
+\end{lstlisting}
+
+\subsection{Algoritmo 2 --- Momento fletor resistente positivo}
+\begin{lstlisting}[caption={Momento fletor resistente positivo},label={lst:alg-momento}]
+ENTRADA: perfil, aço, concreto, laje, Fhd_conexão = η·Fhd
+SAÍDA:   MRd, caso, yp, Cad, a
+
+1. fyd ← fy/1,10 ; fcd ← fck/1,40 ; Cc,max ← 0,85·ηc·fcd·bef·tc ; Fa ← Aa·fyd
+2. parcial ← Fhd_conexão < min(Cc,max; Fa)
+3. SE h/tw ≤ 3,76·√(E/fy):                                   (alma compacta)
+     SE NÃO parcial E Cc,max ≥ Fa:                           (caso a)
+         a ← Fa/(0,85·ηc·fcd·bef) ; MRd ← Fa·(d/2 + hF + tc − a/2)
+     SENÃO:                                                  (casos b e c)
+         Ccd ← Fhd_conexão se parcial, senão Cc,max
+         a   ← Ccd/(0,85·ηc·fcd·bef) se parcial, senão tc
+         Cad ← (Fa − Ccd)/2
+         SE Cad ≤ bf·tf·fyd:  yp ← Cad/(bf·fyd) ; yc ← yp/2 ; Ac ← bf·yp
+         SENÃO:               yp ← tf + hw·(Cad − bf·tf·fyd)/(hw·tw·fyd)
+                              Ac ← bf·tf + tw·(yp − tf) ; yc ← centroide de Ac
+         yt  ← (Aa·d/2 − Ac·(d − yc))/(Aa − Ac)
+         MRd ← Cad·(d − yt − yc) + Ccd·(tc − a/2 + hF + d − yt)
+4. SENÃO SE h/tw ≤ 5,70·√(E/fy):                             (alma semicompacta)
+     seção homogeneizada (n = Ea/Ec) ; Wef ← Wa + √η·(Wtr,i − Wa)
+     MRd ← min(Wef·fyd ; n·Wtr,s·0,85·ηc·fcd)
+5. SENÃO: não aplicável (alma esbelta)
+\end{lstlisting}
+
+\subsection{Algoritmo 3 --- Flechas em serviço}
+\begin{lstlisting}[caption={Flechas em serviço},label={lst:alg-flechas}]
+ENTRADA: perfil, laje, Ec, L, g1, g2, q, ψ1, ψ2, η, escorada, contraflecha,
+         combinações (δmax e dano), alvenaria, retração (εsh)
+SAÍDA:   parcelas de flecha, δmax, δ2+δ3 e verificações
+
+1. Seções homogeneizadas (2.8.1): curta (n = Ea/Ec) e longa (n = 3·Ea/Ec)
+2. Ief ← Ia + √η·(Itr − Ia) ; Ief,∞ ← Ia + √η·(Itr,∞ − Ia) ; k ← 5L⁴/(384·Ea)
+3. δg1 ← (escorada ? 0 : k·g1/Ia)
+   δ1  ← (escorada ? k·(g1+g2)/Ief : δg1 + k·g2/Ief)
+   δfl ← k·(escorada ? g1+g2 : g2)·(1/Ief,∞ − 1/Ief)
+   δsh ← (retração ? Psh·esh·L²/(8·Ea·Ief,∞) : 0) ; δ2 ← δfl + δsh
+4. Para cada combinação c ∈ {δmax, dano}: ψ ← ψ2 | ψ1 | 1,0
+   δ3(c) ← k·ψ·q/Ief + k·ψ2·q·(1/Ief,∞ − 1/Ief)
+5. δ0 ← min(contraflecha; δ1) ; δmax ← δ1 + δ2 + δ3(δmax) − δ0 ≤ L/350
+   δ2 + δ3(dano) ≤ L/350 (≤ 15 mm com alvenaria solidarizada)
+\end{lstlisting}
+
+\subsection{Algoritmo 4 --- Vibração do piso (Anexo I, modo A)}
+\begin{lstlisting}[caption={Vibração do piso (Anexo I, modo A)},label={lst:alg-vibracao}]
+ENTRADA: perfil, laje, L, b, g1, g2, q, ψvib, Ec,din, Is (0 = automático),
+         componentes de β, kb, largura do piso, critério, limites da Tabela I.3
+SAÍDA:   f0, Bb, M, β, ap, aw,rms, R, utilização e aprovação
+
+1. ndin ← Ea/Ec,din ; Ib ← inércia da seção homogeneizada NÃO fissurada com ndin
+2. Is ← (Is informado > 0 ? Is : tc³/(12·ndin))
+3. w ← g1 + g2 + ψvib·q ; m ← w/(9,81·b)
+4. δ ← w/(384·Ea)·(5L⁴/Ib + b³/Is) ; f0 ← 18/√δ
+5. Bb ← min(kb·L·(Is·b/Ib)^0,25 ; 2/3·largura do piso) ; M ← 0,5·m·L·Bb
+6. β ← 0,010 + (forros ? 0,010 : 0) + β_ocupação + β_divisórias
+7. ap ← 0,55·750·e^(−0,35·f0)/(2·β·M)
+   W ← (f0 < 4 ? 0,5·√f0 : f0 ≤ 8 ? 1 : 8/f0) ; ζ ← (f0 ≤ 5 ? 0,15 : 0,10)
+   aw,rms ← W·ζ·750/(2·√2·β·M) ; R ← aw,rms/0,005
+8. utilização ← (critério = ap ? ap/ap,lim : R/Rmax)
+   aprovado ← f0 ≥ 3 Hz E (f0 > 9 Hz OU utilização ≤ 1)
+\end{lstlisting}
+
+\section{Verificação do Software}\label{sec:3.4}
+O código é verificado por uma suíte de \textbf{36 testes automatizados} (executável \texttt{vmp\_tests}, registrado no CTest), escrita com um mini-framework próprio (\texttt{tests/test\_framework.h}) que compara resultados por erro relativo (\texttt{ASSERT\_PERCENT}) ou absoluto (\texttt{ASSERT\_NEAR}). Os testes se dividem em três grupos:
+\begin{enumerate}
+\item \textbf{Calibração ponta a ponta contra a planilha de referência} (\texttt{tests/test\_estudo\_caso.cpp}): o estudo de caso V1 completo é executado pelo verificador e 49 grandezas --- da Fase 1 à vibração --- são comparadas com os valores do memorial da planilha, com tolerância de 0,01\%;
+\item \textbf{Gabarito independente de vibração:} o exemplo de laje maciça (W360\ensuremath{\times}51,0, vão de 7 m, garagem) de um memorial de cálculo distinto da planilha é reproduzido em $\delta$, $f_0$, $B_b$, $M$, $a_p$, $a_{w,rms}$ e $R$;
+\item \textbf{Testes unitários das rotinas:} compressão, flexão e cortante do perfil, momento positivo e negativo, regras de $R_g$, $R_p$ e espaçamentos, seção homogeneizada com a linha neutra no perfil e na laje, limite de 15 mm com alvenaria, critério de vibração de 2008 e diferenças entre as edições.
+\end{enumerate}
+
+A suíte foi usada também para \textbf{regressão}: quando uma correção alterava um resultado, o valor esperado só foi atualizado depois de conferido à mão ou contra a norma. Foi o caso do momento resistente de uma seção semicompacta com a linha neutra elástica dentro da laje (395,01 kN\ensuremath{\cdot}m na versão inicial, que não recalculava a linha neutra; 383,97 kN\ensuremath{\cdot}m após a correção, conferido à mão).
+
+Todas as tabelas numéricas dos Capítulos~\ref{cap:4} e~\ref{cap:5} são produzidas pelo executável \texttt{vmp\_tabelas} a partir do mesmo motor de cálculo, o que garante que o texto corresponda à versão do código.
+
+\section{Interface Gráfica}\label{sec:3.5}
+A janela é dividida em um painel de entrada, à esquerda, e uma área de resultados, à direita. O painel de entrada tem cinco abas:
+\begin{itemize}
+\item \textbf{Perfil de Aço:} perfis rápidos (incluindo o do estudo de caso), catálogo completo Gerdau W/VS ou perfil paramétrico, com recálculo automático das propriedades;
+\item \textbf{Laje \& Deck:} laje maciça ou \emph{steel deck} (catálogo Metform com 42 combinações de altura e espessura), orientação das nervuras, concreto e tipo de agregado; $E_c$ é calculado pela edição selecionada;
+\item \textbf{Stud Bolts:} diâmetro, altura, $f_u$, $n_t$, $k$ e $e_{mh}$;
+\item \textbf{Vão \& Cargas:} vão, $L_b$, distâncias às vigas adjacentes, assistente de cargas da NBR 6120 e coeficientes de ponderação;
+\item \textbf{ELS \& Vibração:} combinações de flecha, contraflecha, alvenaria, retração e os parâmetros do Anexo I (ocupação, amortecimento, largura do piso e critério).
+\end{itemize}
+
+A área de resultados mostra o desenho em escala da seção (perfil, nervuras, conectores, linha neutra plástica e bloco comprimido), indicadores resumidos (situação global, momento, conexão, flecha e vibração) e o quadro de verificações com barras de utilização. O menu \textbf{Exemplos} carrega o estudo de caso V1 e o menu \textbf{Norma} alterna entre as edições.

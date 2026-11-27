@@ -57,13 +57,42 @@ inline PerfilI perfil_w360x57_8() {
     return p;
 }
 
+// ============================================================================
+// ESTUDO DE CASO DO TCC (viga V1 - planilha Viga_Mista_NBR8800-2024.xlsx)
+// Gerdau W 460 x 52,0 - propriedades do catálogo
+// ============================================================================
+inline PerfilI perfil_w460x52() {
+    PerfilI p;
+    p.nome = "W 460 x 52,0";
+    p.tipo = LAMINADO;
+    p.d = 450.0;
+    p.bf = 152.0;
+    p.tw = 7.6;
+    p.tf = 10.8;
+    p.h = 428.4;            // d - 2 tf
+    p.d1 = 404.0;           // d' (altura plana da alma, catálogo)
+    p.r = (428.4 - 404.0) / 2.0;
+    p.Ag = 6660.0;          // 66,6 cm²
+    p.Ix = 21370e4;         // 21370 cm⁴
+    p.Wx = 949.8e3;         // 949,8 cm³
+    p.Zx = 1095.9e3;        // 1095,9 cm³
+    p.Iy = 634e4;           // 634 cm⁴
+    p.ry = 30.9;            // 3,09 cm
+    p.rx = 179.1;           // 17,91 cm
+    p.It = 21.79e4;         // 21,79 cm⁴
+    p.Cw = 305741.1744e6;   // 305741 cm⁶
+    p.lbf = 152.0 / (2.0 * 10.8);
+    p.lbw = 404.0 / 7.6;
+    return p;
+}
+
 inline Aco aco_a572_gr50() {
     Aco a;
     a.nome = "ASTM A572 Grau 50";
     a.fy_MPa = 345.0;     // MPa
     a.fu_MPa = 450.0;     // MPa
     a.E_MPa = 200000.0;   // MPa
-    a.G_MPa = 7700.0;     // MPa
+    a.G_MPa = 77000.0;    // MPa
     return a;
 }
 

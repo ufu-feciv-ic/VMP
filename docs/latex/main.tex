@@ -1,0 +1,193 @@
+% =============================================================================
+% Trabalho de Conclusão de Curso -- Engenharia Civil -- UFU
+% Convertido de docs/TCC_VIGA_MISTA_NBR8800_2024.md para abnTeX2
+% Compilar com pdfLaTeX + BibTeX (ex.: latexmk -pdf main.tex)
+% =============================================================================
+\documentclass[
+  12pt,
+  openright,
+  oneside,
+  a4paper,
+  chapter=TITLE,
+  section=TITLE,
+  english,
+  brazil
+]{abntex2}
+
+% ---------------------------------------------------------------- Pacotes
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{indentfirst}
+\usepackage{graphicx}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,shapes,fit,babel}
+\usepackage{microtype}
+\usepackage[alf]{abntex2cite}
+
+% ---------------------------------------------------------------- Comandos
+% Marcador de pendências de revisão (listadas no README.md)
+\newcommand{\conferir}[1]{\textcolor{red}{\textbf{[#1]}}}
+
+% Colunas X alinhadas para tabularx
+\newcolumntype{L}{>{\raggedright\arraybackslash}X}
+\newcolumntype{C}{>{\centering\arraybackslash}X}
+\newcolumntype{R}{>{\raggedleft\arraybackslash}X}
+
+% ---------------------------------------------------------------- TikZ
+\tikzset{
+  caixa/.style={draw, rectangle, rounded corners=2pt, fill=gray!8,
+    text width=#1, align=center, font=\footnotesize, inner sep=4pt},
+  caixa/.default=4cm,
+  titulogrupo/.style={font=\footnotesize\bfseries, align=center},
+  grupo/.style={draw, dashed, rounded corners=4pt, inner sep=6pt},
+  seta/.style={-{Stealth[length=2.5mm]}, thick},
+}
+
+% ---------------------------------------------------------------- Listings
+\renewcommand{\lstlistingname}{Algoritmo}
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  breaklines=true,
+  columns=fullflexible,
+  keepspaces=true,
+  frame=single,
+  captionpos=t,
+  numberbychapter=false,
+  showstringspaces=false,
+  literate=
+    {á}{{\'a}}1 {à}{{\`a}}1 {â}{{\^a}}1 {ã}{{\~a}}1
+    {é}{{\'e}}1 {ê}{{\^e}}1 {í}{{\'\i}}1 {ó}{{\'o}}1
+    {ô}{{\^o}}1 {õ}{{\~o}}1 {ú}{{\'u}}1 {ç}{{\c{c}}}1
+    {Á}{{\'A}}1 {Ã}{{\~A}}1 {É}{{\'E}}1 {Í}{{\'I}}1
+    {Ó}{{\'O}}1 {Ú}{{\'U}}1 {Ç}{{\c{C}}}1
+    {≤}{{$\le$}}1 {≥}{{$\ge$}}1 {←}{{$\leftarrow$}}2
+    {·}{{$\cdot$}}1 {√}{{$\surd$}}1 {−}{{-}}1 {—}{{\textemdash}}1
+    {²}{{$^2$}}1 {³}{{$^3$}}1 {⁴}{{$^4$}}1
+    {η}{{$\eta$}}1 {ψ}{{$\psi$}}1 {δ}{{$\delta$}}1 {β}{{$\beta$}}1
+    {ζ}{{$\zeta$}}1 {ε}{{$\varepsilon$}}1 {π}{{$\pi$}}1 {ρ}{{$\rho$}}1
+    {∞}{{$\infty$}}1 {∈}{{$\in$}}1
+    {⌊}{{$\lfloor$}}1 {⌋}{{$\rfloor$}}1 {⌈}{{$\lceil$}}1 {⌉}{{$\rceil$}}1
+    {|}{{\textbar}}1
+}
+
+% ---------------------------------------------------------------- Metadados
+\titulo{Desenvolvimento de ferramenta computacional para dimensionamento e verificação de vigas mistas de aço e concreto segundo a ABNT NBR 8800:2024}
+\autor{[NOME DO AUTOR]}
+\local{Uberlândia}
+\data{2026}
+\orientador{[NOME DO ORIENTADOR]}
+\instituicao{%
+  Universidade Federal de Uberlândia -- UFU
+  \par
+  Faculdade de Engenharia Civil
+  \par
+  Curso de Engenharia Civil}
+\tipotrabalho{Trabalho de Conclusão de Curso (Graduação)}
+\preambulo{Trabalho de Conclusão de Curso apresentado à Faculdade de Engenharia Civil da Universidade Federal de Uberlândia como requisito parcial para obtenção do título de Bacharel em Engenharia Civil.}
+
+% ---------------------------------------------------------------- PDF
+\makeatletter
+\hypersetup{
+  pdftitle={\@title},
+  pdfauthor={\@author},
+  pdfsubject={\imprimirpreambulo},
+  pdfcreator={LaTeX with abnTeX2},
+  colorlinks=true,
+  linkcolor=blue,
+  citecolor=blue,
+  filecolor=magenta,
+  urlcolor=blue,
+  bookmarksdepth=4
+}
+\makeatother
+
+% Espaçamentos e indentação
+\setlength{\parindent}{1.3cm}
+\setlength{\parskip}{0.2cm}
+
+% =============================================================================
+\begin{document}
+
+\selectlanguage{brazil}
+\frenchspacing
+
+% ---------------------------------------------------------------- Pré-textuais
+\imprimircapa
+\imprimirfolhaderosto
+
+% Folha de aprovação (preencher após a defesa)
+\begin{folhadeaprovacao}
+
+  \begin{center}
+    {\ABNTEXchapterfont\large\imprimirautor}
+
+    \vspace*{\fill}\vspace*{\fill}
+    \begin{center}
+      \ABNTEXchapterfont\bfseries\Large\imprimirtitulo
+    \end{center}
+    \vspace*{\fill}
+
+    \hspace{.45\textwidth}
+    \begin{minipage}{.5\textwidth}
+      \imprimirpreambulo
+    \end{minipage}%
+    \vspace*{\fill}
+  \end{center}
+
+  Trabalho aprovado. \imprimirlocal, [DIA] de [MÊS] de 2026:
+
+  \assinatura{\textbf{\imprimirorientador} \\ Orientador}
+  \assinatura{\textbf{[NOME DO MEMBRO DA BANCA 1]} \\ [INSTITUIÇÃO]}
+  \assinatura{\textbf{[NOME DO MEMBRO DA BANCA 2]} \\ [INSTITUIÇÃO]}
+
+  \begin{center}
+    \vspace*{0.5cm}
+    {\large\imprimirlocal}
+    \par
+    {\large\imprimirdata}
+    \vspace*{1cm}
+  \end{center}
+
+\end{folhadeaprovacao}
+
+\input{pretextuais/resumo}
+\input{pretextuais/abstract}
+
+\pdfbookmark[0]{\listfigurename}{lof}
+\listoffigures*
+\cleardoublepage
+
+\pdfbookmark[0]{\listtablename}{lot}
+\listoftables*
+\cleardoublepage
+
+\input{pretextuais/simbolos}
+
+\pdfbookmark[0]{\contentsname}{toc}
+\tableofcontents*
+\cleardoublepage
+
+% ---------------------------------------------------------------- Textuais
+\textual
+
+\include{capitulos/01_introducao}
+\include{capitulos/02_fundamentacao}
+\include{capitulos/03_ferramenta}
+\include{capitulos/04_estudo_caso}
+\include{capitulos/05_conclusoes}
+
+% ---------------------------------------------------------------- Pós-textuais
+\postextual
+
+\nocite{*}
+\bibliography{referencias}
+
+\end{document}

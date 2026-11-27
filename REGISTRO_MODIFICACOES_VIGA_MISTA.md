@@ -281,3 +281,35 @@ Este documento registra todas as alterações, inclusões e extensões de códig
   - *Diagnóstico no Raylib:* Ao invocar `LoadFontEx(..., nullptr, 0)`, a Raylib carrega por padrão estritamente 95 caracteres ASCII (32..126). Quaisquer caracteres acentuados (`Ç`, `Ã`, `Õ`, `Á`, `É`, `Í`, `Ó`, `Ú`, `ç`, `ã`, `õ`, etc.) eram omitidos ou desenhados como interrogação (`?`).
   - *Solução no Raylib:* Criado vetor de codepoints explícitos abrangendo ASCII básico (32..126), Latin-1 Supplement (128..255), Latin Extended-A (256..383) e símbolos estruturais ($\eta$, $\le$, $\ge$).
   - *Solução no Dear ImGui:* Definido `glyph_ranges` estendido incluindo Latin básico, Latin suplementar, pontuação geral, sobrescritos/subscritos ($^2$, $^3$) e operadores matemáticos, garantindo que palavras como "Seção", "Maciça", "Plástica", "Aço", "Vão" e "Dimensões" sejam renderizadas perfeitamente sem falhas.
+
+---
+
+## [2026-11-26] - Vibração (Anexo I), Flechas por Fases e Calibração Integral com a Planilha V1
+
+### 1. Novas funcionalidades
+- **Criado:** `include/vibracao.h` e `src/vibracao.cpp` — avaliação simplificada do Anexo I da NBR 8800:2024 (modo A): $I_b$ com $E_{c,din} = 38$ GPa e concreto não fissurado, $f_0 = 18/\sqrt{\delta}$ (viga + flexibilidade da laje $b^3/I_s$), $B_b$, massa modal, $\beta$ (Tabela I.2), $a_p$, $a_{w,rms}$, $R$ e tabela de ocupações (Tabelas I.2/I.3, $\psi_{vib}$ de I.1.5). Na edição 2008, critério L.3.2 ($\delta$ frequente $\le 20$ mm).
+- **Criado:** `include/estudo_caso.h` — dados do caso V1 da planilha (W460x52, MF-75, L = 9 m), reutilizados por testes, gerador de tabelas e GUI (menu *Exemplos*).
+- **Modelo de flechas reescrito** (`calcularFlechasVM`, nova assinatura com `AcoesPiso`): $\delta_{g1}$, $\delta_1$, fluência $\delta_{fl}$, retração opcional $\delta_{sh}$, $\delta_3$ por combinação (QP/frequente/rara), $\delta_0 = \min(\text{contraflecha};\ \delta_1)$, verificação de $\delta_2+\delta_3$ (15 mm com alvenaria) e contraflecha sugerida. A sobrecarga de construção deixou de entrar na flecha final.
+- **Nova seção homogeneizada de ELS** (`calcularSecaoHomogeneizadaELS`): recalcula a profundidade comprimida $x$ quando a LNE corta a laje (antes a altura era reduzida sem recalcular a LNE). Usada nas flechas, na vibração e no momento de almas semicompactas.
+- `AcoesPiso`: `gamma_g1_fase2` separado de `gamma_g2`; combinações de serviço, alvenaria e retração. `VigaMistaConfig`: `ParametrosVibracao`.
+- Catálogo Metform: campo `inercia_laje_mista_1e6_mm4_m` (42 fôrmas, da planilha). Novo perfil `perfil_w460x52()`.
+- **Gerador `vmp_tabelas`** (src/gerar_tabelas_tcc.cpp, agora no CMake): gera `docs/DADOS_NUMERICOS_E_TABELAS_TCC.md` com o caso V1, a comparação 2008 x 2024 e estudos paramétricos (vão, k, fck).
+
+### 2. Correções normativas
+- FLA (2008): $M_r = f_y W_x$ (Tabela G.1), não $0{,}7 f_y W_x$.
+- $R_p$: depende apenas de $e_{mh}$ (O.4.2.1.3 / L.4.2.1.3); removida a condição $h - h_F \ge 40$ mm.
+- $R_g = 0{,}85$ para nervuras paralelas com $b_F/h_F < 1{,}5$ (antes 1,00 com mais de um pino).
+- Espaçamentos 2008: $s_{min} = 4d$ com fôrma; $s_{max} = 8h$ e $\le 915$ mm só com nervuras perpendiculares (antes $\min(8h, 800)$).
+- Momento positivo plástico: $y_t$ por diferença de momentos estáticos com a área de catálogo (antes, modelo de chapas: +0,4% em $M_{Rd}$ no V1).
+- Compressão 2008: precedência em $Q_s$ elástico, $k_c$ com limites e $Q_a = A_{ef}/A_g$.
+- `aco_a572_gr50()`: $G = 77\,000$ MPa (antes 7 700).
+
+### 3. Interface gráfica
+- Nova aba *ELS & Vibração*; coluna de vibração no painel de indicadores; menu *Exemplos*.
+- $E_c$ calculado pela edição selecionada e pelo tipo de agregado (opção manual mantida).
+- Perfil paramétrico: propriedades recalculadas só quando as dimensões mudam (antes eram exibidas zeradas).
+- Coeficientes de ponderação editáveis; dica de $L_b = 0$ com *steel deck*; rótulo da cortante da Fase 2 corrigido (ELU).
+
+### 4. Testes
+- **Criado:** `tests/test_estudo_caso.cpp` — calibração ponta a ponta com a planilha (49 grandezas, tolerância 0,01%; desvio real ≤ 2,4e-15), gabarito independente de vibração (laje maciça, garagem), seção ELS, limite de 15 mm, critério 2008 e regras de $R_g$/$R_p$/espaçamento. Suíte: 36 testes, todos aprovados.
+- Atualizados dois valores de regressão que refletiam os erros corrigidos (FLA 2008; seção semicompacta com LNE na laje: 395,01 → 383,97 kN·m, conferido à mão).

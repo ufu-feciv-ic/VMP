@@ -1,0 +1,323 @@
+% Capítulo 4 -- convertido de docs/TCC_VIGA_MISTA_NBR8800_2024.md
+\chapter{Estudo de caso, validação e estudos paramétricos}\label{cap:4}
+
+\begin{quote}\small
+Todos os valores deste capítulo foram gerados pelo executável \texttt{vmp\_tabelas} (arquivo \texttt{docs/DADOS\_NUMERICOS\_E\_TABELAS\_TCC.md}).
+\end{quote}
+
+\section{Caracterização do Estudo de Caso (V1)}\label{sec:4.1}
+Adotou-se o exemplo resolvido na planilha \texttt{Viga\_Mista\_NBR8800-2024.xlsx}, que acompanha o texto de apoio de \citeonline{carvalho2024}: uma viga secundária interna de piso de escritórios.
+\begin{itemize}
+\item \textbf{Vão:} $L = 9{,}00$ m, biapoiada; vigas adjacentes a 2,80 m de cada lado ($b = 2{,}80$ m);
+\item \textbf{Largura efetiva:} $b_{ef} = \min(9000/8;\ 2800/2) \cdot 2 = 2250$ mm;
+\item \textbf{Perfil:} W460\ensuremath{\times}52,0 (Gerdau), ASTM A572 Gr. 50 ($f_y = 345$ MPa): $d = 450$ mm, $b_f = 152$ mm, $t_f = 10{,}8$ mm, $t_w = 7{,}6$ mm, $h = d' = 404$ mm, $A_a = 66{,}6$ cm\ensuremath{^2}, $I_x = 21\,370$ cm\ensuremath{^4}, $W_x = 949{,}8$ cm\ensuremath{^3}, $Z_x = 1\,095{,}9$ cm\ensuremath{^3};
+\item \textbf{Laje:} \emph{steel deck} Metform MF-75, chapa de 0,80 mm, nervuras perpendiculares à viga, altura total de 140 mm ($h_F = 75$ mm, $t_c = 65$ mm, $e_F = 274$ mm, $b_F = 137$ mm);
+\item \textbf{Concreto:} C30, agregado de granito ($\alpha_{ag} = 1{,}0$): $E_c = 0{,}85 \cdot 5600\sqrt{30} = 26\,072$ MPa, $\eta_c = 1{,}00$;
+\item \textbf{Conectores:} pinos \ensuremath{\varnothing}19 \ensuremath{\times} 125 mm, $f_{ucs} = 415$ MPa, um pino por nervura ($n_t = 1$) em todas as nervuras ($k = 1$), $e_{mh} = 59$ mm;
+\item \textbf{Construção:} não escorada; a fôrma fixada à mesa contém o perfil durante a concretagem ($L_b = 0$); contraflecha de 15 mm;
+\item \textbf{Ações:} concreto com consumo de 0,1025 m\ensuremath{^3}/m\ensuremath{^2} (2,5625 kN/m\ensuremath{^2}), fôrma 0,092 kN/m\ensuremath{^2}, perfil 0,510 kN/m; revestimento 1,00, forro 0,25 e instalações 0,30 kN/m\ensuremath{^2}; escritórios 2,50 kN/m\ensuremath{^2} e divisórias 0,75 kN/m\ensuremath{^2} ($\psi_1 = 0{,}6$; $\psi_2 = 0{,}4$); sobrecarga de construção 1,00 kN/m\ensuremath{^2}. Em cargas lineares: $g_1 = 7{,}942$ kN/m, $q_1 = 2{,}80$ kN/m, $g_2 = 4{,}34$ kN/m e $q = 9{,}10$ kN/m;
+\item \textbf{Flechas:} $\delta_{max}$ na combinação quase permanente; $\delta_2 + \delta_3$ na combinação rara, sem alvenaria solidarizada; retração considerada com $\varepsilon_{sh} = 0{,}0002$;
+\item \textbf{Vibração:} escritórios, forros e instalações suspensos, sem divisórias de piso a teto, viga interna, largura do piso de 20 m, critério da aceleração de pico, $I_s = 13{,}17 \times 10^6$ mm\ensuremath{^4}/m (catálogo, MF-75 com 140 mm e 0,80 mm).
+\end{itemize}
+
+\section{Resolução Passo a Passo (NBR 8800:2024)}\label{sec:4.2}
+
+\subsection{Etapa 1 --- Fase 1 (construção)}
+\[
+  q_{Sd,c} = 1{,}25 \cdot 7{,}175 + 1{,}15\,(0{,}257 + 0{,}510) + 1{,}30 \cdot 2{,}80 = 13{,}49\ \text{kN/m}
+\]
+\[
+  M_{Sd,c} = 136{,}60\ \text{kN}\cdot\text{m}, \qquad V_{Sd,c} = 60{,}71\ \text{kN}
+\]
+
+Com $L_b = 0$, a FLT não governa. As flambagens locais também não: $b_f/(2t_f) = 7{,}04 < 9{,}15$ e $h/t_w = 53{,}16 < 90{,}53$. Assim, $M_{pl} = Z_x f_y = 378{,}09$ kN\ensuremath{\cdot}m ($< 1{,}5\, W_x f_y$) e:
+
+\[
+  M_{Rd,a} = \frac{378{,}09}{1{,}10} = 343{,}71\ \text{kN}\cdot\text{m} \quad \Rightarrow \quad \frac{136{,}60}{343{,}71} = 39{,}7\%
+\]
+
+Força cortante: $h/t_w = 53{,}16 \le \lambda_p = 61{,}20$ ($k_v = 5{,}34$), logo $V_{Rd} = V_{pl}/\gamma_{a1} = 707{,}94/1{,}10 = 643{,}58$ kN.
+
+\subsection{Etapa 2 --- Conectores e grau de interação}
+\begin{itemize}
+\item $A_{cs} = 283{,}5$ mm\ensuremath{^2}; $Q_{Rd1} = 283{,}5\sqrt{30 \cdot 26\,072}/(2 \cdot 1{,}25) = 100{,}30$ kN;
+\item um pino por nervura \ensuremath{\Rightarrow} $R_g = 1{,}00$; $e_{mh} = 59$ mm $\ge 50$ mm \ensuremath{\Rightarrow} $R_p = 0{,}75$;
+\item $Q_{Rd2} = 1{,}00 \cdot 0{,}75 \cdot 283{,}5 \cdot 415/1{,}25 = 70{,}60$ kN \ensuremath{\Rightarrow} $Q_{Rd} = 70{,}60$ kN;
+\item $F_{hd} = \min(6660 \cdot 313{,}64;\ 0{,}85 \cdot 21{,}43 \cdot 2250 \cdot 65) = \min(2088{,}82;\ 2663{,}84) = 2088{,}82$ kN;
+\item $s = 274$ mm; $n = \lfloor 4500/274 \rfloor = 16$ conectores por meio vão (32 na viga); $n_{compl} = \lceil 2088{,}82/70{,}60 \rceil = 30$;
+\item $\eta = 16 \cdot 70{,}60/2088{,}82 = 0{,}541$ \ensuremath{\Rightarrow} interação parcial.
+\end{itemize}
+
+Grau mínimo, com $M_{Sd}$ e $M_{Rd}$ da Etapa 3:
+\begin{itemize}
+\item $c_r = \max(0{,}70;\ 311{,}91/607{,}73 = 0{,}513) = 0{,}70$; $c_p = 0{,}85$;
+\item $\eta_0 = 1 - \dfrac{200\,000}{580 \cdot 345}(0{,}75 - 0{,}030 \cdot 9) = 0{,}520$;
+\item $\eta_i = \max(0{,}85 \cdot 0{,}70^2 \cdot 0{,}520;\ 0{,}40 \cdot 0{,}70) = \max(0{,}217;\ 0{,}280) = 0{,}280$; $n_{min} = 9$;
+\item $\eta = 0{,}541 \ge 0{,}280$: \textbf{atende}.
+\end{itemize}
+
+Limites geométricos: $s_{min} = 4 \cdot 19 = 76$ mm $\le 274$ mm $\le s_{max} = \min(8 \cdot 140;\ 915) = 915$ mm; $h_{cs} = 125 \ge \max(76;\ 75 + 40) = 115$ mm; cobrimento $140 - 125 = 15 \ge 10$ mm; $s = 274 \le 450$ mm (a fôrma fica ancorada pelos próprios conectores).
+
+\subsection{Etapa 3 --- Momento resistente da viga mista (caso c)}
+\begin{gather*}
+  q_{Sd} = 1{,}35 \cdot 7{,}175 + 1{,}25 \cdot 0{,}767 + 1{,}50 \cdot 4{,}34 + 1{,}50 \cdot 9{,}10 = 30{,}81\ \text{kN/m}, \\
+  M_{Sd} = 311{,}91\ \text{kN}\cdot\text{m}, \\
+  V_{Sd} = 138{,}63\ \text{kN}
+\end{gather*}
+
+\begin{itemize}
+\item $C_{cd} = \sum Q_{Rd} = 1129{,}58$ kN; $a = 1129{,}58/(0{,}85 \cdot 21{,}43 \cdot 2250) = 27{,}56$ mm;
+\item $C_{ad} = (2088{,}82 - 1129{,}58)/2 = 479{,}62$ kN $\le A_{af} f_{yd} = 514{,}87$ kN \ensuremath{\Rightarrow} LNP na mesa superior;
+\item $y_p = 479{,}62/514{,}87 \cdot 10{,}8 = 10{,}06$ mm; $y_c = 5{,}03$ mm; $A_c = 1529{,}2$ mm\ensuremath{^2};
+\item $y_t = (6660 \cdot 225 - 1529{,}2 \cdot 444{,}97)/5130{,}8 = 159{,}44$ mm;
+\item $M_{Rd} = 479{,}62 \cdot 285{,}53 + 1129{,}58 \cdot (65 - 13{,}78 + 75 + 450 - 159{,}44) = 136{,}95 + 470{,}78 = 607{,}73$ kN\ensuremath{\cdot}m;
+\item $M_{Sd}/M_{Rd} = 51{,}3\%$; $V_{Sd}/V_{Rd} = 138{,}63/643{,}58 = 21{,}5\%$.
+\end{itemize}
+
+\subsection{Etapa 4 --- Flechas e tensão em serviço}
+\begin{itemize}
+\item Curta duração ($\alpha_E = 7{,}67$): $y_0 = 471{,}4$ mm $< d + h_F = 525$ mm \ensuremath{\Rightarrow} linha neutra no perfil; $I_{tr} = 76\,609$ cm\ensuremath{^4};
+\item longa duração ($3\alpha_E = 23{,}01$): $I_{tr,\infty} = 57\,546$ cm\ensuremath{^4};
+\item $\sqrt{\eta} = 0{,}735$ \ensuremath{\Rightarrow} $I_{ef} = 61\,991$ cm\ensuremath{^4} e $I_{ef,\infty} = 47\,973$ cm\ensuremath{^4}.
+\end{itemize}
+
+\begin{table}[htbp]
+  \centering
+  \caption{Parcelas de flecha do estudo de caso V1}\label{tab:flechas-v1}
+  {
+  \begin{tabular}{lr}
+  \toprule
+  Parcela & Valor (mm) \\
+  \midrule
+  $\delta_{g1}$ (perfil isolado) & 15,88 \\
+  $\delta_1$ (permanentes) & 18,87 \\
+  $\delta_{fl}$ (fluência) & 0,87 \\
+  $\delta_{sh}$ (retração) & 4,56 \\
+  $\delta_3$ (variáveis, quase permanente) & 3,24 \\
+  $\delta_0$ (contraflecha considerada) & 15,00 \\
+  \textbf{$\delta_{max}$} & \textbf{12,55} $\le 25{,}71$ (48,8\%) \\
+  \textbf{$\delta_2 + \delta_3$} (rara) & \textbf{12,44} $\le 25{,}71$ (48,4\%) \\
+  \bottomrule
+  \end{tabular}
+  }
+  \fonte{Elaborado pelo autor (2026).}
+\end{table}
+
+A contraflecha de 15 mm coincide com a sugerida pela ferramenta (maior múltiplo de 5 mm abaixo de $\delta_{g1} = 15{,}88$ mm). A tensão na face inferior do perfil em serviço é $\sigma = 181{,}1$ MPa $\le f_y = 345$ MPa (52,5\%).
+
+\subsection{Etapa 5 --- Vibração do piso (Anexo I)}
+\begin{itemize}
+\item $n_{din} = 200/38 = 5{,}26$; $I_b = 81\,743$ cm\ensuremath{^4} (concreto não fissurado);
+\item $w = 7{,}942 + 4{,}34 + 0{,}1 \cdot 9{,}10 = 13{,}19$ kN/m; $m = 480{,}3$ kg/m\ensuremath{^2};
+\item $\delta = 7{,}18$ mm \ensuremath{\Rightarrow} $f_0 = 18/\sqrt{7{,}18} = 6{,}72$ Hz (dentro de 3--9 Hz);
+\item $B_b = 2 \cdot 9 \cdot (13\,170/291\,940)^{0{,}25} = 8{,}30$ m $\le 13{,}33$ m; $M = 0{,}5 \cdot 480{,}3 \cdot 9 \cdot 8{,}30 = 17\,929$ kg;
+\item $\beta = 0{,}010 + 0{,}010 + 0{,}010 = 0{,}030$;
+\item $a_p = 0{,}55 \cdot 750 \cdot e^{-0{,}35 \cdot 6{,}72}/(2 \cdot 0{,}030 \cdot 17\,929) = 0{,}0365$ m/s\ensuremath{^2} $\le 0{,}050$ m/s\ensuremath{^2} (73,1\%): \textbf{atende};
+\item $W = 1{,}0$; $\zeta = 0{,}10$; $a_{w,rms} = 0{,}0493$ m/s\ensuremath{^2}; $R = 9{,}86$.
+\end{itemize}
+
+Pelo critério do fator de resposta, a mesma viga \textbf{não atenderia} ($R = 9{,}86 > 8$). Como o Anexo I deixa a escolha do critério ao responsável técnico (I.2.4), o resultado da verificação de conforto depende dessa escolha.
+
+\subsection{Quadro de verificações}
+
+\begin{table}[htbp]
+  \centering
+  \caption{Quadro de verificações do estudo de caso V1 (ABNT NBR 8800:2024)}\label{tab:quadro-v1}
+  {\small
+  \begin{tabular}{@{}lrrrc@{}}
+  \toprule
+  Verificação & Solicitante & Resistente / limite & Utilização & Situação \\
+  \midrule
+  Flexão, Fase 1 & 136,60 kN\ensuremath{\cdot}m & 343,71 kN\ensuremath{\cdot}m & 39,7\% & Atende \\
+  Cortante, Fase 1 & 60,71 kN & 643,58 kN & 9,4\% & Atende \\
+  Grau de interação & $\eta_i$ = 0,280 & $\eta$ = 0,541 & 51,8\% & Atende \\
+  Espaçamento dos conectores & 274 mm & 915 mm & 29,9\% & Atende \\
+  Altura e cobrimento do conector & 115 mm (mín.) & 125 mm & 92,0\% & Atende \\
+  Geometria transversal & 50 mm (mín.) & 152 mm & 32,9\% & Atende \\
+  Flexão, Fase 2 & 311,91 kN\ensuremath{\cdot}m & 607,73 kN\ensuremath{\cdot}m & 51,3\% & Atende \\
+  Cortante, Fase 2 & 138,63 kN & 643,58 kN & 21,5\% & Atende \\
+  Tensão em serviço & 181,07 MPa & 345,00 MPa & 52,5\% & Atende \\
+  Flecha máxima & 12,55 mm & 25,71 mm & 48,8\% & Atende \\
+  Flecha pós-cura & 12,44 mm & 25,71 mm & 48,4\% & Atende \\
+  Vibração ($a_p$) & 0,0365 m/s\ensuremath{^2} & 0,050 m/s\ensuremath{^2} & 73,1\% & Atende \\
+  \bottomrule
+  \end{tabular}
+  }
+  \fonte{Elaborado pelo autor (2026).}
+\end{table}
+
+\section{Confronto com a Planilha de Referência}\label{sec:4.3}
+
+{\small
+\begin{longtable}{lrrr}
+\caption{Confronto entre a planilha de referência e o software no estudo de caso V1}\label{tab:confronto-planilha}\\
+\toprule
+Grandeza & Planilha & Software & Diferença relativa \\
+\midrule
+\endfirsthead
+\caption[]{Confronto entre a planilha de referência e o software no estudo de caso V1 (continuação)}\\
+\toprule
+Grandeza & Planilha & Software & Diferença relativa \\
+\midrule
+\endhead
+\midrule
+\multicolumn{4}{r}{\footnotesize (continua)}\\
+\endfoot
+\bottomrule
+\endlastfoot
+$M_{Sd,c}$ (kN\ensuremath{\cdot}m) & 136,60 & 136,60 & 0 \\
+$M_{Rd,a}$ (kN\ensuremath{\cdot}m) & 343,71 & 343,71 & $3{,}3 \times 10^{-16}$ \\
+$V_{Rd}$ (kN) & 643,58 & 643,58 & $3{,}5 \times 10^{-16}$ \\
+$Q_{Rd}$ (kN) & 70,60 & 70,60 & $2{,}0 \times 10^{-16}$ \\
+$F_{hd}$ (kN) & 2088,82 & 2088,82 & $6{,}5 \times 10^{-16}$ \\
+$n$ (meio vão) & 16 & 16 & 0 \\
+$\eta$ & 0,5408 & 0,5408 & $6{,}2 \times 10^{-16}$ \\
+$\eta_i$ & 0,280 & 0,280 & $2{,}0 \times 10^{-16}$ \\
+$n_{min}$ & 9 & 9 & 0 \\
+$M_{Sd}$ (kN\ensuremath{\cdot}m) & 311,91 & 311,91 & 0 \\
+$C_{ad}$ (kN) & 479,62 & 479,62 & 0 \\
+$M_{Rd}$ (kN\ensuremath{\cdot}m) & 607,73 & 607,73 & $3{,}7 \times 10^{-16}$ \\
+$I_{ef}$ (cm\ensuremath{^4}) & 61\,991 & 61\,991 & $3{,}5 \times 10^{-16}$ \\
+$I_{ef,\infty}$ (cm\ensuremath{^4}) & 47\,973 & 47\,973 & $1{,}1 \times 10^{-15}$ \\
+$\delta_1$ (mm) & 18,87 & 18,87 & $2{,}1 \times 10^{-15}$ \\
+$\delta_2$ (mm) & 5,44 & 5,44 & $4{,}9 \times 10^{-16}$ \\
+$\delta_3$ (mm) & 3,24 & 3,24 & $5{,}5 \times 10^{-16}$ \\
+$\delta_{max}$ (mm) & 12,55 & 12,55 & $9{,}9 \times 10^{-16}$ \\
+$\delta_2 + \delta_3$ (mm) & 12,44 & 12,44 & $2{,}4 \times 10^{-15}$ \\
+$\sigma$ (MPa) & 181,1 & 181,1 & $4{,}7 \times 10^{-16}$ \\
+$f_0$ (Hz) & 6,72 & 6,72 & $5{,}3 \times 10^{-16}$ \\
+$B_b$ (m) & 8,30 & 8,30 & $6{,}4 \times 10^{-16}$ \\
+$M$ (kg) & 17\,929 & 17\,929 & $2{,}2 \times 10^{-15}$ \\
+$a_p$ (m/s\ensuremath{^2}) & 0,0365 & 0,0365 & $1{,}5 \times 10^{-15}$ \\
+$R$ & 9,86 & 9,86 & $1{,}8 \times 10^{-16}$ \\
+\end{longtable}
+}
+\vspace{-\baselineskip}
+\fonte{Elaborado pelo autor (2026).}
+
+As diferenças são da ordem do erro de arredondamento em precisão dupla. Isso mostra que \textbf{o software implementa o mesmo modelo de cálculo da planilha}; não constitui, por si só, prova de que o modelo esteja correto em relação à norma. Por isso, a validação foi complementada por:
+\begin{itemize}
+\item \textbf{verificação independente da vibração}, contra o exemplo de laje maciça de um memorial distinto (W360\ensuremath{\times}51,0, vão de 7 m, garagem): o software reproduziu $\delta = 4{,}023$ mm, $f_0 = 8{,}97$ Hz, $B_b = 7{,}790$ m, $M = 20\,249$ kg, $a_p = 0{,}0176$ m/s\ensuremath{^2} e $R = 9{,}34$;
+\item \textbf{conferência manual} das etapas da seção~\ref{sec:4.2} e do caso semicompacto descrito em~\ref{sec:3.4};
+\item \textbf{leitura direta dos itens normativos} para $R_g$, $R_p$, espaçamentos, $M_r$ da FLA e critério de vibração de 2008, que motivou correções no código (Capítulo~\ref{cap:5}).
+\end{itemize}
+
+Durante a calibração, três divergências entre a versão inicial do software e a planilha foram rastreadas até a sua origem:
+\begin{enumerate}
+\item o centroide $y_t$ calculado com a área do modelo de chapas (diferença de 0,4\% em $M_{Rd}$; ver~\ref{sec:2.6});
+\item o modelo de flechas, que incluía a sobrecarga de construção na flecha final e não separava fluência e retração;
+\item a ausência da verificação de vibração.
+\end{enumerate}
+
+\section{O Mesmo Caso nas Duas Edições}\label{sec:4.4}
+
+\begin{table}[htbp]
+  \centering
+  \caption{Estudo de caso V1 calculado pelas edições de 2008 e de 2024 da ABNT NBR 8800}\label{tab:v1-edicoes}
+  {
+  \begin{tabular}{lrrr}
+  \toprule
+  Grandeza & NBR 8800:2008 & NBR 8800:2024 & Variação \\
+  \midrule
+  $E_c$ (MPa) & 26\,072 & 26\,072 & 0,0\% \\
+  $Q_{Rd}$ (kN) & 70,60 & 70,60 & 0,0\% \\
+  $\eta$ & 0,541 & 0,541 & 0,0\% \\
+  $\eta_i$ & 0,519 & 0,280 & \ensuremath{-}46,0\% \\
+  $n_{min}$ (meio vão) & 16 & 9 & \ensuremath{-}43,8\% \\
+  $M_{Rd}$ (kN\ensuremath{\cdot}m) & 607,73 & 607,73 & 0,0\% \\
+  $V_{Rd}$ (kN) & 643,58 & 643,58 & 0,0\% \\
+  $\delta_{max}$ (mm) & 12,55 & 12,55 & 0,0\% \\
+  \bottomrule
+  \end{tabular}
+  }
+  \fonte{Elaborado pelo autor (2026).}
+\end{table}
+
+Neste caso as resistências não mudam: com \emph{steel deck} perpendicular, $R_p = 0{,}75$ nas duas edições; com $f_{ck} = 30$ MPa, $\eta_c = 1$; e a alma é compacta ao cisalhamento com $k_v$ = 5,00 ou 5,34. A diferença está no grau mínimo: pela edição de 2008, os 16 conectores por meio vão adotados seriam exatamente o mínimo ($\eta = 0{,}541 \ge 0{,}519$, com folga de 4\%); pela de 2024, bastariam 9.
+
+Na vibração, as edições divergem no resultado. Pelo critério indireto de 2008, o deslocamento frequente sem a parcela diferida é 22,63 mm $> 20$ mm, e a viga \textbf{não atende}. Pelo Anexo I de 2024, $a_p = 0{,}0365 \le 0{,}050$ m/s\ensuremath{^2} e a viga \textbf{atende}. O critério de 2008 depende só da rigidez; o de 2024 considera também a massa mobilizada e o amortecimento, que favorecem este piso.
+
+\section{Estudos Paramétricos}\label{sec:4.5}
+
+\subsection{Variação do vão}\label{sec:4.5.1}
+Mantidos os demais dados do V1 (conectores em todas as nervuras e contraflecha de 15 mm):
+
+\begin{table}[htbp]
+  \centering
+  \caption{Estudo paramétrico: variação do vão}\label{tab:param-vao}
+  {\footnotesize
+  \begin{tabularx}{\textwidth}{@{}RRRRRRRRC@{}}
+  \toprule
+  $L$ (m) & $\eta$ & $\eta_i$ 2008 & $\eta_i$ 2024 & $M_{Sd}/M_{Rd}$ & $\delta_{max}/\delta_{lim}$ & $f_0$ (Hz) & $a_p$ (m/s\ensuremath{^2}) & Global 2024 \\
+  \midrule
+  6,0 & 0,398 & 0,428 & 0,280 & 25,8\% & 17,3\% & 13,62 & 0,0072 & Atende \\
+  7,0 & 0,409 & 0,458 & 0,280 & 33,4\% & 22,7\% & 10,54 & 0,0157 & Atende \\
+  8,0 & 0,473 & 0,488 & 0,280 & 41,9\% & 28,0\% & 8,33 & 0,0262 & Atende \\
+  9,0 & 0,541 & 0,519 & 0,280 & 51,3\% & 48,8\% & 6,72 & 0,0365 & Atende \\
+  10,0 & 0,608 & 0,549 & 0,280 & 61,4\% & 87,3\% & 5,52 & 0,0452 & Atende \\
+  11,0 & 0,676 & 0,579 & 0,289 & 72,2\% & 130,8\% & 4,61 & 0,0515 & \textbf{Não atende} \\
+  12,0 & 0,710 & 0,609 & 0,373 & 84,8\% & 182,3\% & 3,89 & 0,0557 & \textbf{Não atende} \\
+  \bottomrule
+  \end{tabularx}
+  }
+  \fonte{Elaborado pelo autor (2026).}
+\end{table}
+
+Observações:
+\begin{itemize}
+\item os estados-limites de serviço governam: a 11 m a flexão ainda está a 72\% da capacidade, mas a flecha e a aceleração de pico já excedem os limites;
+\item a flecha cresce rapidamente com o vão porque a contraflecha foi mantida em 15 mm; ela compensa uma fração cada vez menor de $\delta_1$;
+\item até 8 m, o grau de interação obtido com conectores em todas as nervuras ($\eta \le 0{,}473$) seria \textbf{insuficiente pela edição de 2008}, mas suficiente pela de 2024 ($\eta_i = 0{,}280$). Para vãos menores, a mudança da norma permite conexões mais leves;
+\item com o vão, $c_r$ deixa de ser limitado em 0,70 (a partir de 11 m) e $\eta_i$ de 2024 começa a crescer.
+\end{itemize}
+
+\subsection{Densidade de conectores}\label{sec:4.5.2}
+Com $L = 9$ m, variando o número de nervuras entre conectores:
+
+\begin{table}[htbp]
+  \centering
+  \caption{Estudo paramétrico: densidade de conectores ($L = 9$ m)}\label{tab:param-conectores}
+  {\footnotesize
+  \begin{tabularx}{\textwidth}{@{}RRRRRRCCRR@{}}
+  \toprule
+  $k$ & $s$ (mm) & $n$ & $\eta$ & $\eta_i$ 2008 & $\eta_i$ 2024 & Atende 2008 & Atende 2024 & $M_{Rd}$ (kN\ensuremath{\cdot}m) & $\delta_{max}$ (mm) \\
+  \midrule
+  1 & 274 & 16 & 0,541 & 0,519 & 0,280 & Atende & Atende & 607,7 & 12,55 \\
+  2 & 548 & 8 & 0,270 & 0,519 & 0,280 & Não & Não & 508,6 & 14,81 \\
+  3 & 822 & 5 & 0,169 & 0,519 & 0,280 & Não & Não & 452,4 & 16,32 \\
+  4 & 1096 & 4 & 0,135 & 0,519 & 0,289 & Não & Não & 431,3 & 17,02 \\
+  \bottomrule
+  \end{tabularx}
+  }
+  \fonte{Elaborado pelo autor (2026).}
+\end{table}
+
+Com um conector a cada duas nervuras, $\eta = 0{,}270$ fica pouco abaixo do mínimo de 2024 (0,280). Como a modulação da fôrma é discreta, não há configuração intermediária com um pino por nervura. Mesmo assim, o momento resistente com $k = 2$ (508,6 kN\ensuremath{\cdot}m) ainda superaria $M_{Sd}$ com folga: no V1 a conexão é governada pelo grau mínimo, e não pela resistência. A redução de $\eta$ também aumenta a flecha (de 12,55 para 14,81 mm), pelo fator $\sqrt{\eta}$ de $I_{ef}$.
+
+\subsection{Resistência do concreto}\label{sec:4.5.3}
+Para isolar o efeito de $\eta_c$ e de $R_p$, usou-se laje maciça de 120 mm com conectores dimensionados para interação completa:
+
+\begin{table}[htbp]
+  \centering
+  \caption{Estudo paramétrico: resistência do concreto em laje maciça com interação completa}\label{tab:param-fck}
+  {\footnotesize
+  \begin{tabularx}{\textwidth}{@{}RRRRRRRR@{}}
+  \toprule
+  $f_{ck}$ (MPa) & $\eta_c$ (2024) & $Q_{Rd}$ 2008 (kN) & $Q_{Rd}$ 2024 (kN) & $n_{compl}$ 2008 & $n_{compl}$ 2024 & $M_{Rd}$ 2008 (kN\ensuremath{\cdot}m) & $M_{Rd}$ 2024 (kN\ensuremath{\cdot}m) \\
+  \midrule
+  25 & 1,000 & 87,48 & 70,60 & 24 & 30 & 656,8 & 656,8 \\
+  30 & 1,000 & 94,13 & 70,60 & 23 & 30 & 667,4 & 667,4 \\
+  35 & 1,000 & 94,13 & 70,60 & 23 & 30 & 675,0 & 675,0 \\
+  40 & 1,000 & 94,13 & 70,60 & 23 & 30 & 680,7 & 680,7 \\
+  45 & 0,961 & 94,13 & 70,60 & 23 & 30 & 685,2 & 683,7 \\
+  50 & 0,928 & 94,13 & 70,60 & 23 & 30 & 688,7 & 686,2 \\
+  \bottomrule
+  \end{tabularx}
+  }
+  \fonte{Elaborado pelo autor (2026).}
+\end{table}
+
+\begin{itemize}
+\item O coeficiente $\eta_c$ só atua acima de 40 MPa e, como o perfil governa $F_{hd}$, o seu efeito em $M_{Rd}$ é pequeno (\ensuremath{-}0,4\% a 50 MPa).
+\item O efeito mais relevante é o de $R_p = 0{,}75$ em lajes maciças: a resistência do conector passa a ser governada pelo aço (70,60 kN) e a interação completa exige \textbf{30 conectores por meio vão, contra 23 pela edição de 2008 (+30\%)}, para o mesmo momento resistente.
+\end{itemize}

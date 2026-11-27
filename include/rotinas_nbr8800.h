@@ -145,15 +145,49 @@ struct ResultadoRotinaF {
 };
 
 // ----------------------------------------------------------------------------
-// Rotina ELS: Flechas com Fluência (reutilizando calcularSecaoTransformada)
-// e Tensão em Serviço na Mesa Inferior (Construção Não Escorada)
+// Seção homogeneizada para os estados-limites de serviço (O.1.2 / L.1.2)
+// Concreto tracionado desprezado: se a linha neutra elástica cair dentro da
+// laje, recalcula-se a profundidade comprimida x (equilíbrio de momentos estáticos).
+// ----------------------------------------------------------------------------
+struct ResultadoSecaoHomogeneizadaELS {
+    double razao_modular = 0.0;   // n = Ea / Ec (já multiplicada por 3 para longa duração)
+    double btr_mm = 0.0;          // bef / n
+    bool lne_na_laje = false;     // linha neutra elástica dentro da laje de concreto
+    double x_mm = 0.0;            // profundidade comprimida da laje (se lne_na_laje)
+    double yLN_mm = 0.0;          // posição da LNE medida a partir da face inferior do perfil
+    double Itr_mm4 = 0.0;
+    double Wtr_inf_mm3 = 0.0;     // módulo na face inferior do perfil
+    double Wtr_sup_mm3 = 0.0;     // módulo na face superior da laje (em unidades de aço)
+};
+
+ResultadoSecaoHomogeneizadaELS calcularSecaoHomogeneizadaELS(
+    const PerfilI& perfil,
+    const Laje& laje,
+    double razao_modular,
+    bool desprezar_concreto_tracionado = true
+);
+
+// ----------------------------------------------------------------------------
+// Rotina ELS: Flechas por fases (Anexo B / L.1.2 / L.2.3.2) e tensão em serviço
+//
+// Parcelas (modelo da planilha de referência e do Anexo B da NBR 8800:2024):
+//   delta_g1 = k·g1/Ia                         (não escorada; 0 se escorada)
+//   delta1   = delta_g1 + k·g2/Ief,s            (permanentes, sem efeitos de longa duração)
+//   delta_fl = k·g_mista·(1/Ief,l − 1/Ief,s)     (acréscimo por fluência)
+//   delta_sh = Psh·esh·L² / (8·E·Ief,l)          (retração, opcional – AISC 360-16 C-I3)
+//   delta2   = delta_fl + delta_sh
+//   delta3   = k·psi·q/Ief,s + k·psi2·q·(1/Ief,l − 1/Ief,s)
+//   delta_max = delta1 + delta2 + delta3 − min(contraflecha; delta1) <= L/350
+//   delta2 + delta3(dano) <= L/350 (e <= 15 mm com alvenaria solidarizada)
+// com k = 5·L⁴ / (384·E).
 // ----------------------------------------------------------------------------
 struct ResultadoFlechasVM {
-    ResultadoSecaoTransformada secao_curta; // t = 0 (n = Ecs / Ea)
-    ResultadoSecaoTransformada secao_longa; // t = inf (n = Ecs / (3*Ea))
+    ResultadoSecaoHomogeneizadaELS secao_curta; // n = Ea / Ec
+    ResultadoSecaoHomogeneizadaELS secao_longa; // n = 3·Ea / Ec
 
-    double alpha_E_curta = 0.0; // Ea / Ecs
-    double alpha_E_longa = 0.0; // 3 * Ea / Ecs
+    double alpha_E_curta = 0.0; // Ea / Ec
+    double alpha_E_longa = 0.0; // 3·Ea / Ec
+    double fator_interacao = 1.0; // sqrt(eta)
     double Itr_cd_cm4 = 0.0;
     double Itr_ld_cm4 = 0.0;
     double Ief_cd_cm4 = 0.0;
@@ -161,19 +195,28 @@ struct ResultadoFlechasVM {
     double Wef_inf_cd_cm3 = 0.0;
     double Wef_inf_ld_cm3 = 0.0;
 
-    double flecha_fase1_mm = 0.0;       // Perfil isolado na construção
-    double flecha_perm_ld_mm = 0.0;     // Permanentes pós-cura (g2) com fluência
-    double flecha_var_cd_mm = 0.0;      // Parcela instantânea de q2 (1 - psi2)
-    double flecha_var_ld_mm = 0.0;      // Parcela quase-permanente de q2 com fluência (psi2)
-    double flecha_total_bruta_mm = 0.0; // Soma bruta das parcelas
-    double contraflecha_mm = 0.0;       // Contraflecha deduzida
-    double flecha_total_mm = 0.0;       // Flecha total líquida
-    double flecha_ativa_mm = 0.0;       // Flecha pós-cura (g2 + q2)
+    double flecha_g1_mm = 0.0;            // delta_g1: perfil isolado na concretagem
+    double flecha_perm_curta_mm = 0.0;    // delta1
+    double flecha_fluencia_mm = 0.0;      // delta_fl
+    double flecha_retracao_mm = 0.0;      // delta_sh
+    double flecha_longa_duracao_mm = 0.0; // delta2 = delta_fl + delta_sh
+    double flecha_var_max_mm = 0.0;       // delta3 na combinação de delta_max
+    double flecha_var_dano_mm = 0.0;      // delta3 na combinação de dano
+    double flecha_total_bruta_mm = 0.0;   // delta_tot = delta1 + delta2 + delta3
+    double contraflecha_mm = 0.0;         // delta0 = min(contraflecha; delta1)
+    double flecha_total_mm = 0.0;         // delta_max = delta_tot − delta0
+    double flecha_dano_mm = 0.0;          // delta2 + delta3(dano)
+    double contraflecha_sugerida_mm = 0.0; // múltiplo de 5 mm, <= delta_g1
 
-    double limite_total_mm = 0.0;       // L / 350
-    double limite_ativa_mm = 0.0;       // L / 350
+    double limite_total_mm = 0.0;         // L / 350
+    double limite_dano_mm = 0.0;          // L / 350 (e 15 mm com alvenaria)
     double taxa_flecha_total = 0.0;
+    double taxa_flecha_dano = 0.0;
     bool aprovado_flecha = true;
+    bool aprovado_flecha_dano = true;
+
+    // NBR 8800:2008 L.3.2: deslocamento na combinação frequente, sem parcela dependente do tempo
+    double flecha_vibracao_2008_mm = 0.0;
 
     // Verificação de tensão em serviço na mesa inferior (O.2.3.2-b / L.2.3.2-b)
     double tensao_mesa_inferior_MPa = 0.0;
@@ -295,14 +338,9 @@ ResultadoFlechasVM calcularFlechasVM(
     const Concreto& concreto,
     const Laje& laje,
     double Lv_mm,
-    double g1_kN_m,
-    double q1_kN_m,
-    double g2_kN_m,
-    double q2_kN_m,
-    double psi2,
+    const AcoesPiso& acoes,
     double grau_interacao_eta,
-    bool escorada = false,
-    double contraflecha_mm = 0.0
+    bool escorada = false
 );
 
 } // namespace v2008
@@ -418,14 +456,9 @@ ResultadoFlechasVM calcularFlechasVM(
     const Concreto& concreto,
     const Laje& laje,
     double Lv_mm,
-    double g1_kN_m,
-    double q1_kN_m,
-    double g2_kN_m,
-    double q2_kN_m,
-    double psi2,
+    const AcoesPiso& acoes,
     double grau_interacao_eta,
-    bool escorada = false,
-    double contraflecha_mm = 0.0
+    bool escorada = false
 );
 
 } // namespace v2024

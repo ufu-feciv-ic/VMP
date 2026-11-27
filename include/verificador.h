@@ -2,6 +2,7 @@
 #include "modelos.h"
 #include "rotinas_nbr8800.h"
 #include "rotinas_vmp.h"
+#include "vibracao.h"
 #include <vector>
 #include <string>
 
@@ -65,7 +66,12 @@ struct RelatorioVigaMista {
     ResultadoFase2VM fase2;
     nbr8800::ResultadoRotinaF costura;
     nbr8800::ResultadoFlechasVM flechas;
+    nbr8800::ResultadoVibracaoPiso vibracao;
+    double b_influencia_mm = 0.0;
 };
+
+// Largura de influência da viga (distância entre vigas secundárias usada nas cargas e na vibração)
+double calcularLarguraInfluencia(const GeometriaVigaMista& geo);
 
 // Funções do Verificador de Viga Mista (despacham para nbr8800::v2008 ou nbr8800::v2024)
 nbr8800::ResultadoRotinaE calcularConectoresVigaMista(const VigaMistaConfig& cfg, double bef_mm);

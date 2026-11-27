@@ -197,6 +197,44 @@ struct GeometriaVigaMista {
 };
 
 // ----------------------------------------------------------------------------
+// Combinações de serviço usadas nas verificações de deslocamento (Anexo B)
+// ----------------------------------------------------------------------------
+enum class CombinacaoServico {
+    QUASE_PERMANENTE, // psi2 (4.8.7.3.2)
+    FREQUENTE,        // psi1 (4.8.7.3.3)
+    RARA              // 1,0  (4.8.7.3.4)
+};
+
+// ----------------------------------------------------------------------------
+// Critério de aceitação da vibração (Anexo I.2.4 / I.2.5 da NBR 8800:2024)
+// ----------------------------------------------------------------------------
+enum class CriterioVibracao {
+    ACELERACAO_PICO,   // a_p <= a_p,lim
+    FATOR_RESPOSTA     // R <= R_max
+};
+
+// ----------------------------------------------------------------------------
+// Parâmetros da verificação de vibração do piso (caminhar de pessoas)
+// NBR 8800:2024 Anexo I (modo A) / NBR 8800:2008 L.3.2 (deslocamento <= 20 mm)
+// ----------------------------------------------------------------------------
+struct ParametrosVibracao {
+    bool verificar = true;
+    double Ec_din_MPa = 38000.0;      // I.1.7: módulo dinâmico do concreto de densidade normal
+    double psi_vib = 0.10;            // I.1.5: 0,1 (0 em garagens, escadas, passarelas, circulação de público)
+    double beta_estrutura = 0.010;    // Tabela I.2: sistema estrutural
+    bool forro_instalacoes_suspensos = true; // Tabela I.2: +0,010
+    double beta_ocupacao = 0.010;     // Tabela I.2: componente da ocupação
+    double beta_divisorias = 0.0;     // Tabela I.2: 0,020 a 0,050 se houver divisórias piso-teto
+    bool viga_interna = true;         // I.2.3: kb = 2,0 (interna) ou 1,0 (borda não conectada à fachada)
+    double largura_piso_m = 0.0;      // np·Lp: limita Bb <= 2/3 dessa largura (0 = sem limite)
+    double Is_laje_mm4_por_mm = 0.0;  // Inércia da laje por unidade de largura homogeneizada em aço
+                                      // (0 = automático: tc³ / (12·alpha_din); steel deck ⊥: usar catálogo)
+    CriterioVibracao criterio = CriterioVibracao::ACELERACAO_PICO;
+    double ap_lim_m_s2 = 0.050;       // Tabela I.3
+    double R_max = 8.0;               // Tabela I.3
+};
+
+// ----------------------------------------------------------------------------
 // Ações Lineares e Combinações por Fases (Fase 1 Construção / Fase 2 Mista)
 // ----------------------------------------------------------------------------
 struct AcoesPiso {
@@ -209,13 +247,22 @@ struct AcoesPiso {
     double q2_kN_m = 5.250;                // Sobrecarga variável de uso (kN/m)
 
     // Coeficientes de ponderação e combinação
-    double gamma_g1 = 1.25;                // Ponderação permanente Fase 1
-    double gamma_q1 = 1.30;                // Ponderação variável Fase 1
-    double gamma_g2 = 1.40;                // Ponderação permanente Fase 2
+    double gamma_g1 = 1.25;                // Ponderação de g1 na combinação de construção (Fase 1)
+    double gamma_q1 = 1.30;                // Ponderação da sobrecarga de construção (Fase 1)
+    double gamma_g1_fase2 = 1.40;          // Ponderação de g1 na combinação última normal (Fase 2)
+    double gamma_g2 = 1.40;                // Ponderação de g2 na combinação última normal (Fase 2)
     double gamma_q2 = 1.50;                // Ponderação variável Fase 2
     double psi1 = 0.70;                    // Fator combinação frequente ELS
     double psi2 = 0.40;                    // Fator combinação quase permanente ELS
     double contraflecha_mm = 0.0;          // Contraflecha de fabricação (mm)
+
+    // Estados-limites de serviço: deslocamentos (Anexo B e L.1.2)
+    double denominador_limite_flecha = 350.0;                          // Tabela B.1: vigas de piso L/350
+    CombinacaoServico combinacao_flecha_max = CombinacaoServico::QUASE_PERMANENTE; // B.2.4: aspecto
+    CombinacaoServico combinacao_flecha_dano = CombinacaoServico::RARA;            // B.2.4: danos
+    bool alvenaria_solidarizada = false;   // Tabela B.1, nota e: delta2 + delta3 <= 15 mm
+    bool considerar_retracao = false;      // Flecha por retração (AISC 360-16, Comentário I3.2)
+    double eps_sh = 0.0002;                // Deformação de retração restringida
 };
 
 // ----------------------------------------------------------------------------
@@ -244,6 +291,7 @@ struct VigaMistaConfig {
     ConectorCisalhamento conector;
     GeometriaVigaMista geometria;
     AcoesPiso acoes;
+    ParametrosVibracao vibracao;
 };
 
 // ----------------------------------------------------------------------------

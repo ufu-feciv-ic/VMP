@@ -109,7 +109,9 @@ TEST_CASE("Rotina C.2 - NBR 8800:2008: Momento positivo viga mista semicompacta 
     ASSERT_PERCENT(res.lbw, 102.67, 0.01);
     ASSERT_PERCENT(res.lbw_p, 90.53, 0.01);
     ASSERT_PERCENT(res.lbw_r, 137.23, 0.01);
-    ASSERT_PERCENT(res.MRd_VM_kNm, 395.01, 0.1);
+    // LNE dentro da laje (y0 = 399,8 mm > d = 358 mm): x = 79,25 mm, Itr = 50 042 cm⁴,
+    // Wtr,i = 1 224,3 cm³ -> MRd = Wtr,i·fyd = 383,97 kN·m (conferido à mão; L.1.2 / O.1.2)
+    ASSERT_PERCENT(res.MRd_VM_kNm, 383.97, 0.1);
 }
 
 TEST_CASE("Rotina C.3 - NBR 8800:2008: Momento negativo viga mista (Exemplo 2)")

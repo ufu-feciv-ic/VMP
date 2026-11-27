@@ -24,6 +24,46 @@ double calcularLarguraEfetiva(const GeometriaVigaMista& geo) {
 }
 
 // ============================================================================
+// SEÇÃO HOMOGENEIZADA PARA ELS (O.1.2 / L.1.2)
+// ============================================================================
+ResultadoSecaoHomogeneizadaELS calcularSecaoHomogeneizadaELS(
+    const PerfilI& perfil, const Laje& laje, double razao_modular, bool desprezar_concreto_tracionado
+) {
+    ResultadoSecaoHomogeneizadaELS res;
+    res.razao_modular = razao_modular;
+    res.btr_mm = laje.bef_mm / std::max(1e-9, razao_modular);
+
+    const double A = perfil.Ag;
+    const double d = perfil.d;
+    const double hF = laje.hF_mm;
+    const double tc = laje.tc_mm;
+    const double bt = res.btr_mm;
+    const double topo = d + hF + tc;
+
+    // Linha neutra supondo toda a espessura tc comprimida (medida a partir da face inferior do perfil)
+    const double y0 = (A * d / 2.0 + bt * tc * (d + hF + tc / 2.0)) / (A + bt * tc);
+    res.lne_na_laje = desprezar_concreto_tracionado && (y0 > d + hF);
+
+    if (res.lne_na_laje) {
+        // Equilíbrio: bt·x²/2 = A·(tc + hF + d/2 − x)
+        const double D = tc + hF + d / 2.0;
+        res.x_mm = (-A + std::sqrt(A * A + 2.0 * bt * A * D)) / bt;
+        res.yLN_mm = topo - res.x_mm;
+        res.Itr_mm4 = bt * std::pow(res.x_mm, 3.0) / 3.0 + perfil.Ix + A * std::pow(D - res.x_mm, 2.0);
+    } else {
+        res.x_mm = tc;
+        res.yLN_mm = y0;
+        res.Itr_mm4 = perfil.Ix + A * std::pow(y0 - d / 2.0, 2.0)
+            + bt * std::pow(tc, 3.0) / 12.0
+            + bt * tc * std::pow(d + hF + tc / 2.0 - y0, 2.0);
+    }
+
+    res.Wtr_inf_mm3 = res.Itr_mm4 / res.yLN_mm;
+    res.Wtr_sup_mm3 = res.Itr_mm4 / std::max(1e-9, topo - res.yLN_mm);
+    return res;
+}
+
+// ============================================================================
 // NAMESPACE v2008: ABNT NBR 8800:2008
 // ============================================================================
 inline namespace v2008 {
@@ -55,18 +95,17 @@ ResultadoNormalResistentePerfil calcularNormalResistentePerfil(
 
         if (lbf <= lbf_p) res.Qs = 1.0;
         else if (lbf <= lbf_r) res.Qs = 1.415 - 0.74 * lbf * std::sqrt(aco.fy_MPa / aco.E_MPa);
-        else res.Qs = 0.69 * aco.E_MPa / aco.fy_MPa * lbf * lbf;
+        else res.Qs = 0.69 * aco.E_MPa / (aco.fy_MPa * lbf * lbf);
     } else if (perfil.tipo == TipoFabricacao::SOLDADO) {
-        double lbw = perfil.lbw;
-        double kc = 4.0 / std::sqrt(lbw);
+        double kc = std::clamp(4.0 / std::sqrt(perfil.h / perfil.tw), 0.35, 0.76);
 
         double lbf = perfil.lbf;
         double lbf_p = 0.64 * std::sqrt(aco.E_MPa / (aco.fy_MPa / kc));
         double lbf_r = 1.17 * std::sqrt(aco.E_MPa / (aco.fy_MPa / kc));
 
         if (lbf <= lbf_p) res.Qs = 1.0;
-        else if (lbf <= lbf_r) res.Qs = 1.415 - 0.65 * lbf * std::sqrt(aco.fy_MPa / aco.E_MPa * kc);
-        else res.Qs = 0.9 * aco.E_MPa * kc / aco.fy_MPa * lbf * lbf;
+        else if (lbf <= lbf_r) res.Qs = 1.415 - 0.65 * lbf * std::sqrt(aco.fy_MPa / (kc * aco.E_MPa));
+        else res.Qs = 0.90 * aco.E_MPa * kc / (aco.fy_MPa * lbf * lbf);
     }
 
     double lbw = perfil.lbw;
@@ -83,8 +122,8 @@ ResultadoNormalResistentePerfil calcularNormalResistentePerfil(
             * (1.0 - ((0.34 / lbw) * std::sqrt(aco.E_MPa / 10.0 / sigma))); // cm
 
         bef_a = std::min(bef_a * 10.0, perfil.d1);
-        double Aef = perfil.d1 * perfil.tw - (perfil.d1 - bef_a) * perfil.tw;
-        res.Qa = Aef / (perfil.d1 * perfil.tw);
+        double Aef = perfil.Ag - (perfil.d1 - bef_a) * perfil.tw; // F.3.1: Aef = Ag − Σ(b − bef)·t
+        res.Qa = Aef / perfil.Ag;
     }
 
     res.Q = res.Qs * res.Qa;
@@ -190,17 +229,19 @@ double calcularMRdFLM(const PerfilI& perfil, const Aco& aco, double gamma_a1, do
     return MRd_kNm;
 }
 
-double calcularMRdFLA(const PerfilI& perfil, const Aco& aco, double gamma_a1, double Mpl, double Mr) {
+double calcularMRdFLA(const PerfilI& perfil, const Aco& aco, double gamma_a1, double Mpl, [[maybe_unused]] double Mr) {
+    // NBR 8800:2008 Tabela G.1 (FLA): Mr = fy·W (sem tensão residual, ao contrário de FLT e FLM)
     double lbw = perfil.lbw;
     double lbw_p = 3.76 * std::sqrt(aco.E_MPa / aco.fy_MPa);
     double lbw_r = 5.70 * std::sqrt(aco.E_MPa / aco.fy_MPa);
+    double Mr_fla = (aco.fy_MPa * perfil.Wx) / 1e6;
 
     double MRd_kNm = 0.0;
 
     if (lbw <= lbw_p) {
         MRd_kNm = Mpl / gamma_a1;
     } else if (lbw <= lbw_r) {
-        MRd_kNm = (1.0 / gamma_a1) * (Mpl - (Mpl - Mr) * ((lbw - lbw_p) / (lbw_r - lbw_p)));
+        MRd_kNm = (1.0 / gamma_a1) * (Mpl - (Mpl - Mr_fla) * ((lbw - lbw_p) / (lbw_r - lbw_p)));
         MRd_kNm = std::min(MRd_kNm, Mpl / gamma_a1);
     } else {
         MRd_kNm = 0.0;
@@ -286,10 +327,6 @@ ResultadoMomentoPositivoVM calcularMomentoPositivoVM(
                 yp = (res.C_aco_kN * 1e3) / (perfil.bf * fyd);
                 yc = yp / 2.0;
 
-                yt = (((perfil.bf * perfil.tf * perfil.tf / 2.0)
-                    + (perfil.h * perfil.tw * (perfil.h / 2.0 + perfil.tf))
-                    + ((perfil.bf / 2.0) * (perfil.tf - yp) * (3.0 * perfil.tf + 2.0 * perfil.h - yp)))
-                    / ((perfil.bf * perfil.tf) + (perfil.h * perfil.tw) + (perfil.bf * (perfil.tf - yp))));
             } else {
                 // LNP na alma do perfil
                 yp = perfil.tf + (perfil.h
@@ -300,12 +337,18 @@ ResultadoMomentoPositivoVM calcularMomentoPositivoVM(
                     + (perfil.tw * (yp - perfil.tf) * ((yp + perfil.tf) / 2.0)))
                     / ((perfil.bf * perfil.tf) + ((yp - perfil.tf) * perfil.tw)));
 
-                yt = (((perfil.bf * perfil.tf * perfil.tf / 2.0)
-                    + (perfil.tw * (perfil.d - yp - perfil.tf) * ((perfil.d - yp + perfil.tf) / 2.0)))
-                    / ((perfil.bf * perfil.tf) + ((perfil.d - yp - perfil.tf) * perfil.tw)));
             }
 
             res.y_lnp_mm = yp;
+
+            // Centro da parte tracionada (a partir da face inferior) pela diferença de momentos
+            // estáticos: perfil inteiro (Aa, centroide em d/2) menos a parte comprimida.
+            // Usa a mesma área Aa das forças plásticas (consistente com a planilha de referência).
+            const double Ac = (yp <= perfil.tf)
+                ? perfil.bf * yp
+                : perfil.bf * perfil.tf + perfil.tw * (yp - perfil.tf);
+            const double At = perfil.Ag - Ac;
+            yt = (perfil.Ag * perfil.d / 2.0 - Ac * (perfil.d - yc)) / At;
 
             double braco_conc = (laje.tc_mm - res.a_linha_neutra_mm / 2.0) + laje.hF_mm + perfil.d - yt;
             res.MRd_VM_kNm = (res.C_aco_kN * (perfil.d - yt - yc) + res.Ccd_kN * braco_conc) * 1e-3;
@@ -315,15 +358,16 @@ ResultadoMomentoPositivoVM calcularMomentoPositivoVM(
         res.secao_compacta = false;
         res.lnp_na_laje = false;
 
-        auto secao_tr = nbr8800::v2008::calcularSecaoTransformada(
-            perfil, laje, concreto, aco, 1.0, 0.0, true
+        // Seção homogeneizada de curta duração (n = Ea/Ec), concreto tracionado desprezado
+        auto secao_tr = nbr8800::calcularSecaoHomogeneizadaELS(
+            perfil, laje, aco.E_MPa / concreto.Ecs_MPa
         );
 
         double Wef_inf = perfil.Wx + std::sqrt(res.eta_interacao) * (secao_tr.Wtr_inf_mm3 - perfil.Wx);
 
         res.MRd_VM_kNm = std::min(
             Wef_inf * fyd,
-            (1.0 / secao_tr.n_relacao_modular) * secao_tr.Wtr_sup_mm3 * fcd
+            secao_tr.razao_modular * secao_tr.Wtr_sup_mm3 * fcd
         ) * 1e-6;
     } else {
         res.aplicavel = false;
@@ -505,7 +549,7 @@ ResultadoRotinaE calcularConectoresCisalhamento(
         res.QRd2_aco_kN = res.QRd1_concreto_kN;
         res.QRd_kN = res.QRd1_concreto_kN;
         res.s_min_long_mm = std::max(conector.h, conector.Lcs);
-        res.s_max_long_mm = std::min(8.0 * (laje.tc_mm + laje.hF_mm), 800.0);
+        res.s_max_long_mm = 8.0 * (laje.tc_mm + laje.hF_mm); // O.4.3.2
     } else {
         // NBR 8800:2008 item O.4.2.1: Pino com Cabeça (Stud Bolt)
         double d = conector.d;
@@ -523,11 +567,11 @@ ResultadoRotinaE calcularConectoresCisalhamento(
                 else if (n_linha == 2) res.Rg = 0.85;
                 else res.Rg = 0.70;
 
-                double altura_livre = conector.h - laje.hF_mm;
-                res.Rp = (conector.emh_mm >= 50.0 && altura_livre >= 40.0) ? 0.75 : 0.60;
+                // O.4.2.1.3-b/c e L.4.2.1.3-b/c: depende apenas de emh
+                res.Rp = (conector.emh_mm >= 50.0) ? 0.75 : 0.60;
             } else { // Nervuras paralelas à viga
                 double relacao = (laje.hF_mm > 0.0) ? (laje.bF_mm / laje.hF_mm) : 2.0;
-                res.Rg = (relacao >= 1.5) ? 1.00 : ((n_linha == 1) ? 0.85 : 1.00);
+                res.Rg = (relacao >= 1.5) ? 1.00 : 0.85; // O.4.2.1.2-a3/b2
                 res.Rp = 0.75;
             }
         }
@@ -539,10 +583,12 @@ ResultadoRotinaE calcularConectoresCisalhamento(
         res.QRd2_aco_kN = (res.Rg * res.Rp * res.Acs_mm2 * conector.fu) / (gamma_cs * 1000.0);
         res.QRd_kN = std::min(res.QRd1_concreto_kN, res.QRd2_aco_kN);
 
-        // Limites de espaçamento NBR 8800:2008 (O.4.3.3 e O.4.3.4)
-        res.s_min_long_mm = 6.0 * d;
+        // Limites de espaçamento NBR 8800:2008 (O.4.3.2 e O.4.3.3)
+        res.s_min_long_mm = (laje.tipo == LAJE_STEEL_DECK) ? (4.0 * d) : (6.0 * d);
         double h_total_laje = laje.tc_mm + laje.hF_mm;
-        res.s_max_long_mm = std::min(8.0 * h_total_laje, 800.0);
+        res.s_max_long_mm = (laje.tipo == LAJE_STEEL_DECK && !laje.nervura_paralela)
+            ? std::min(8.0 * h_total_laje, 915.0)
+            : (8.0 * h_total_laje);
     }
 
     // Conectores necessários para interação completa (100%):
@@ -686,78 +732,104 @@ ResultadoRotinaF calcular_rotina_f_armadura_costura(
     return res;
 }
 
+static double fator_psi_combinacao(CombinacaoServico combo, double psi1, double psi2) {
+    switch (combo) {
+        case CombinacaoServico::QUASE_PERMANENTE: return psi2;
+        case CombinacaoServico::FREQUENTE: return psi1;
+        default: return 1.0;
+    }
+}
+
 ResultadoFlechasVM calcularFlechasVM(
     const PerfilI& perfil,
     const Aco& aco,
     const Concreto& concreto,
     const Laje& laje,
     double Lv_mm,
-    double g1_kN_m,
-    double q1_kN_m,
-    double g2_kN_m,
-    double q2_kN_m,
-    double psi2,
+    const AcoesPiso& acoes,
     double grau_interacao_eta,
-    bool escorada,
-    double contraflecha_mm
+    bool escorada
 ) {
     ResultadoFlechasVM res;
-    double E = aco.E_MPa;
-    double Ia = perfil.Ix;
-    double Wa = perfil.Wx;
+    const double E = aco.E_MPa;
+    const double Ia = perfil.Ix;
+    const double Wa = perfil.Wx;
+    const double g1 = acoes.g1_kN_m;   // kN/m == N/mm
+    const double g2 = acoes.g2_kN_m;
+    const double q = acoes.q2_kN_m;
 
-    // Reutiliza diretamente calcularSecaoTransformada de rotinas_vmp.cpp!
-    res.secao_curta = nbr8800::v2008::calcularSecaoTransformada(perfil, laje, concreto, aco, 1.0, 0.0, true);
-    res.secao_longa = nbr8800::v2008::calcularSecaoTransformada(perfil, laje, concreto, aco, 3.0, 0.0, false);
+    // Seções homogeneizadas (O.1.2 / L.1.2): curta (n = Ea/Ec) e longa (n = 3·Ea/Ec)
+    res.alpha_E_curta = E / concreto.Ecs_MPa;
+    res.alpha_E_longa = 3.0 * res.alpha_E_curta;
+    res.secao_curta = calcularSecaoHomogeneizadaELS(perfil, laje, res.alpha_E_curta);
+    res.secao_longa = calcularSecaoHomogeneizadaELS(perfil, laje, res.alpha_E_longa);
 
-    res.alpha_E_curta = 1.0 / res.secao_curta.n_relacao_modular;
-    res.alpha_E_longa = 1.0 / res.secao_longa.n_relacao_modular;
-
-    double Itr_cd = res.secao_curta.Itr_mm4;
-    double Itr_ld = res.secao_longa.Itr_mm4;
+    const double Itr_cd = res.secao_curta.Itr_mm4;
+    const double Itr_ld = res.secao_longa.Itr_mm4;
     res.Itr_cd_cm4 = Itr_cd / 1e4;
     res.Itr_ld_cm4 = Itr_ld / 1e4;
 
-    // Inércia efetiva e módulo efetivo com interação parcial: Ief = Ia + sqrt(eta) * (Itr - Ia) (NBR 8800 O.1.2.2.1 / L.1.2.2.1)
-    double raiz_eta = std::sqrt(std::clamp(grau_interacao_eta, 0.0, 1.0));
-    double Ief_cd = Ia + raiz_eta * (Itr_cd - Ia);
-    double Ief_ld = Ia + raiz_eta * (Itr_ld - Ia);
+    // Interação parcial: Ief = Ia + sqrt(eta)·(Itr − Ia) (O.1.2.2.1 / L.1.2.2.1)
+    res.fator_interacao = std::sqrt(std::clamp(grau_interacao_eta, 0.0, 1.0));
+    const double Ief_cd = Ia + res.fator_interacao * (Itr_cd - Ia);
+    const double Ief_ld = Ia + res.fator_interacao * (Itr_ld - Ia);
     res.Ief_cd_cm4 = Ief_cd / 1e4;
     res.Ief_ld_cm4 = Ief_ld / 1e4;
 
-    double Wef_inf_cd = Wa + raiz_eta * (res.secao_curta.Wtr_inf_mm3 - Wa);
-    double Wef_inf_ld = Wa + raiz_eta * (res.secao_longa.Wtr_inf_mm3 - Wa);
+    const double Wef_inf_cd = Wa + res.fator_interacao * (res.secao_curta.Wtr_inf_mm3 - Wa);
+    const double Wef_inf_ld = Wa + res.fator_interacao * (res.secao_longa.Wtr_inf_mm3 - Wa);
     res.Wef_inf_cd_cm3 = Wef_inf_cd / 1e3;
     res.Wef_inf_ld_cm3 = Wef_inf_ld / 1e3;
 
-    // Parcelas de flecha (Lv_mm em mm, cargas em N/mm == kN/m)
-    double L4 = std::pow(Lv_mm, 4);
+    // Parcelas de deslocamento (k = 5·L⁴ / (384·E); cargas em N/mm, comprimentos em mm)
+    const double k = 5.0 * std::pow(Lv_mm, 4.0) / (384.0 * E);
+    const double fluencia = (1.0 / Ief_ld) - (1.0 / Ief_cd);
+
     if (!escorada) {
-        res.flecha_fase1_mm = (5.0 * (g1_kN_m + q1_kN_m) * L4) / (384.0 * E * Ia);
-        res.flecha_perm_ld_mm = (5.0 * g2_kN_m * L4) / (384.0 * E * Ief_ld);
+        res.flecha_g1_mm = k * g1 / Ia;
+        res.flecha_perm_curta_mm = res.flecha_g1_mm + k * g2 / Ief_cd;
+        res.flecha_fluencia_mm = k * g2 * fluencia;
     } else {
-        res.flecha_fase1_mm = 0.0;
-        res.flecha_perm_ld_mm = (5.0 * (g1_kN_m + g2_kN_m) * L4) / (384.0 * E * Ief_ld);
+        res.flecha_g1_mm = 0.0;
+        res.flecha_perm_curta_mm = k * (g1 + g2) / Ief_cd;
+        res.flecha_fluencia_mm = k * (g1 + g2) * fluencia;
     }
 
-    res.flecha_var_cd_mm = (5.0 * (1.0 - psi2) * q2_kN_m * L4) / (384.0 * E * Ief_cd);
-    res.flecha_var_ld_mm = (5.0 * (psi2 * q2_kN_m) * L4) / (384.0 * E * Ief_ld);
+    if (acoes.considerar_retracao) {
+        // Psh = eps_sh·(Ec/3)·bef·tc ; esh = distância do centro da laje à LNE de longa duração
+        const double Psh_N = acoes.eps_sh * (concreto.Ecs_MPa / 3.0) * laje.bef_mm * laje.tc_mm;
+        const double esh_mm = perfil.d + laje.hF_mm + laje.tc_mm / 2.0 - res.secao_longa.yLN_mm;
+        res.flecha_retracao_mm = Psh_N * esh_mm * Lv_mm * Lv_mm / (8.0 * E * Ief_ld);
+    }
+    res.flecha_longa_duracao_mm = res.flecha_fluencia_mm + res.flecha_retracao_mm;
 
-    res.flecha_total_bruta_mm = res.flecha_fase1_mm + res.flecha_perm_ld_mm + res.flecha_var_cd_mm + res.flecha_var_ld_mm;
-    res.contraflecha_mm = contraflecha_mm;
-    res.flecha_total_mm = std::max(0.0, res.flecha_total_bruta_mm - contraflecha_mm);
-    res.flecha_ativa_mm = res.flecha_perm_ld_mm + res.flecha_var_cd_mm + res.flecha_var_ld_mm;
+    const double psi_max = fator_psi_combinacao(acoes.combinacao_flecha_max, acoes.psi1, acoes.psi2);
+    const double psi_dano = fator_psi_combinacao(acoes.combinacao_flecha_dano, acoes.psi1, acoes.psi2);
+    res.flecha_var_max_mm = k * psi_max * q / Ief_cd + k * acoes.psi2 * q * fluencia;
+    res.flecha_var_dano_mm = k * psi_dano * q / Ief_cd + k * acoes.psi2 * q * fluencia;
 
-    res.limite_total_mm = Lv_mm / 350.0;
-    res.limite_ativa_mm = Lv_mm / 350.0;
+    res.flecha_total_bruta_mm = res.flecha_perm_curta_mm + res.flecha_longa_duracao_mm + res.flecha_var_max_mm;
+    res.contraflecha_mm = std::clamp(acoes.contraflecha_mm, 0.0, res.flecha_perm_curta_mm); // B.3.2
+    res.flecha_total_mm = res.flecha_total_bruta_mm - res.contraflecha_mm;
+    res.flecha_dano_mm = res.flecha_longa_duracao_mm + res.flecha_var_dano_mm;
+    res.contraflecha_sugerida_mm = std::floor(res.flecha_g1_mm / 5.0) * 5.0;
+
+    const double den = (acoes.denominador_limite_flecha > 0.0) ? acoes.denominador_limite_flecha : 350.0;
+    res.limite_total_mm = Lv_mm / den;
+    res.limite_dano_mm = acoes.alvenaria_solidarizada ? std::min(res.limite_total_mm, 15.0) : res.limite_total_mm;
     res.taxa_flecha_total = res.flecha_total_mm / res.limite_total_mm;
+    res.taxa_flecha_dano = res.flecha_dano_mm / res.limite_dano_mm;
     res.aprovado_flecha = (res.taxa_flecha_total <= 1.00);
+    res.aprovado_flecha_dano = (res.taxa_flecha_dano <= 1.00);
+
+    // NBR 8800:2008 L.3.2: permanentes (sem parcela dependente do tempo) + psi1·q, vigas biapoiadas
+    res.flecha_vibracao_2008_mm = res.flecha_perm_curta_mm + k * acoes.psi1 * q / Ief_cd;
 
     // Tensão na mesa inferior em serviço (O.2.3.2-b / L.2.3.2-b: combinação rara de serviço)
-    double L_m = Lv_mm / 1000.0;
-    double M_g1_S = (g1_kN_m * L_m * L_m) / 8.0;
-    double M_g2_S = (g2_kN_m * L_m * L_m) / 8.0;
-    double M_q2_S = (q2_kN_m * L_m * L_m) / 8.0;
+    const double L_m = Lv_mm / 1000.0;
+    const double M_g1_S = (g1 * L_m * L_m) / 8.0;
+    const double M_g2_S = (g2 * L_m * L_m) / 8.0;
+    const double M_q2_S = (q * L_m * L_m) / 8.0;
 
     if (!escorada) {
         res.tensao_mesa_inferior_MPa = (M_g1_S * 1e6 / Wa) + (M_g2_S * 1e6 / Wef_inf_ld) + (M_q2_S * 1e6 / Wef_inf_cd);
@@ -910,9 +982,8 @@ double calcularMRdFLM(const PerfilI& perfil, const Aco& aco, double gamma_a1, do
 }
 
 double calcularMRdFLA(const PerfilI& perfil, const Aco& aco, double gamma_a1, double Mpl, [[maybe_unused]] double Mr) {
-    // NBR 8800:2024 Anexo D, Tabela D.1 (pág. 144, 3ª linha - FLA):
-    // Diferença em relação a 2008: na Tabela D.1 de 2024, para FLA tem-se Mr = fy * Wx
-    // (sem a tensão residual sigma_r = 0.3*fy que existia na Tabela G.1 de 2008!)
+    // NBR 8800:2024 Anexo D, Tabela D.1 (FLA): Mr = fy * Wx
+    // (mesmo critério da Tabela G.1 de 2008; a tensão residual só entra em FLT e FLM)
     double lbw = perfil.lbw;
     double lbw_p = 3.76 * std::sqrt(aco.E_MPa / aco.fy_MPa);
     double lbw_r = 5.70 * std::sqrt(aco.E_MPa / aco.fy_MPa);
@@ -1012,10 +1083,6 @@ ResultadoMomentoPositivoVM calcularMomentoPositivoVM(
                 yp = (res.C_aco_kN * 1e3) / (perfil.bf * fyd);
                 yc = yp / 2.0;
 
-                yt = (((perfil.bf * perfil.tf * perfil.tf / 2.0)
-                    + (perfil.h * perfil.tw * (perfil.h / 2.0 + perfil.tf))
-                    + ((perfil.bf / 2.0) * (perfil.tf - yp) * (3.0 * perfil.tf + 2.0 * perfil.h - yp)))
-                    / ((perfil.bf * perfil.tf) + (perfil.h * perfil.tw) + (perfil.bf * (perfil.tf - yp))));
             } else {
                 // LNP na alma do perfil
                 yp = perfil.tf + (perfil.h
@@ -1026,12 +1093,18 @@ ResultadoMomentoPositivoVM calcularMomentoPositivoVM(
                     + (perfil.tw * (yp - perfil.tf) * ((yp + perfil.tf) / 2.0)))
                     / ((perfil.bf * perfil.tf) + ((yp - perfil.tf) * perfil.tw)));
 
-                yt = (((perfil.bf * perfil.tf * perfil.tf / 2.0)
-                    + (perfil.tw * (perfil.d - yp - perfil.tf) * ((perfil.d - yp + perfil.tf) / 2.0)))
-                    / ((perfil.bf * perfil.tf) + ((perfil.d - yp - perfil.tf) * perfil.tw)));
             }
 
             res.y_lnp_mm = yp;
+
+            // Centro da parte tracionada (a partir da face inferior) pela diferença de momentos
+            // estáticos: perfil inteiro (Aa, centroide em d/2) menos a parte comprimida.
+            // Usa a mesma área Aa das forças plásticas (consistente com a planilha de referência).
+            const double Ac = (yp <= perfil.tf)
+                ? perfil.bf * yp
+                : perfil.bf * perfil.tf + perfil.tw * (yp - perfil.tf);
+            const double At = perfil.Ag - Ac;
+            yt = (perfil.Ag * perfil.d / 2.0 - Ac * (perfil.d - yc)) / At;
 
             double braco_conc = (laje.tc_mm - res.a_linha_neutra_mm / 2.0) + laje.hF_mm + perfil.d - yt;
             res.MRd_VM_kNm = (res.C_aco_kN * (perfil.d - yt - yc) + res.Ccd_kN * braco_conc) * 1e-3;
@@ -1042,8 +1115,9 @@ ResultadoMomentoPositivoVM calcularMomentoPositivoVM(
         res.secao_compacta = false;
         res.lnp_na_laje = false;
 
-        auto secao_tr = nbr8800::v2008::calcularSecaoTransformada(
-            perfil, laje, concreto, aco, 1.0, 0.0, true
+        // Seção homogeneizada de curta duração (n = Ea/Ec), concreto tracionado desprezado
+        auto secao_tr = nbr8800::calcularSecaoHomogeneizadaELS(
+            perfil, laje, aco.E_MPa / concreto.Ecs_MPa
         );
 
         double Wef_inf = perfil.Wx + std::sqrt(res.eta_interacao) * (secao_tr.Wtr_inf_mm3 - perfil.Wx);
@@ -1051,7 +1125,7 @@ ResultadoMomentoPositivoVM calcularMomentoPositivoVM(
 
         res.MRd_VM_kNm = std::min(
             Wef_inf * fyd,
-            (1.0 / secao_tr.n_relacao_modular) * secao_tr.Wtr_sup_mm3 * fcd_lim
+            secao_tr.razao_modular * secao_tr.Wtr_sup_mm3 * fcd_lim
         ) * 1e-6;
     } else {
         res.aplicavel = false;
@@ -1309,11 +1383,11 @@ ResultadoRotinaE calcularConectoresCisalhamento(
                 else if (n_linha == 2) res.Rg = 0.85;
                 else res.Rg = 0.70;
 
-                double altura_livre = conector.h - laje.hF_mm;
-                res.Rp = (conector.emh_mm >= 50.0 && altura_livre >= 40.0) ? 0.75 : 0.60;
+                // O.4.2.1.3-b/c e L.4.2.1.3-b/c: depende apenas de emh
+                res.Rp = (conector.emh_mm >= 50.0) ? 0.75 : 0.60;
             } else { // Nervuras paralelas à viga
                 double relacao = (laje.hF_mm > 0.0) ? (laje.bF_mm / laje.hF_mm) : 2.0;
-                res.Rg = (relacao >= 1.5) ? 1.00 : ((n_linha == 1) ? 0.85 : 1.00);
+                res.Rg = (relacao >= 1.5) ? 1.00 : 0.85; // O.4.2.1.2-a3/b2
                 res.Rp = 0.75;
             }
         }
@@ -1469,20 +1543,12 @@ ResultadoFlechasVM calcularFlechasVM(
     const Concreto& concreto,
     const Laje& laje,
     double Lv_mm,
-    double g1_kN_m,
-    double q1_kN_m,
-    double g2_kN_m,
-    double q2_kN_m,
-    double psi2,
+    const AcoesPiso& acoes,
     double grau_interacao_eta,
-    bool escorada,
-    double contraflecha_mm
+    bool escorada
 ) {
-    return v2008::calcularFlechasVM(
-        perfil, aco, concreto, laje, Lv_mm,
-        g1_kN_m, q1_kN_m, g2_kN_m, q2_kN_m, psi2,
-        grau_interacao_eta, escorada, contraflecha_mm
-    );
+    // Mesmo modelo de deslocamentos nas duas edições (Anexo B / L.1.2 x Anexo C / O.1.2)
+    return v2008::calcularFlechasVM(perfil, aco, concreto, laje, Lv_mm, acoes, grau_interacao_eta, escorada);
 }
 
 } // namespace v2024

@@ -1,0 +1,448 @@
+% Capítulo 2 -- convertido de docs/TCC_VIGA_MISTA_NBR8800_2024.md
+\chapter{Fundamentação teórica e prescrições normativas}\label{cap:2}
+
+\section{Mecânica da Viga Mista e Ação Composta}\label{sec:2.1}
+Considere-se uma viga de piso formada por um perfil de alma cheia sobre o qual se apoia uma laje de concreto. Sem ligação mecânica na interface, cada elemento flete em torno do seu próprio eixo neutro:
+\begin{itemize}
+\item a face inferior da laje se alonga, enquanto a face superior do perfil se encurta;
+\item essa incompatibilidade gera um escorregamento relativo ao longo da interface;
+\item a rigidez do conjunto se reduz à soma das rigidezes individuais ($I_a + I_c$), sendo pequena a contribuição de uma laje delgada.
+\end{itemize}
+
+Com conectores de cisalhamento soldados ao topo do perfil e embutidos no concreto, restringe-se o escorregamento e o fluxo de cisalhamento longitudinal passa a ser transferido entre os materiais. Com interação completa, as deformações tornam-se contínuas na interface e a seção passa a ter uma única linha neutra: a resultante de compressão se situa no concreto e a de tração no perfil, com braço de alavanca interno bem maior que o do perfil isolado.
+
+\begin{figure}[htbp]
+  \centering
+  \caption{Comportamento da seção sem ligação mecânica e com ação mista}\label{fig:acao-mista}
+  \begin{tikzpicture}
+    \node[caixa=4cm] (a2) {Aço comprimido na mesa superior e tracionado na inferior};
+    \node[caixa=4cm, left=4mm of a2] (a1) {Concreto comprimido no topo e tracionado na base};
+    \node[caixa=4cm, right=4mm of a2] (a3) {Duas linhas neutras; escorregamento na interface};
+    \node[titulogrupo, below=2mm of a2] (at) {Sem ligação mecânica};
+    \node[grupo, fit=(a1)(a2)(a3)(at)] (A) {};
+    \node[caixa=4cm, below=16mm of at] (b2) {Aço predominantemente tracionado};
+    \node[caixa=4cm, left=4mm of b2] (b1) {Concreto comprimido};
+    \node[caixa=4cm, right=4mm of b2] (b3) {Linha neutra única; cisalhamento transferido pelos conectores};
+    \node[titulogrupo, below=2mm of b2] (bt) {Com ação mista (conectores)};
+    \node[grupo, fit=(b1)(b2)(b3)(bt)] (B) {};
+    \draw[seta] (A.south) -- node[right, font=\footnotesize] {Instalação de conectores} (A.south |- B.north);
+  \end{tikzpicture}
+  \fonte{Elaborado pelo autor (2026).}
+\end{figure}
+
+\section{Sistemas de Laje e Orientação das Nervuras}\label{sec:2.2}
+Segundo o item L.1.1.1 da ABNT NBR 8800:2024 \cite{abnt8800:2024}, as lajes que podem compor vigas mistas são:
+\begin{enumerate}
+\item \textbf{Laje maciça moldada no local:} admite conectores tipo pino com cabeça ou perfil U laminado ou formado a frio;
+\item \textbf{Laje com fôrma de aço incorporada (\emph{steel deck}):} chapa perfilada de aço galvanizado (espessuras usuais de 0,80 mm a 1,25 mm) com mossas que garantem a aderência ao concreto. Aplicam-se os limites $h_F \le 75$ mm, $b_F \ge 50$ mm, diâmetro do pino soldado através da fôrma $d_{cs} \le 19$ mm e altura do conector de pelo menos $h_F + 40$ mm;
+\item \textbf{Laje com pré-laje de concreto pré-moldada:} pré-lajes com capa de concreto moldada no local;
+\item \textbf{Laje alveolar pré-moldada:} painéis protendidos com alvéolos longitudinais e capa estrutural.
+\end{enumerate}
+
+A ferramenta desenvolvida trata as tipologias 1 e 2.
+
+\subsection{Influência da orientação das nervuras do \emph{steel deck}}
+\begin{itemize}
+\item \textbf{Nervuras perpendiculares à viga:} caso usual das \textbf{vigas secundárias}, em que a fôrma vence o vão entre vigas adjacentes e se apoia na mesa do perfil. O concreto das nervuras é desprezado no cálculo da seção (L.2.6.2-a): considera-se apenas a capa $t_c$ acima da fôrma. Os conectores ficam dentro das nervuras, com a resistência reduzida por $R_g$ e $R_p$, e o espaçamento longitudinal é necessariamente múltiplo do passo da fôrma;
+\item \textbf{Nervuras paralelas à viga:} caso típico das \textbf{vigas principais}, em que uma nervura contínua se apoia sobre a mesa do perfil. Nesta ferramenta, por simplicidade e a favor da segurança, também se considera apenas a capa $t_c$ acima da fôrma.
+\end{itemize}
+
+\begin{table}[htbp]
+  \centering
+  \caption{Parâmetros de cálculo segundo o sistema de laje e a orientação das nervuras do \emph{steel deck}}\label{tab:sistemas-laje}
+  {\footnotesize
+  \begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{2.7cm}CCC}
+  \toprule
+  Parâmetro & Laje maciça & \emph{Steel deck} perpendicular & \emph{Steel deck} paralelo \\
+  \midrule
+  \textbf{Concreto considerado} & Espessura total $t_c$ & Capa acima da fôrma ($t_c$) & Capa acima da fôrma ($t_c$) \\
+  \textbf{Conector permitido} & Pino com cabeça ou perfil U & Pino com cabeça ($d_{cs} \le 19$ mm) & Pino com cabeça ($d_{cs} \le 19$ mm) \\
+  \textbf{$R_g$} & 1,00 & 1,00 (1 pino); 0,85 (2); 0,70 ($\ge$ 3) & 1,00 se $b_F/h_F \ge 1{,}5$; senão 0,85 \\
+  \textbf{$R_p$ (2024)} & 0,75 & 0,75 ($e_{mh} \ge 50$ mm); 0,60 ($e_{mh} < 50$ mm) & 0,75 \\
+  \textbf{$R_p$ (2008)} & 1,00 & 0,75 ($e_{mh} \ge 50$ mm); 0,60 ($e_{mh} < 50$ mm) & 0,75 \\
+  \textbf{Espaçamento longitudinal} & Informado ($s$) & $s = k \cdot e_F$ & Informado ($s$) \\
+  \bottomrule
+  \end{tabularx}
+  }
+  \fonte{Elaborado pelo autor (2026).}
+\end{table}
+
+\section{Largura Efetiva da Laje ($b_{ef}$)}\label{sec:2.3}
+A compressão na mesa de concreto não é uniforme na largura: é máxima sobre o perfil e decresce com a distância a ele (\emph{shear lag}). Na prática, substitui-se a distribuição real por uma largura efetiva $b_{ef}$ com tensão uniforme.
+
+Conforme o item L.2.2 da ABNT NBR 8800:2024, a largura efetiva de vigas biapoiadas é a soma das parcelas de cada lado do eixo do perfil:
+
+\[
+  b_{ef} = b_1 + b_2
+\]
+
+\begin{itemize}
+\item \textbf{Lado com viga adjacente:} $b_{1,2} = \min\left( \dfrac{L}{8};\; \dfrac{e_{1,2}}{2} \right)$
+\item \textbf{Lado com borda livre:} $b_{1,2} = \min\left( \dfrac{L}{8};\; \text{balanço} \right)$
+\end{itemize}
+
+Para vigas internas com espaçamento uniforme $e$, resulta $b_{ef} = \min(L/4;\ e)$.
+
+\section{Fase 1: Perfil de Aço Isolado em Construção Não Escorada}\label{sec:2.4}
+
+\subsection{Ações e combinações}\label{sec:2.4.1}
+A ação permanente da Fase 1 ($g_1$) é formada pelo peso do concreto fresco, da fôrma e do perfil:
+
+\[
+  g_1 = (g_c + g_F) \cdot b + g_a
+\]
+
+em que $g_c$ é o peso do concreto por unidade de área (no \emph{steel deck}, consumo de concreto do catálogo \ensuremath{\times} 25 kN/m\ensuremath{^3}), $g_F$ o peso da fôrma, $g_a$ o peso linear do perfil e $b$ a largura de influência. A sobrecarga de construção é $q_1 = q_c \cdot b$, com $q_c \ge 1{,}0$ kN/m\ensuremath{^2} (N.4.1.3).
+
+Na combinação última de construção, cada parcela recebe o coeficiente da Tabela 1 da norma: 1,25 para o concreto moldado no local, 1,15 para as estruturas de aço (perfil e fôrma) e 1,30 para a sobrecarga de construção:
+
+\begin{gather*}
+  q_{Sd,c} = 1{,}25 \, g_c b + 1{,}15 \, (g_F b + g_a) + 1{,}30 \, q_1, \\
+  M_{Sd,c} = \frac{q_{Sd,c} L^2}{8}, \\
+  V_{Sd,c} = \frac{q_{Sd,c} L}{2}
+\end{gather*}
+
+No software, os coeficientes de cada parcela são reduzidos a um coeficiente equivalente aplicado a $g_1$.
+
+\subsection{Momento fletor resistente do perfil isolado (Anexo D)}\label{sec:2.4.2}
+O momento resistente de cálculo é o menor entre os obtidos para FLT, FLM e FLA, limitado a $1{,}5 W_x f_y / \gamma_{a1}$. Para a FLT de perfis I duplamente simétricos (Anexo D, Tabela D.1):
+
+\begin{gather*}
+  \lambda = \frac{L_b}{r_y}, \\
+  \lambda_p = 1{,}76\sqrt{\frac{E_a}{f_y}}, \\
+  \beta_1 = \frac{0{,}7 f_y W_x}{E_a I_t}
+\end{gather*}
+
+\[
+  \lambda_r = \frac{1{,}38\, C_b \sqrt{I_y I_t}}{r_y I_t \beta_1}\sqrt{1 + \sqrt{1 + \frac{27\, C_w \beta_1^2}{C_b^2 I_y}}}
+\]
+
+\[
+  M_{cr} = \frac{C_b \pi^2 E_a I_y}{L_b^2}\sqrt{\frac{C_w}{I_y}\left(1 + 0{,}039\,\frac{I_t L_b^2}{C_w}\right)}
+\]
+
+\[
+  M_{Rd} = \begin{cases} \dfrac{M_{pl}}{\gamma_{a1}}, & \lambda \le \lambda_p \\[2mm] \dfrac{1}{\gamma_{a1}}\left[M_{pl} - (M_{pl} - M_r)\dfrac{\lambda - \lambda_p}{\lambda_r - \lambda_p}\right], & \lambda_p < \lambda \le \lambda_r \\[2mm] \dfrac{M_{cr}}{\gamma_{a1}}, & \lambda > \lambda_r \end{cases}
+\]
+
+com $M_{pl} = Z_x f_y$ e $M_r = 0{,}7 f_y W_x$. Na edição de 2024, $C_b$ aparece dentro da expressão de $\lambda_r$; na de 2008, $C_b$ multiplicava a expressão de interpolação. As FLM e FLA seguem a mesma forma, com $\lambda = b_f/(2t_f)$, $\lambda_p = 0{,}38\sqrt{E_a/f_y}$ (FLM) e $\lambda = h/t_w$, $\lambda_p = 3{,}76\sqrt{E_a/f_y}$, $\lambda_r = 5{,}70\sqrt{E_a/f_y}$ (FLA). Para a FLA, nas duas edições, $M_r = f_y W_x$, sem a tensão residual.
+
+\textbf{Contenção lateral pelo \emph{steel deck}.} Quando a fôrma de aço é fixada à mesa superior do perfil (por pinos ou soldas tampão), ela impede o deslocamento lateral da mesa comprimida durante a concretagem e a FLT não governa. Nesse caso, adota-se $L_b = 0$ e o momento resistente é governado por $M_{pl}$ ou pelas flambagens locais. Em lajes maciças sobre fôrmas provisórias, $L_b$ é a distância entre travamentos.
+
+\subsection{Força cortante resistente}\label{sec:2.4.3}
+A alma resiste à força cortante com $V_{pl} = 0{,}60\, d\, t_w f_y$ e a esbeltez $\lambda = h/t_w$:
+
+\[
+  \lambda_p = 1{,}10\sqrt{\frac{k_v E_a}{f_y}}, \qquad \lambda_r = 1{,}37\sqrt{\frac{k_v E_a}{f_y}}
+\]
+
+\begin{gather*}
+  V_{Rd} = \frac{V_{pl}}{\gamma_{a1}} \ (\lambda \le \lambda_p); \\
+  V_{Rd} = \frac{\lambda_p}{\lambda}\frac{V_{pl}}{\gamma_{a1}} \ (\lambda_p < \lambda \le \lambda_r); \\
+  V_{Rd} = 1{,}24\left(\frac{\lambda_p}{\lambda}\right)^2 \frac{V_{pl}}{\gamma_{a1}} \ (\lambda > \lambda_r)
+\end{gather*}
+
+Para almas sem enrijecedores transversais, a edição de 2024 adota $k_v = 5{,}34$ (5,00 na edição de 2008). Em vigas mistas de alma cheia, a força cortante é resistida apenas pelo perfil, inclusive na Fase 2.
+
+\section{Conexão de Cisalhamento e Grau de Interação}\label{sec:2.5}
+
+\subsection{Resistência de um conector pino com cabeça ($Q_{Rd}$)}\label{sec:2.5.1}
+Conforme o item L.4.2.1.1, a resistência de cálculo de um pino com cabeça é a menor entre a do concreto e a do aço do conector:
+
+\begin{gather*}
+  Q_{Rd} = \min\left( \frac{A_{cs}\sqrt{f_{ck} E_c}}{2\,\gamma_{cs}};\ \frac{R_g R_p A_{cs} f_{ucs}}{\gamma_{cs}} \right), \\
+  A_{cs} = \frac{\pi d_{cs}^2}{4}, \quad \gamma_{cs} = 1{,}25
+\end{gather*}
+
+\subsection{Coeficientes de grupo ($R_g$) e de posição ($R_p$)}\label{sec:2.5.2}
+\textbf{$R_g$ (L.4.2.1.2):}
+\begin{itemize}
+\item 1,00 para um conector por nervura perpendicular; para qualquer número de conectores em uma linha soldados diretamente no perfil; e para qualquer número de conectores em uma linha em nervura paralela com $b_F/h_F \ge 1{,}5$;
+\item 0,85 para dois conectores por nervura perpendicular, e para um conector em nervura paralela com $b_F/h_F < 1{,}5$;
+\item 0,70 para três ou mais conectores por nervura perpendicular.
+\end{itemize}
+
+O caso de mais de um conector em nervura paralela com $b_F/h_F < 1{,}5$ não é explicitado pela norma; a ferramenta adota 0,85, a favor da segurança.
+
+\textbf{$R_p$ (L.4.2.1.3):}
+\begin{itemize}
+\item 0,75 para conectores soldados diretamente no perfil (na edição de 2008, 1,00);
+\item 0,75 para conectores em laje mista com nervuras perpendiculares e $e_{mh} \ge 50$ mm, e para conectores em nervuras paralelas;
+\item 0,60 para nervuras perpendiculares com $e_{mh} < 50$ mm.
+\end{itemize}
+
+A altura mínima do conector ($h_{cs} \ge h_F + 40$ mm) é uma exigência geométrica independente (\ref{sec:2.5.6}) e não altera $R_p$.
+
+\subsection{Força de cisalhamento para interação completa ($F_{hd}$)}\label{sec:2.5.3}
+Entre a seção de momento nulo e a de momento máximo, a força de cisalhamento de cálculo é a menor entre a resistência à tração do perfil e a resistência à compressão da laje:
+
+\begin{gather*}
+  F_{hd} = \min\left( A_a f_{yd};\ 0{,}85\,\eta_c f_{cd}\, b_{ef}\, t_c \right), \\
+  n_{compl} = \left\lceil \frac{F_{hd}}{Q_{Rd}} \right\rceil
+\end{gather*}
+
+\subsection{Disposição dos conectores e grau de interação ($\eta$)}\label{sec:2.5.4}
+No \emph{steel deck} perpendicular, os pinos são soldados nas nervuras, a cada $k$ nervuras ($s = k\, e_F$). Nos demais casos, $s$ é informado. O número de linhas entre o apoio e o meio do vão e o grau de interação são:
+
+\begin{gather*}
+  n_{lin} = \left\lfloor \frac{L/2}{s} \right\rfloor, \\
+  n = n_{lin}\, n_t, \\
+  \sum Q_{Rd} = n\, Q_{Rd}, \\
+  \eta = \min\left(1;\ \frac{\sum Q_{Rd}}{F_{hd}}\right)
+\end{gather*}
+
+Com $\eta = 1$ há interação completa; com $\eta < 1$, interação parcial.
+
+\subsection{Grau de interação mínimo ($\eta_i$)}\label{sec:2.5.5}
+Com interação parcial, o escorregamento na interface exige capacidade de deformação dos conectores. Para que essa capacidade não se esgote antes de a viga atingir o momento resistente, a norma impõe um grau mínimo.
+
+\textbf{Edição de 2024 (L.2.3.1.1.2):}
+
+\[
+  \eta_i = \min\left[ 1;\ \max\left( c_p\, c_r^2\, \eta_0;\ \eta_{lim} \right) \right]
+\]
+
+\begin{gather*}
+  \eta_0 = 1 - \frac{E_a}{580 f_y}\left[0{,}75 - 0{,}45\rho - (0{,}030 - 0{,}015\rho) L_e\right], \\
+  \eta_{lim} = 0{,}40\, c_r (1 + 0{,}8\rho)
+\end{gather*}
+
+com $c_p = 0{,}85$ (não escorada) ou 1,00 (escorada), $c_r = \max(0{,}70;\ M_{Sd}/M_{Rd})$, $L_e$ em metros e $\rho = 0$ para perfis duplamente simétricos.
+
+\textbf{Edição de 2008 (O.2.3.1.1.2), perfis de mesas iguais e $L_e \le 25$ m:}
+
+\[
+  \eta_i = 1 - \frac{E_a}{578 f_y}(0{,}75 - 0{,}03 L_e) \ge 0{,}40
+\]
+
+Em ambos os casos, $n_{min} = \lceil \eta_i F_{hd} / Q_{Rd} \rceil$. Se $\eta < \eta_i$, a conexão não atende e é preciso aumentar $n_t$ ou reduzir $k$.
+
+\subsection{Limites geométricos}\label{sec:2.5.6}
+Conforme os itens L.4.1, L.4.3 e L.4.4 (O.4.1, O.4.3 e O.4.4 em 2008, com os mesmos valores):
+\begin{itemize}
+\item \textbf{espaçamento mínimo:} $6\,d_{cs}$ ao longo do vão, reduzido para $4\,d_{cs}$ com fôrma de aço; $4\,d_{cs}$ na direção transversal;
+\item \textbf{espaçamento máximo:} $8$ vezes a espessura total da laje e, com nervuras perpendiculares, no máximo 915 mm;
+\item \textbf{altura do conector:} $h_{cs} \ge 4\,d_{cs}$ e, com fôrma, $h_{cs} \ge h_F + 40$ mm; cobrimento superior mínimo de 10 mm;
+\item \textbf{diâmetro:} $d_{cs} \le 19$ mm através da fôrma; $d_{cs} \le 2{,}5\,t_f$, a menos que o conector esteja sobre a alma;
+\item \textbf{ancoragem da fôrma:} com nervuras perpendiculares e $s > 450$ mm, a fôrma deve receber fixações adicionais à mesa;
+\item \textbf{largura da mesa:} para $n_t$ conectores lado a lado, a ferramenta exige $(n_t - 1)\cdot 4\,d_{cs} + 2 \cdot 25\ \text{mm} \le b_f$, combinando o espaçamento transversal mínimo com o cobrimento lateral de 25 mm (L.4.4.2). Este é o critério adotado pelo autor; a norma não fixa explicitamente a distância do conector à borda da mesa.
+\end{itemize}
+
+\section{Fase 2: Momento Fletor Resistente Positivo}\label{sec:2.6}
+Para vigas biapoiadas com alma compacta ($h/t_w \le 3{,}76\sqrt{E_a/f_y}$), o momento resistente é obtido pela distribuição plástica de tensões, com o concreto a $0{,}85\,\eta_c f_{cd}$ e o aço a $f_{yd}$. O item L.2.3.1.1.1 distingue três casos.
+
+\subsection{Caso a --- interação completa, linha neutra plástica na laje}
+Ocorre quando $\sum Q_{Rd} \ge A_a f_{yd}$ e $0{,}85\,\eta_c f_{cd} b_{ef} t_c \ge A_a f_{yd}$. Todo o perfil está tracionado:
+
+\begin{gather*}
+  T_{ad} = A_a f_{yd}, \\
+  a = \frac{T_{ad}}{0{,}85\,\eta_c f_{cd} b_{ef}} \le t_c, \\
+  M_{Rd} = \beta_{vm}\, T_{ad}\left(\frac{d}{2} + h_F + t_c - \frac{a}{2}\right)
+\end{gather*}
+
+\subsection{Caso b --- interação completa, linha neutra plástica no perfil}
+Ocorre quando $\sum Q_{Rd} \ge 0{,}85\,\eta_c f_{cd} b_{ef} t_c$ e $A_a f_{yd} > 0{,}85\,\eta_c f_{cd} b_{ef} t_c$. Toda a laje está comprimida ($a = t_c$):
+
+\begin{gather*}
+  C_{cd} = 0{,}85\,\eta_c f_{cd} b_{ef} t_c, \\
+  C_{ad} = \frac{A_a f_{yd} - C_{cd}}{2}, \\
+  T_{ad} = C_{cd} + C_{ad}
+\end{gather*}
+
+A linha neutra plástica, medida a partir do topo do perfil, fica na mesa superior se $C_{ad} \le A_{af} f_{yd}$, ou na alma, caso contrário:
+
+\begin{gather*}
+  y_p = \frac{C_{ad}}{A_{af} f_{yd}}\, t_f \quad \text{(mesa)}, \\
+  y_p = t_f + h_w\,\frac{C_{ad} - A_{af} f_{yd}}{A_{aw} f_{yd}} \quad \text{(alma)}
+\end{gather*}
+
+\[
+  M_{Rd} = \beta_{vm}\left[ C_{ad}\,(d - y_t - y_c) + C_{cd}\left(\frac{t_c}{2} + h_F + d - y_t\right) \right]
+\]
+
+\subsection{Caso c --- interação parcial}
+Ocorre quando $\sum Q_{Rd}$ é menor que $A_a f_{yd}$ e que $0{,}85\,\eta_c f_{cd} b_{ef} t_c$, atendido o grau mínimo. A compressão na laje fica limitada pela conexão, $C_{cd} = \sum Q_{Rd}$, e o bloco comprimido não ocupa toda a espessura:
+
+\begin{gather*}
+  a = \frac{C_{cd}}{0{,}85\,\eta_c f_{cd} b_{ef}}, \\
+  M_{Rd} = \beta_{vm}\left[ C_{ad}\,(d - y_t - y_c) + C_{cd}\left(t_c - \frac{a}{2} + h_F + d - y_t\right) \right]
+\end{gather*}
+
+com $C_{ad}$ e $y_p$ calculados como no caso b, usando o novo $C_{cd}$.
+
+\subsection{Centroides das partes comprimida e tracionada}
+O centroide da parte comprimida vale $y_c = y_p/2$ com a linha neutra na mesa, ou é obtido pela composição da mesa com o trecho comprimido da alma. A área comprimida é $A_c = b_f y_p$ (mesa) ou $A_c = b_f t_f + t_w (y_p - t_f)$ (alma). O centroide da parte tracionada, medido a partir da face inferior, é obtido pela diferença de momentos estáticos entre o perfil inteiro e a parte comprimida:
+
+\[
+  y_t = \frac{A_a\,\dfrac{d}{2} - A_c\,(d - y_c)}{A_a - A_c}
+\]
+
+Essa forma usa a mesma área $A_a$ de catálogo que entra nas forças plásticas. Na versão inicial do software, $y_t$ era calculado pelo modelo de três retângulos (sem os raios de concordância), cuja área difere da área de catálogo; isso gerava, no estudo de caso, um momento resistente 0,4\% maior. A forma acima elimina essa inconsistência.
+
+\subsection{Almas semicompactas}
+Para $3{,}76\sqrt{E_a/f_y} < h/t_w \le 5{,}70\sqrt{E_a/f_y}$, o momento resistente é obtido em regime elástico (L.2.3.1.2), limitando a tensão de tração na face inferior do aço a $f_{yd}$ (com o módulo efetivo $W_{ef}$ da interação parcial) e a tensão de compressão no topo da laje a $0{,}85\,\eta_c f_{cd}$, sobre a seção homogeneizada de~\ref{sec:2.8.1}.
+
+\section{Observação sobre o Caso b do Item L.2.3.1.1.1 da ABNT NBR 8800:2024}\label{sec:2.7}
+
+Na expressão do momento resistente do caso b (L.2.3.1.1.1-b, p. 203 da edição de 2024), o primeiro termo dentro dos colchetes aparece multiplicado por $\sum Q_{Rd}$, e não por $C_{ad}$:
+
+\[
+  M_{Rd} = \beta_{vm}\left[ \sum Q_{Rd}\,(d - y_t - y_c) + C_{cd}\left(\frac{t_c}{2} + h_F + d - y_t\right) \right] \quad \text{(como impresso)}
+\]
+
+Duas verificações elementares indicam que o termo deve ser $C_{ad}$, como na edição de 2008:
+
+\begin{enumerate}
+\item \textbf{Braço de alavanca.} A distância $(d - y_t - y_c)$ vai do centroide da parte tracionada ao centroide da parte comprimida \emph{do perfil de aço}. A força que atua nesse braço é a compressão no aço, $C_{ad}$. A força dos conectores atua na interface e já está representada, no equilíbrio, por $C_{cd}$ no segundo termo;
+\item \textbf{Consistência com o equilíbrio.} No caso b, a interação é completa e $\sum Q_{Rd} \ge C_{cd}$ pode ser muito maior que $C_{ad}$. Com a expressão impressa, acrescentar conectores além do necessário aumentaria o momento resistente indefinidamente, o que não é compatível com o equilíbrio da seção plastificada.
+\end{enumerate}
+
+A planilha de referência usada na validação faz a mesma observação e também adota $C_{ad}$. O software implementa a expressão com $C_{ad}$. Trata-se da interpretação adotada neste trabalho; recomenda-se acompanhar eventuais erratas da norma.
+
+\section{Estados-Limites de Serviço}\label{sec:2.8}
+
+\subsection{Seção homogeneizada}\label{sec:2.8.1}
+As propriedades elásticas são calculadas com a laje homogeneizada em aço, com largura $b_{ef}/n$:
+\begin{itemize}
+\item \textbf{curta duração:} $n = \alpha_E = E_a/E_c$;
+\item \textbf{longa duração:} $n = 3\,\alpha_E$, considerando de forma simplificada a fluência (L.1.2).
+\end{itemize}
+
+O concreto tracionado é desprezado. Supondo toda a capa comprimida, a linha neutra elástica, medida da face inferior do perfil, é:
+
+\[
+  y_0 = \frac{A_a\,d/2 + (b_{ef}/n)\,t_c\,(d + h_F + t_c/2)}{A_a + (b_{ef}/n)\,t_c}
+\]
+
+Se $y_0 \le d + h_F$, a linha neutra está fora da laje e toda a capa é considerada:
+
+\[
+  I_{tr} = I_a + A_a\left(y_0 - \frac{d}{2}\right)^2 + \frac{b_{ef}}{n}\frac{t_c^3}{12} + \frac{b_{ef}}{n}\,t_c\left(d + h_F + \frac{t_c}{2} - y_0\right)^2
+\]
+
+Se $y_0 > d + h_F$, a linha neutra corta a laje e a profundidade comprimida $x$ sai do equilíbrio de momentos estáticos:
+
+\begin{gather*}
+  \frac{b_{ef}}{n}\frac{x^2}{2} = A_a\left(t_c + h_F + \frac{d}{2} - x\right), \\
+  I_{tr} = \frac{b_{ef}}{n}\frac{x^3}{3} + I_a + A_a\left(t_c + h_F + \frac{d}{2} - x\right)^2
+\end{gather*}
+
+\subsection{Interação parcial}\label{sec:2.8.2}
+Com interação parcial, a flexibilidade da conexão reduz a rigidez. Conforme L.1.2.2.1:
+
+\[
+  I_{ef} = I_a + \sqrt{\eta}\,(I_{tr} - I_a), \qquad W_{ef} = W_a + \sqrt{\eta}\,(W_{tr} - W_a)
+\]
+
+\subsection{Flechas por fases}\label{sec:2.8.3}
+Com $k = 5L^4/(384\,E_a)$ e as ações lineares em serviço, as parcelas de flecha em construção não escorada são:
+
+\begin{table}[htbp]
+  \centering
+  \caption{Parcelas de flecha em construção não escorada}\label{tab:parcelas-flecha}
+  {\small
+  \renewcommand{\arraystretch}{1.6}
+  \begin{tabularx}{\textwidth}{@{}l l L@{}}
+  \toprule
+  Parcela & Expressão & Significado \\
+  \midrule
+  $\delta_{g1}$ & $k\, g_1 / I_a$ & $g_1$ sobre o perfil isolado (0 se escorada) \\
+  $\delta_1$ & $\delta_{g1} + k\, g_2 / I_{ef}$ & Permanentes, sem efeitos de longa duração \\
+  $\delta_{fl}$ & $k\, g_2\left(\dfrac{1}{I_{ef,\infty}} - \dfrac{1}{I_{ef}}\right)$ & Acréscimo por fluência das permanentes aplicadas à seção mista \\
+  $\delta_{sh}$ & $\dfrac{P_{sh}\, e_{sh}\, L^2}{8\, E_a I_{ef,\infty}}$ & Retração (opcional) \\
+  $\delta_2$ & $\delta_{fl} + \delta_{sh}$ & Efeitos de longa duração \\
+  $\delta_3$ & $k\,\psi\, q / I_{ef} + k\,\psi_2\, q\left(\dfrac{1}{I_{ef,\infty}} - \dfrac{1}{I_{ef}}\right)$ & Ações variáveis \\
+  \bottomrule
+  \end{tabularx}
+  }
+  \fonte{Elaborado pelo autor (2026).}
+\end{table}
+
+Na construção escorada, $\delta_{g1} = 0$ e $g_1 + g_2$ atuam na seção mista. Para a retração, adota-se o modelo do comentário I3 da AISC 360-16 (a NBR 8800 não fornece expressão): $P_{sh} = \varepsilon_{sh} (E_c/3)\, b_{ef}\, t_c$, com $\varepsilon_{sh} = 0{,}0002$ na falta de dados, e $e_{sh}$ igual à distância do centro da laje à linha neutra de longa duração.
+
+O fator $\psi$ de $\delta_3$ depende da combinação: $\psi_2$ (quase permanente), $\psi_1$ (frequente) ou 1,0 (rara). Seguindo o item B.2.4 do Anexo B, verificam-se:
+\begin{itemize}
+\item \textbf{aspecto visual:} $\delta_{max} = \delta_1 + \delta_2 + \delta_3 - \delta_0 \le L/350$, com $\delta_3$ na combinação quase permanente e a contraflecha considerada limitada às permanentes, $\delta_0 = \min(\text{contraflecha};\ \delta_1)$;
+\item \textbf{danos a elementos não estruturais:} $\delta_2 + \delta_3 \le L/350$, com $\delta_3$ na combinação rara (ou frequente, conforme o caso). Havendo alvenaria solidarizada à viga, o limite passa a $\min(L/350;\ 15\ \text{mm})$ (Tabela B.1).
+\end{itemize}
+
+A contraflecha sugerida pela ferramenta é o maior múltiplo de 5 mm que não excede $\delta_{g1}$.
+
+\subsection{Tensão na face inferior do perfil em serviço}\label{sec:2.8.4}
+Para validar a hipótese de comportamento elástico em serviço (L.2.3.2-b), a tensão na face inferior do perfil na combinação rara, em construção não escorada, deve atender a:
+
+\[
+  \sigma = \frac{M_{g1}}{W_a} + \frac{M_{g2}}{W_{ef,\infty}} + \frac{M_q}{W_{ef}} \le f_y
+\]
+
+\section{Vibração do Piso pelo Caminhar de Pessoas}\label{sec:2.9}
+
+\subsection{Edição de 2024 --- Anexo I}\label{sec:2.9.1}
+O Anexo I traz uma avaliação simplificada (I.2) para pisos com frequência fundamental entre 3 Hz e 9 Hz. Neste trabalho avalia-se o modo A, controlado pela rigidez das vigas secundárias.
+
+\textbf{Rigidez e carregamento.} As vigas podem ser consideradas mistas, com o concreto não fissurado e o módulo dinâmico $E_{c,din} = 38$ GPa para concreto de densidade normal (I.1.7). Usa-se a combinação frequente com $\psi_{vib} = 0{,}1$, ou $\psi_{vib} = 0$ em garagens, escadas, passarelas e áreas de circulação de público (I.1.5):
+
+\[
+  w = g_1 + g_2 + \psi_{vib}\, q, \qquad m = \frac{w}{g\, b}
+\]
+
+\textbf{Frequência fundamental (I.2.2 e Tabela I.1).} O deslocamento do modo A soma a flexão da viga secundária biapoiada e a flexibilidade da laje entre vigas:
+
+\begin{gather*}
+  \delta = \frac{w}{384\, E_a}\left(\frac{5 L^4}{I_b} + \frac{b^3}{I_s}\right), \\
+  f_0 = \frac{18}{\sqrt{\delta}} \quad (\delta \text{ em mm})
+\end{gather*}
+
+em que $I_b$ é a inércia da viga mista com $E_{c,din}$ e $I_s$ a inércia da laje por unidade de largura homogeneizada em aço: $t_c^3/(12\, n_{din})$ em lajes maciças, ou a inércia da laje mista do catálogo do fabricante para \emph{steel deck} com nervuras perpendiculares à viga. Recomenda-se $f_0 \ge 3$ Hz (I.1.6).
+
+\textbf{Massa modal (I.2.3).}
+
+\begin{gather*}
+  B_b = k_b\, L \left(\frac{I_s}{I_b/b}\right)^{0{,}25} \le \frac{2}{3}\,(n_p L_p), \\
+  M = 0{,}5\, m\, L\, B_b
+\end{gather*}
+
+com $k_b = 2{,}0$ para vigas internas e $n_p L_p$ a largura do piso perpendicular às vigas secundárias.
+
+\textbf{Resposta (I.2.4 e I.2.5).} Com $P_0 = 750$ N e a razão de amortecimento $\beta$ obtida pela soma dos componentes da Tabela I.2 (estrutura 0,010; forros e instalações suspensos 0,010; ocupação; divisórias de piso a teto 0,020 a 0,050):
+
+\begin{gather*}
+  a_p = \frac{0{,}55\, P_0\, e^{-0{,}35 f_0}}{2\,\beta\, M}, \\
+  a_{w,rms} = \frac{W\,\zeta\, P_0}{2\sqrt{2}\,\beta\, M}, \\
+  R = \frac{a_{w,rms}}{0{,}005}
+\end{gather*}
+
+com $\zeta = 0{,}15$ para $f_0 \le 5$ Hz e 0,10 nos demais casos, e $W = 0{,}5\sqrt{f_0}$ ($f_0 < 4$ Hz), 1,0 ($4 \le f_0 \le 8$ Hz) ou $8/f_0$ ($f_0 > 8$ Hz). A critério do responsável técnico, compara-se $a_p$ com a aceleração de pico-limite ou $R$ com o fator de resposta máximo da Tabela I.3 (por exemplo, 0,050 m/s\ensuremath{^2} e $R \le 8$ para escritórios, residências e escolas; 0,15 m/s\ensuremath{^2} e $R \le 24$ para garagens e áreas de circulação de público).
+
+\begin{quote}\small
+\textbf{Nota sobre a expressão de $a_p$.} O denominador $2\beta M$ é coerente com a expressão de $a_{w,rms}$ (o valor eficaz de uma resposta harmônica de amplitude $\zeta P_0/(2\beta M)$ é essa amplitude dividida por $\sqrt{2}$) e reproduz os dois exemplos de referência usados na validação (Capítulo~\ref{cap:4}). \conferir{Conferir na versão impressa da norma e remover esta nota.}
+\end{quote}
+
+\subsection{Edição de 2008 --- critério indireto (L.3.2)}\label{sec:2.9.2}
+A edição de 2008 exige, em pisos onde as pessoas caminham regularmente, frequência natural não inferior a 4 Hz. A exigência é considerada satisfeita se o deslocamento vertical total do piso causado pelas ações permanentes (excluindo a parcela dependente do tempo) e pelas variáveis, na combinação frequente e considerando as vigas biapoiadas, não superar 20 mm. Na ferramenta: $\delta_1 + k\,\psi_1\, q / I_{ef} \le 20$ mm.
+
+\section{Síntese Comparativa: NBR 8800:2008 \ensuremath{\times} NBR 8800:2024}\label{sec:2.10}
+
+\begin{table}[htbp]
+  \centering
+  \caption{Síntese comparativa entre as edições de 2008 e 2024 da ABNT NBR 8800 para vigas mistas}\label{tab:comparativo-edicoes}
+  {\footnotesize
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{2.6cm}CCL@{}}
+  \toprule
+  Aspecto & ABNT NBR 8800:2008 & ABNT NBR 8800:2024 & Efeito prático \\
+  \midrule
+  \textbf{Localização} & Anexo O & Anexo L & Reorganização da norma \\
+  \textbf{Módulo do concreto} & $E_c = 4760\sqrt{f_{ck}}$ & $E_c = 0{,}85\,\alpha_{ag}\, 5600\sqrt{f_{ck}}$ & Idênticos para granito e gnaisse ($\alpha_{ag} = 1{,}0$) \\
+  \textbf{Bloco de compressão} & $0{,}85\, f_{cd}$ & $0{,}85\,\eta_c f_{cd}$ & Redução só para $f_{ck} > 40$ MPa \\
+  \textbf{$R_p$ com pino soldado no perfil} & 1,00 & 0,75 & $Q_{Rd}$ até 25\% menor em laje maciça \\
+  \textbf{Grau de interação mínimo} & $1 - \frac{E_a}{578 f_y}(0{,}75 - 0{,}03L_e) \ge 0{,}40$ & $\min[1;\ \max(c_p c_r^2 \eta_0;\ \eta_{lim})]$ & Menor em vigas pouco solicitadas e não escoradas \\
+  \textbf{FLT ($C_b$)} & $C_b$ multiplica a interpolação & $C_b$ dentro de $\lambda_r$ & Difere apenas quando $C_b > 1$ \\
+  \textbf{Cortante ($k_v$ sem enrijecedores)} & 5,00 & 5,34 & $\lambda_p$ cerca de 3\% maior \\
+  \textbf{Vibração} & $f \ge 4$ Hz, verificada por $\delta \le 20$ mm (L.3.2) & Anexo I: $f_0$, $M$, $\beta$, $a_p$ ou $R$ & Critério explícito de conforto \\
+  \textbf{Espaçamento dos conectores} & $4d$ a $6d$; $\le 8h$ e $\le 915$ mm (deck \ensuremath{\perp}) & Igual & Sem alteração \\
+  \bottomrule
+  \end{tabularx}
+  }
+  \fonte{Elaborado pelo autor (2026).}
+\end{table}

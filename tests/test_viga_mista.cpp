@@ -218,12 +218,13 @@ TEST_CASE("Diferenciacao por Namespaces nbr8800::v2008 vs nbr8800::v2024")
     auto mrd_2024 = nbr8800::v2024::calcularMomentoResistentePerfil(perfil, aco, 3500.0, 1.25);
     ASSERT_TRUE(std::abs(mrd_2008.MRd_FLT_kNm - mrd_2024.MRd_FLT_kNm) > 1.0);
 
-    // 7. FLA em alma semicompacta (Mr = 0.7*fy*Wx em v2008 Tabela G.1 vs Mr = fy*Wx em v2024 Tabela D.1)
+    // 7. FLA em alma semicompacta: Mr = fy*Wx nas duas edições (Tabela G.1 de 2008 e Tabela D.1 de 2024)
     PerfilI p_semi = perfil;
     p_semi.lbw = 110.0; // Entre 90.53 e 137.23
     auto fla_2008 = nbr8800::v2008::calcularMomentoResistentePerfil(p_semi, aco, 0.0, 1.0);
     auto fla_2024 = nbr8800::v2024::calcularMomentoResistentePerfil(p_semi, aco, 0.0, 1.0);
-    ASSERT_TRUE(fla_2024.MRd_FLA_kNm > fla_2008.MRd_FLA_kNm);
+    ASSERT_NEAR(fla_2024.MRd_FLA_kNm, fla_2008.MRd_FLA_kNm, 1e-9);
+    ASSERT_TRUE(fla_2008.MRd_FLA_kNm < fla_2008.Mpl_kNm / 1.10);
 
     // 8. Momento Positivo VM com concreto C50 (fck = 50 MPa > 40 MPa -> eta_c = 0.928 em v2024 vs 1.00 em v2008)
     auto vm_pos_2008 = nbr8800::v2008::calcularMomentoPositivoVM(perfil, aco, conc50, laje);

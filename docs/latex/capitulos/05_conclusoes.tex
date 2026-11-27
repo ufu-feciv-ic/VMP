@@ -1,0 +1,44 @@
+% Capítulo 5 -- convertido de docs/TCC_VIGA_MISTA_NBR8800_2024.md
+\chapter{Conclusões e trabalhos futuros}\label{cap:5}
+
+\section{Conclusões}\label{sec:5.1}
+\begin{enumerate}
+\item \textbf{Ferramenta e validação.} Foi desenvolvida uma ferramenta de código aberto que verifica vigas mistas biapoiadas nas Fases 1 e 2 e nos estados-limites de serviço, incluindo a vibração do piso, segundo as edições de 2008 e 2024 da ABNT NBR 8800. No estudo de caso V1, as 25 grandezas comparadas coincidiram com a planilha de referência dentro do erro de arredondamento em precisão dupla. O procedimento de vibração foi conferido também contra um exemplo independente.
+\item \textbf{Verificação contínua.} A suíte de 36 testes automatizados e a geração das tabelas do texto a partir do próprio código mantêm o documento e o software consistentes entre si.
+\item \textbf{Correções identificadas.} A confrontação com a norma, com a planilha e com cálculos manuais levou a correções na versão inicial do código:
+\begin{itemize}
+\item $M_r = f_y W_x$ na FLA também em 2008;
+\item $R_p$ dependente apenas de $e_{mh}$;
+\item $R_g = 0{,}85$ em nervuras paralelas com $b_F/h_F < 1{,}5$;
+\item espaçamentos de 2008 (4d com fôrma e 915 mm);
+\item recálculo da linha neutra elástica quando ela corta a laje;
+\item centroide $y_t$ consistente com a área de catálogo;
+\item modelo de flechas por fases;
+\item $G = 77\,000$ MPa no catálogo de aços;
+\item fatores de redução $Q_s$ e $Q_a$ da compressão em 2008.
+\end{itemize}
+
+Essas correções ilustram o valor de testes contra referências independentes no desenvolvimento de software de engenharia.
+\item \textbf{Caso b do item L.2.3.1.1.1.} A expressão impressa com $\sum Q_{Rd}$ no primeiro termo não é compatível com o equilíbrio da seção; adotou-se $C_{ad}$, como na edição de 2008 e na planilha de referência.
+\item \textbf{Efeito da edição de 2024.} No V1, o grau mínimo caiu de 0,519 para 0,280 (9 em vez de 16 conectores por meio vão). Em lajes maciças, por outro lado, $R_p = 0{,}75$ aumenta em cerca de 30\% os conectores necessários para a interação completa. O coeficiente $\eta_c$ teve efeito pequeno nos casos estudados.
+\item \textbf{Estados-limites de serviço governam.} No V1 e nos vãos maiores do estudo paramétrico, a flecha e a vibração governaram o dimensionamento antes da resistência. O critério indireto de vibração de 2008 reprovou o V1, que o Anexo I de 2024 aprova pela aceleração de pico, mas reprovaria pelo fator de resposta: a escolha do critério, deixada ao projetista, é decisiva.
+\end{enumerate}
+
+\section{Limitações}\label{sec:5.2}
+\begin{itemize}
+\item Apenas vigas biapoiadas de alma cheia sob carga uniformemente distribuída; vigas contínuas e semicontínuas, cargas concentradas e aberturas na alma não são tratadas (as rotinas de momento negativo existem, mas não fazem parte do verificador);
+\item no \emph{steel deck} com nervuras paralelas, despreza-se o concreto da nervura;
+\item na vibração, avalia-se apenas o modo A (vigas secundárias); o modo B (vigas principais) exige dados da viga principal;
+\item a verificação elástica de seções semicompactas não faz a superposição de tensões das fases construtivas (L.2.3.2-c);
+\item a armadura de costura é estimada de forma simplificada e não integra o quadro de verificações.
+\end{itemize}
+
+\section{Trabalhos Futuros: Vigas Mistas Protendidas (VMP)}\label{sec:5.3}
+Este trabalho é a base de uma pesquisa futura sobre \textbf{vigas mistas protendidas com cabos externos}. Em grandes vãos, as vigas mistas convencionais são limitadas por flecha e vibração, como mostrou o estudo paramétrico, e a protensão externa permite:
+\begin{enumerate}
+\item impor uma contraflecha ativa, que compensa as flechas da concretagem e de serviço;
+\item reduzir a seção de aço necessária;
+\item aumentar a rigidez em serviço.
+\end{enumerate}
+
+O repositório já contém rotinas preliminares de protensão (seção transformada, força de protensão, perdas e tensão no cabo em ELU), que deverão passar pelo mesmo processo de verificação por testes antes de serem integradas ao verificador.

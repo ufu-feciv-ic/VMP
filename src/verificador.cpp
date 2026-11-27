@@ -20,6 +20,14 @@ nbr8800::ResultadoRotinaE calcularConectoresVigaMista(const VigaMistaConfig& cfg
     }
 }
 
+double calcularLarguraInfluencia(const GeometriaVigaMista& geo) {
+    if (geo.eh_viga_borda) {
+        double d_prox = (geo.dist_esq_mm > 0.0) ? geo.dist_esq_mm : geo.dist_dir_mm;
+        return d_prox / 2.0 + geo.dist_borda_mm;
+    }
+    return (geo.dist_esq_mm + geo.dist_dir_mm) / 2.0;
+}
+
 RelatorioVigaMista verificar_viga_mista(const VigaMistaConfig& cfg) {
     RelatorioVigaMista rel;
     rel.aprovado_global = true;
@@ -82,7 +90,8 @@ RelatorioVigaMista verificar_viga_mista(const VigaMistaConfig& cfg) {
     rel.fase2.bef_mm = bef_mm;
     rel.fase2.g2_kN_m = cfg.acoes.g2_kN_m;
     rel.fase2.q2_kN_m = cfg.acoes.q2_kN_m;
-    rel.fase2.qSd2_kN_m = cfg.acoes.gamma_g2 * (rel.fase1.g1_kN_m + rel.fase2.g2_kN_m)
+    rel.fase2.qSd2_kN_m = cfg.acoes.gamma_g1_fase2 * rel.fase1.g1_kN_m
+        + cfg.acoes.gamma_g2 * rel.fase2.g2_kN_m
         + cfg.acoes.gamma_q2 * rel.fase2.q2_kN_m;
     rel.fase2.MSd2_kNm = (rel.fase2.qSd2_kN_m * L_m * L_m) / 8.0;
     rel.fase2.VSd2_kN = (rel.fase2.qSd2_kN_m * L_m) / 2.0;
@@ -137,16 +146,23 @@ RelatorioVigaMista verificar_viga_mista(const VigaMistaConfig& cfg) {
     if (cfg.norma == NormaEdicao::NBR8800_2024) {
         rel.flechas = nbr8800::v2024::calcularFlechasVM(
             perfil, cfg.aco, cfg.concreto, laje_calc, cfg.geometria.L_vao_mm,
-            rel.fase1.g1_kN_m, rel.fase1.q1_kN_m, rel.fase2.g2_kN_m, rel.fase2.q2_kN_m,
-            cfg.acoes.psi2, rel.conectores.grau_interacao_eta,
-            cfg.geometria.escorada, cfg.acoes.contraflecha_mm
+            cfg.acoes, rel.conectores.grau_interacao_eta, cfg.geometria.escorada
         );
     } else {
         rel.flechas = nbr8800::v2008::calcularFlechasVM(
             perfil, cfg.aco, cfg.concreto, laje_calc, cfg.geometria.L_vao_mm,
-            rel.fase1.g1_kN_m, rel.fase1.q1_kN_m, rel.fase2.g2_kN_m, rel.fase2.q2_kN_m,
-            cfg.acoes.psi2, rel.conectores.grau_interacao_eta,
-            cfg.geometria.escorada, cfg.acoes.contraflecha_mm
+            cfg.acoes, rel.conectores.grau_interacao_eta, cfg.geometria.escorada
+        );
+    }
+
+    // ========================================================================
+    // 5b. ELS: VIBRAÇÃO DO PISO (2024: Anexo I, modo A | 2008: L.3.2)
+    // ========================================================================
+    rel.b_influencia_mm = calcularLarguraInfluencia(cfg.geometria);
+    if (cfg.vibracao.verificar) {
+        rel.vibracao = nbr8800::calcularVibracaoPisoAnexoI(
+            perfil, cfg.aco, laje_calc, cfg.geometria.L_vao_mm, rel.b_influencia_mm,
+            rel.fase1.g1_kN_m, rel.fase2.g2_kN_m, rel.fase2.q2_kN_m, cfg.vibracao
         );
     }
 
@@ -227,7 +243,7 @@ RelatorioVigaMista verificar_viga_mista(const VigaMistaConfig& cfg) {
     });
     rel.itens.push_back({
         "Cortante Fase 2 (Viga Mista)",
-        "Resistência ao Cortante em Serviço (Rotina D)",
+        "Força cortante resistente do perfil de aço (ELU, Rotina D)",
         rel.fase2.VSd2_kN,
         rel.fase2.cortante_misto.VRd_kN,
         "kN",
@@ -246,14 +262,49 @@ RelatorioVigaMista verificar_viga_mista(const VigaMistaConfig& cfg) {
     });
 
     rel.itens.push_back({
-        "ELS Flecha Total",
-        "Flecha de Serviço Considerando Fluência (L/350)",
+        "ELS Flecha Máxima",
+        "δmax = δ1 + δ2 + δ3 − δ0 (aspecto visual, Tabela B.1)",
         rel.flechas.flecha_total_mm,
         rel.flechas.limite_total_mm,
         "mm",
         rel.flechas.taxa_flecha_total,
         rel.flechas.aprovado_flecha
     });
+    rel.itens.push_back({
+        "ELS Flecha Pós-Cura",
+        "δ2 + δ3 (danos a elementos não estruturais, Tabela B.1)",
+        rel.flechas.flecha_dano_mm,
+        rel.flechas.limite_dano_mm,
+        "mm",
+        rel.flechas.taxa_flecha_dano,
+        rel.flechas.aprovado_flecha_dano
+    });
+
+    if (cfg.vibracao.verificar) {
+        if (cfg.norma == NormaEdicao::NBR8800_2024) {
+            const bool por_ap = (cfg.vibracao.criterio == CriterioVibracao::ACELERACAO_PICO);
+            rel.itens.push_back({
+                "ELS Vibração do Piso",
+                por_ap ? "Aceleração de pico a_p (Anexo I, modo A)" : "Fator de resposta R (Anexo I, modo A)",
+                por_ap ? rel.vibracao.ap_m_s2 : rel.vibracao.R,
+                por_ap ? rel.vibracao.ap_lim_m_s2 : rel.vibracao.R_max,
+                por_ap ? "m/s²" : "-",
+                rel.vibracao.utilizacao,
+                rel.vibracao.aprovado
+            });
+        } else {
+            const double lim = 20.0;
+            rel.itens.push_back({
+                "ELS Vibração do Piso",
+                "Deslocamento frequente sem parcela diferida <= 20 mm (L.3.2)",
+                rel.flechas.flecha_vibracao_2008_mm,
+                lim,
+                "mm",
+                rel.flechas.flecha_vibracao_2008_mm / lim,
+                rel.flechas.flecha_vibracao_2008_mm <= lim
+            });
+        }
+    }
 
     for (const auto& item : rel.itens) {
         if (!item.aprovado) {

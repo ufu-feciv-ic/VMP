@@ -5,6 +5,8 @@
 #include "catalogo_completo.h"
 #include "calculadora_cargas.h"
 #include "geometria.h"
+#include "vibracao.h"
+#include "estudo_caso.h"
 
 #include "raylib.h"
 #include "rlImGui.h"
@@ -605,6 +607,11 @@ int main() {
 
     // Estado do Assistente de Cargas (NBR 6120:2019)
     bool usar_assistente_cargas = true;
+
+    // Concreto: Ecs calculado pela norma selecionada (4.6.3.1) ou informado manualmente
+    bool ecs_automatico = true;
+    int agregado_idx = 1;     // 0 basalto/diabásio, 1 granito/gnaisse, 2 calcário, 3 arenito
+    int ocup_vib_idx = 0;     // Ocupação para vibração (Tabelas I.2 e I.3)
     nbr6120::AssistenteCargasConfig assist_cfg;
 
     while (!WindowShouldClose()) {
@@ -617,6 +624,22 @@ int main() {
 
         if (perfil_modo_idx == 2) {
             calcular_propriedades_secao_i(cfg.perfil);
+        }
+
+        if (ecs_automatico) {
+            cfg.concreto.Ecs_MPa = (cfg.norma == NormaEdicao::NBR8800_2024)
+                ? nbr8800::v2024::calcularEcsConcreto(cfg.concreto.fck_MPa, cfg.concreto.alpha_ag)
+                : nbr8800::v2008::calcularEcsConcreto(cfg.concreto.fck_MPa, cfg.concreto.alpha_ag);
+        }
+
+        {
+            // Vibração: inércia da laje por unidade de largura. Steel deck com nervuras perpendiculares
+            // usa a inércia da laje mista do catálogo Metform; nos demais casos, tc³/(12·alpha_din).
+            const auto& decks_vib = obter_catalogo_steel_deck();
+            bool deck_perp = (cfg.laje.tipo == LAJE_STEEL_DECK && !cfg.laje.nervura_paralela);
+            cfg.vibracao.Is_laje_mm4_por_mm = (deck_perp && deck_cat_idx >= 0 && deck_cat_idx < (int)decks_vib.size())
+                ? decks_vib[deck_cat_idx].inercia_laje_mista_1e6_mm4_m * 1000.0
+                : 0.0;
         }
 
         // Executa o verificador que reutiliza rotinas_nbr8800 (v2008 / v2024) e rotinas_vmp
@@ -679,6 +702,25 @@ int main() {
                 }
                 ImGui::EndMenu();
             }
+            if (ImGui::BeginMenu("Exemplos")) {
+                if (ImGui::MenuItem("Estudo de caso V1 (TCC) - W460x52, MF-75, L = 9 m")) {
+                    cfg = estudo_caso_v1::configuracao();
+                    norma_idx = 0;
+                    perfil_modo_idx = 0;
+                    perfil_idx = 3;
+                    laje_idx = 1;
+                    orient_deck_idx = 0;
+                    usar_assistente_cargas = false;
+                    ecs_automatico = true;
+                    agregado_idx = 1;
+                    ocup_vib_idx = 0;
+                    const auto& decks = obter_catalogo_steel_deck();
+                    for (int n = 0; n < (int)decks.size(); ++n) {
+                        if (std::string(decks[n].chave) == "MF-75|140|80") deck_cat_idx = n;
+                    }
+                }
+                ImGui::EndMenu();
+            }
             if (ImGui::BeginMenu("Norma")) {
                 if (ImGui::MenuItem("ABNT NBR 8800:2024 (nbr8800::v2024)", nullptr, norma_idx == 0)) norma_idx = 0;
                 if (ImGui::MenuItem("ABNT NBR 8800:2008 (nbr8800::v2008)", nullptr, norma_idx == 1)) norma_idx = 1;
@@ -717,13 +759,14 @@ int main() {
                 ImGui::Spacing();
 
                 if (perfil_modo_idx == 0) {
-                    const char* perfis[] = { "W 360 x 51,0 (Caso Estudo)", "W 360 x 57,8", "W 460 x 89,0" };
+                    const char* perfis[] = { "W 360 x 51,0", "W 360 x 57,8", "W 460 x 89,0", "W 460 x 52,0 (Estudo de caso V1)" };
                     ImGui::Text("Perfil Rápido:");
                     ImGui::SetNextItemWidth(-1.0f);
-                    if (ImGui::Combo("##PerfilComboRapido", &perfil_idx, perfis, 3)) {
+                    if (ImGui::Combo("##PerfilComboRapido", &perfil_idx, perfis, 4)) {
                         if (perfil_idx == 0) cfg.perfil = perfil_w360x51();
                         else if (perfil_idx == 1) cfg.perfil = perfil_w360x57_8();
                         else if (perfil_idx == 2) cfg.perfil = perfil_w460x89();
+                        else if (perfil_idx == 3) cfg.perfil = perfil_w460x52();
                     }
                 } else if (perfil_modo_idx == 1) {
                     const auto& lista_cat = obter_catalogo_perfis_completo();
@@ -750,15 +793,22 @@ int main() {
                     }
                 } else {
                     ImGui::TextColored(ImVec4(0.9f, 0.7f, 0.2f, 1.0f), "Edição Paramétrica:");
-                    ImGui::SetNextItemWidth(input_w); ImGui::InputDouble("Altura d (mm)", &cfg.perfil.d, 5.0, 20.0, "%.1f");
-                    ImGui::SetNextItemWidth(input_w); ImGui::InputDouble("Largura mesa bf (mm)", &cfg.perfil.bf, 5.0, 20.0, "%.1f");
-                    ImGui::SetNextItemWidth(input_w); ImGui::InputDouble("Espessura mesa tf (mm)", &cfg.perfil.tf, 0.5, 2.0, "%.2f");
-                    ImGui::SetNextItemWidth(input_w); ImGui::InputDouble("Espessura alma tw (mm)", &cfg.perfil.tw, 0.5, 1.0, "%.2f");
-                    // Força recálculo de geometria
-                    cfg.perfil.Ag = 0.0; cfg.perfil.Ix = 0.0; cfg.perfil.Iy = 0.0;
-                    cfg.perfil.Wx = 0.0; cfg.perfil.Wy = 0.0; cfg.perfil.Zx = 0.0; cfg.perfil.Zy = 0.0;
-                    cfg.perfil.rx = 0.0; cfg.perfil.ry = 0.0; cfg.perfil.lbf = 0.0; cfg.perfil.lbw = 0.0;
-                    cfg.perfil.It = 0.0; cfg.perfil.Cw = 0.0;
+                    bool dimensoes_mudaram = false;
+                    ImGui::SetNextItemWidth(input_w); dimensoes_mudaram |= ImGui::InputDouble("Altura d (mm)", &cfg.perfil.d, 5.0, 20.0, "%.1f");
+                    ImGui::SetNextItemWidth(input_w); dimensoes_mudaram |= ImGui::InputDouble("Largura mesa bf (mm)", &cfg.perfil.bf, 5.0, 20.0, "%.1f");
+                    ImGui::SetNextItemWidth(input_w); dimensoes_mudaram |= ImGui::InputDouble("Espessura mesa tf (mm)", &cfg.perfil.tf, 0.5, 2.0, "%.2f");
+                    ImGui::SetNextItemWidth(input_w); dimensoes_mudaram |= ImGui::InputDouble("Espessura alma tw (mm)", &cfg.perfil.tw, 0.5, 1.0, "%.2f");
+                    if (dimensoes_mudaram) {
+                        // Zera as propriedades derivadas e recalcula imediatamente, antes de exibi-las
+                        cfg.perfil.nome = "Perfil Customizado";
+                        cfg.perfil.r = 0.0; cfg.perfil.d1 = 0.0;
+                        cfg.perfil.Ag = 0.0; cfg.perfil.Ix = 0.0; cfg.perfil.Iy = 0.0;
+                        cfg.perfil.Wx = 0.0; cfg.perfil.Wy = 0.0; cfg.perfil.Zx = 0.0; cfg.perfil.Zy = 0.0;
+                        cfg.perfil.rx = 0.0; cfg.perfil.ry = 0.0; cfg.perfil.rt = 0.0;
+                        cfg.perfil.lbf = 0.0; cfg.perfil.lbw = 0.0;
+                        cfg.perfil.It = 0.0; cfg.perfil.Cw = 0.0;
+                        calcular_propriedades_secao_i(cfg.perfil);
+                    }
                 }
 
                 ImGui::Spacing();
@@ -859,7 +909,19 @@ int main() {
                 ImGui::Spacing();
                 ImGui::TextColored(ImVec4(0.3f, 0.7f, 1.0f, 1.0f), "Concreto da Laje:");
                 ImGui::SetNextItemWidth(input_w); ImGui::InputDouble("Resistência fck (MPa)", &cfg.concreto.fck_MPa, 5.0, 10.0, "%.1f");
-                ImGui::SetNextItemWidth(input_w); ImGui::InputDouble("Módulo Secante Ecs (MPa)", &cfg.concreto.Ecs_MPa, 500.0, 1000.0, "%.0f");
+                const char* agregados[] = { "Basalto e diabásio (1,2)", "Granito e gnaisse (1,0)", "Calcário (0,9)", "Arenito (0,7)" };
+                const double alphas_ag[] = { 1.2, 1.0, 0.9, 0.7 };
+                ImGui::SetNextItemWidth(input_w * 1.6f);
+                if (ImGui::Combo("Agregado graúdo (αE)", &agregado_idx, agregados, 4)) {
+                    cfg.concreto.alpha_ag = alphas_ag[agregado_idx];
+                }
+                ImGui::Checkbox("Calcular Ec pela norma selecionada (4.6.3.1)", &ecs_automatico);
+                if (ecs_automatico) {
+                    ImGui::BulletText("Ec = %.0f MPa (%s)", cfg.concreto.Ecs_MPa,
+                        norma_idx == 0 ? "0,85·αE·5600·√fck" : "4760·√fck");
+                } else {
+                    ImGui::SetNextItemWidth(input_w); ImGui::InputDouble("Módulo Secante Ecs (MPa)", &cfg.concreto.Ecs_MPa, 500.0, 1000.0, "%.0f");
+                }
                 ImGui::BulletText("Fator eta_c (bloco compressão): %.3f", rel.fase2.momento_misto.eta_c);
                 ImGui::EndTabItem();
             }
@@ -970,6 +1032,9 @@ int main() {
                 ImGui::TextColored(ImVec4(0.3f, 0.7f, 1.0f, 1.0f), "Geometria do Piso:");
                 ImGui::SetNextItemWidth(input_w); ImGui::InputDouble("Vão da Viga L (mm)", &cfg.geometria.L_vao_mm, 500.0, 1000.0, "%.0f");
                 ImGui::SetNextItemWidth(input_w); ImGui::InputDouble("Comprimento Destravado Lb (mm)", &cfg.geometria.Lb_mm, 250.0, 500.0, "%.0f");
+                if (laje_idx == 1) {
+                    ImGui::TextDisabled("Steel deck fixado ao perfil contém a mesa: use Lb = 0 na concretagem.");
+                }
                 ImGui::SetNextItemWidth(input_w); ImGui::InputDouble("Distância viga esquerda (mm)", &cfg.geometria.dist_esq_mm, 100.0, 500.0, "%.0f");
                 ImGui::SetNextItemWidth(input_w); ImGui::InputDouble("Distância viga direita (mm)", &cfg.geometria.dist_dir_mm, 100.0, 500.0, "%.0f");
                 ImGui::Checkbox("Construção Escorada", &cfg.geometria.escorada);
@@ -1108,7 +1173,80 @@ int main() {
                 }
 
                 ImGui::Spacing();
+                ImGui::Separator();
+                ImGui::TextColored(ImVec4(0.3f, 0.7f, 1.0f, 1.0f), "Coeficientes de Ponderação (Tabela 1):");
+                ImGui::SetNextItemWidth(input_w); ImGui::InputDouble("γg de g1 na construção", &cfg.acoes.gamma_g1, 0.05, 0.1, "%.3f");
+                ImGui::SetNextItemWidth(input_w); ImGui::InputDouble("γq da sobrecarga de construção", &cfg.acoes.gamma_q1, 0.05, 0.1, "%.3f");
+                ImGui::SetNextItemWidth(input_w); ImGui::InputDouble("γg de g1 (combinação normal)", &cfg.acoes.gamma_g1_fase2, 0.05, 0.1, "%.3f");
+                ImGui::SetNextItemWidth(input_w); ImGui::InputDouble("γg de g2 (combinação normal)", &cfg.acoes.gamma_g2, 0.05, 0.1, "%.3f");
+                ImGui::SetNextItemWidth(input_w); ImGui::InputDouble("γq de q2 (combinação normal)", &cfg.acoes.gamma_q2, 0.05, 0.1, "%.3f");
+                ImGui::EndTabItem();
+            }
+
+            // ABA 5: ESTADOS-LIMITES DE SERVIÇO (FLECHAS E VIBRAÇÃO)
+            if (ImGui::BeginTabItem("ELS & Vibração")) {
+                ImGui::Spacing();
+                ImGui::TextColored(ImVec4(0.3f, 0.7f, 1.0f, 1.0f), "Deslocamentos (Anexo B e L.1.2):");
+                const char* combos[] = { "Quase permanente (ψ2)", "Frequente (ψ1)", "Rara (1,0)" };
+                int combo_max = static_cast<int>(cfg.acoes.combinacao_flecha_max);
+                int combo_dano = static_cast<int>(cfg.acoes.combinacao_flecha_dano);
+                ImGui::SetNextItemWidth(input_w * 1.6f);
+                if (ImGui::Combo("Combinação de δmax", &combo_max, combos, 3)) cfg.acoes.combinacao_flecha_max = static_cast<CombinacaoServico>(combo_max);
+                ImGui::SetNextItemWidth(input_w * 1.6f);
+                if (ImGui::Combo("Combinação de δ2+δ3", &combo_dano, combos, 3)) cfg.acoes.combinacao_flecha_dano = static_cast<CombinacaoServico>(combo_dano);
+                ImGui::SetNextItemWidth(input_w); ImGui::InputDouble("Limite L / ...", &cfg.acoes.denominador_limite_flecha, 10.0, 50.0, "%.0f");
                 ImGui::SetNextItemWidth(input_w); ImGui::InputDouble("Contraflecha (mm)", &cfg.acoes.contraflecha_mm, 1.0, 5.0, "%.1f");
+                ImGui::Checkbox("Alvenaria solidarizada à viga (δ2+δ3 ≤ 15 mm)", &cfg.acoes.alvenaria_solidarizada);
+                ImGui::Checkbox("Considerar retração do concreto", &cfg.acoes.considerar_retracao);
+                if (cfg.acoes.considerar_retracao) {
+                    ImGui::SetNextItemWidth(input_w); ImGui::InputDouble("εsh", &cfg.acoes.eps_sh, 0.00005, 0.0001, "%.5f");
+                }
+                ImGui::BulletText("δg1 = %.1f mm | δ1 = %.1f | δ2 = %.1f | δ3 = %.1f mm",
+                    rel.flechas.flecha_g1_mm, rel.flechas.flecha_perm_curta_mm,
+                    rel.flechas.flecha_longa_duracao_mm, rel.flechas.flecha_var_max_mm);
+                ImGui::BulletText("δmax = %.1f mm (lim. %.1f) | δ2+δ3 = %.1f mm (lim. %.1f)",
+                    rel.flechas.flecha_total_mm, rel.flechas.limite_total_mm,
+                    rel.flechas.flecha_dano_mm, rel.flechas.limite_dano_mm);
+                ImGui::BulletText("Contraflecha sugerida: %.0f mm", rel.flechas.contraflecha_sugerida_mm);
+
+                ImGui::Spacing();
+                ImGui::Separator();
+                ImGui::Spacing();
+                ImGui::TextColored(ImVec4(0.3f, 0.7f, 1.0f, 1.0f), "Vibração do Piso (Anexo I, modo A):");
+                ImGui::Checkbox("Verificar vibração", &cfg.vibracao.verificar);
+                if (cfg.vibracao.verificar) {
+                    const auto& ocups_vib = nbr8800::obter_tabela_ocupacoes_vibracao();
+                    static std::vector<const char*> nomes_vib;
+                    if (nomes_vib.empty()) {
+                        for (const auto& o : ocups_vib) nomes_vib.push_back(o.descricao);
+                    }
+                    ImGui::SetNextItemWidth(-1.0f);
+                    if (ImGui::Combo("##OcupVib", &ocup_vib_idx, nomes_vib.data(), (int)nomes_vib.size())) {
+                        nbr8800::aplicar_ocupacao_vibracao(cfg.vibracao, ocups_vib[ocup_vib_idx]);
+                    }
+                    ImGui::Checkbox("Forros e instalações suspensos (+0,010)", &cfg.vibracao.forro_instalacoes_suspensos);
+                    ImGui::SetNextItemWidth(input_w); ImGui::InputDouble("β divisórias piso-teto", &cfg.vibracao.beta_divisorias, 0.005, 0.01, "%.3f");
+                    ImGui::Checkbox("Viga interna (kb = 2,0)", &cfg.vibracao.viga_interna);
+                    ImGui::SetNextItemWidth(input_w); ImGui::InputDouble("Largura do piso np·Lp (m)", &cfg.vibracao.largura_piso_m, 1.0, 5.0, "%.1f");
+                    const char* criterios[] = { "Aceleração de pico a_p", "Fator de resposta R" };
+                    int crit = static_cast<int>(cfg.vibracao.criterio);
+                    ImGui::SetNextItemWidth(input_w * 1.6f);
+                    if (ImGui::Combo("Critério", &crit, criterios, 2)) cfg.vibracao.criterio = static_cast<CriterioVibracao>(crit);
+
+                    const auto& v = rel.vibracao;
+                    if (norma_idx == 0) {
+                        ImGui::BulletText("Is = %.0f mm⁴/mm %s", v.Is_mm4_por_mm,
+                            cfg.vibracao.Is_laje_mm4_por_mm > 0.0 ? "(catálogo Metform)" : "(tc³/12α)");
+                        ImGui::BulletText("δ = %.2f mm  ->  f0 = %.2f Hz%s", v.delta_mm, v.f0_Hz,
+                            v.faixa_metodo_valida ? "" : "  (fora de 3-9 Hz)");
+                        ImGui::BulletText("Bb = %.2f m | M = %.0f kg | β = %.3f", v.Bb_m, v.M_kg, v.beta);
+                        ImGui::BulletText("a_p = %.4f m/s² (lim. %.3f) | R = %.2f (máx. %.0f)",
+                            v.ap_m_s2, v.ap_lim_m_s2, v.R, v.R_max);
+                    } else {
+                        ImGui::BulletText("NBR 8800:2008 L.3.2: δ frequente = %.1f mm ≤ 20 mm",
+                            rel.flechas.flecha_vibracao_2008_mm);
+                    }
+                }
                 ImGui::EndTabItem();
             }
 
@@ -1124,11 +1262,12 @@ int main() {
         ImGui::SetNextWindowSize(ImVec2(painel_dir_w, tabela_h), ImGuiCond_Always);
         ImGui::Begin("Diagnóstico Consolidado ELU & ELS (Verificador)", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
 
-        if (ImGui::BeginTable("KpiTable", 4, ImGuiTableFlags_None)) {
+        if (ImGui::BeginTable("KpiTable", 5, ImGuiTableFlags_None)) {
             ImGui::TableSetupColumn("Status", ImGuiTableColumnFlags_WidthStretch);
             ImGui::TableSetupColumn("Momento", ImGuiTableColumnFlags_WidthStretch);
             ImGui::TableSetupColumn("Conexao", ImGuiTableColumnFlags_WidthStretch);
             ImGui::TableSetupColumn("Flecha", ImGuiTableColumnFlags_WidthStretch);
+            ImGui::TableSetupColumn("Vibracao", ImGuiTableColumnFlags_WidthStretch);
 
             ImGui::TableNextRow();
 
@@ -1159,6 +1298,18 @@ int main() {
             ImVec4 corFlecha = (rel.flechas.aprovado_flecha) ? corAprovado : corReprovado;
             double razao_L = (rel.flechas.flecha_total_mm > 0.05) ? (cfg.geometria.L_vao_mm / rel.flechas.flecha_total_mm) : 9999.0;
             ImGui::TextColored(corFlecha, "%.1f mm (L/%.0f)", rel.flechas.flecha_total_mm, razao_L);
+
+            ImGui::TableSetColumnIndex(4);
+            ImGui::Text("Vibração:");
+            if (!cfg.vibracao.verificar) {
+                ImGui::TextDisabled("não verificada");
+            } else if (norma_idx == 0) {
+                ImVec4 corVib = rel.vibracao.aprovado ? corAprovado : corReprovado;
+                ImGui::TextColored(corVib, "f0 = %.2f Hz", rel.vibracao.f0_Hz);
+            } else {
+                ImVec4 corVib = (rel.flechas.flecha_vibracao_2008_mm <= 20.0) ? corAprovado : corReprovado;
+                ImGui::TextColored(corVib, "δ = %.1f mm", rel.flechas.flecha_vibracao_2008_mm);
+            }
 
             ImGui::EndTable();
         }

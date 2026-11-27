@@ -1,104 +1,125 @@
-# DADOS NUMÉRICOS, TABELAS E ESTUDOS PARAMÉTRICOS PARA O TCC
-## Dimensionamento de Vigas Mistas de Aço e Concreto segundo a ABNT NBR 8800:2024
+# Dados numéricos e tabelas do TCC
 
-> **Nota:** Todas as tabelas a seguir foram geradas diretamente pelo motor de cálculo em C++20 do projeto (`vmp_tests` / `vmp_gui`), com base nas formulações analíticas estritas da **ABNT NBR 8800:2024** e com os devidos comparativos frente à edição de **2008**.
+> Arquivo gerado automaticamente por `vmp_tabelas` (src/gerar_tabelas_tcc.cpp). Não edite à mão: altere o código ou o estudo de caso e gere novamente.
 
----
+## 1. Estudo de caso V1 — ABNT NBR 8800:2024
 
-### Tabela 1 – Propriedades Geométricas do Perfil W360x51 e Parâmetros dos Materiais
+Dados: W460×52,0 (A572 Gr. 50), steel deck MF-75 (h = 140 mm, t = 0,80 mm) com nervuras perpendiculares, C30, vão de 9,0 m, vigas a cada 2,8 m, pinos Ø19 × 125 mm (fu = 415 MPa) em todas as nervuras, construção não escorada, contraflecha de 15 mm.
 
-| Parâmetro Estrutural | Símbolo | Valor Numérico | Unidade |
-| :--- | :---: | :---: | :---: |
-| Altura total do perfil | $d$ | 355 | mm |
-| Largura da mesa | $b_f$ | 171 | mm |
-| Espessura da mesa | $t_f$ | 11.6 | mm |
-| Espessura da alma | $t_w$ | 7.2 | mm |
-| Área bruta da seção de aço | $A_a$ | 63.56 | cm² |
-| Momento de inércia principal | $I_x$ | 14222 | cm⁴ |
-| Módulo de resistência elástico | $W_x$ | 801.2 | cm³ |
-| Módulo de resistência plástico | $Z_x$ | 897.4 | cm³ |
-| Tensão de escoamento do aço | $f_y$ | 345 | MPa |
-| Resistência à tração do aço | $f_u$ | 450 | MPa |
-| Módulo de elasticidade do aço | $E_a$ | 200000 | MPa |
-| Coeficiente de ponderação do aço | $\gamma_{a1}$ | 1.10 | - |
-| Resistência característica do concreto | $f_{ck}$ | 30 | MPa |
-| Módulo de elasticidade secante do concreto | $E_{cs}$ | 26838 | MPa |
-| Coeficiente de ponderação do concreto | $\gamma_c$ | 1.40 | - |
-| Diâmetro do pino stud bolt | $d_{cs}$ | 19.0 | mm |
-| Altura nominal do pino stud bolt | $h_{cs}$ | 100.0 | mm |
-| Resistência à tração do pino | $f_{u,pino}$ | 420.0 | MPa |
+Ações lineares: g1 = 7,942 kN/m; q1 = 2,80 kN/m; g2 = 4,34 kN/m; q2 = 9,10 kN/m.
 
-### Tabela 2 – Verificação da Fase 1: Perfil de Aço Isolado sob Construção Não Escorada
+### 1.1 Grandezas intermediárias
 
-| Verificação Realizada | Solicitante ($S_d$) | Resistente ($R_d$) | Taxa Utilização | Status |
-| :--- | :---: | :---: | :---: | :---: |
-| Peso próprio do perfil ($g_{perfil}$) | 0.50 kN/m | - | - | - |
-| Carga permanente de concreto fresco ($g_{laje}$) | 10.50 kN/m | - | - | - |
-| Sobrecarga transitória de construção ($q_1$) | 3.50 kN/m | - | - | - |
-| Carga total de cálculo ($q_{Sd1}$) | 9.46 kN/m | - | - | - |
-| Momento Fletor Solicitante vs FLT | 57.9 kNm | 199.5 kNm | 29.0 % | **APROVADO** |
-| Força Cortante Solicitante vs Alma | 33.1 kN | 481.0 kN | 6.9 % | **APROVADO** |
-| Momento Crítico Elástico ($M_{cr}$) | - | 313.2 kNm | - | - |
-| Fator de Redução por FLT ($\chi_{LT}$) | - | 0.709 | - | - |
+| Grandeza | Símbolo | Valor | Unidade |
+| :--- | :---: | ---: | :---: |
+| Largura efetiva | $b_{ef}$ | 2250 | mm |
+| Momento solicitante, construção | $M_{Sd,c}$ | 136,60 | kN·m |
+| Momento resistente do perfil isolado | $M_{Rd,a}$ | 343,71 | kN·m |
+| Resistência de um conector | $Q_{Rd}$ | 70,60 | kN |
+| Coeficientes de grupo e posição | $R_g \cdot R_p$ | 0,75 | — |
+| Força de cisalhamento de cálculo | $F_{hd}$ | 2088,82 | kN |
+| Espaçamento adotado | $s$ | 274 | mm |
+| Conectores por meio vão (adotados) | $n$ | 16 | un |
+| Conectores por meio vão p/ interação completa | $n_{compl}$ | 30 | un |
+| Grau de interação | $\eta$ | 0,541 | — |
+| Grau de interação mínimo | $\eta_i$ | 0,280 | — |
+| Conectores mínimos por meio vão | $n_{min}$ | 9 | un |
+| Momento solicitante de cálculo | $M_{Sd}$ | 311,91 | kN·m |
+| Compressão no perfil | $C_{ad}$ | 479,62 | kN |
+| Posição da LNP a partir do topo do perfil | $y_p$ | 10,06 | mm |
+| Momento resistente da viga mista | $M_{Rd}$ | 607,73 | kN·m |
+| Força cortante solicitante | $V_{Sd}$ | 138,63 | kN |
+| Força cortante resistente | $V_{Rd}$ | 643,58 | kN |
+| Inércia homogeneizada, curta duração | $I_{tr}$ | 76609 | cm⁴ |
+| Inércia homogeneizada, longa duração | $I_{tr,\infty}$ | 57546 | cm⁴ |
+| Inércia efetiva, curta duração | $I_{ef}$ | 61991 | cm⁴ |
+| Inércia efetiva, longa duração | $I_{ef,\infty}$ | 47973 | cm⁴ |
+| Flecha de $g_1$ no perfil isolado | $\delta_{g1}$ | 15,88 | mm |
+| Flecha das permanentes (curta duração) | $\delta_1$ | 18,87 | mm |
+| Acréscimo por fluência | $\delta_{fl}$ | 0,87 | mm |
+| Flecha por retração | $\delta_{sh}$ | 4,56 | mm |
+| Flecha das variáveis (quase permanente) | $\delta_3$ | 3,24 | mm |
+| Contraflecha considerada | $\delta_0$ | 15,00 | mm |
+| Flecha máxima | $\delta_{max}$ | 12,55 | mm |
+| Limite $L/350$ | $\delta_{lim}$ | 25,71 | mm |
+| Flecha pós-cura (combinação rara) | $\delta_2+\delta_3$ | 12,44 | mm |
+| Tensão na face inferior em serviço | $\sigma$ | 181,1 | MPa |
+| Inércia dinâmica da viga mista | $I_b$ | 81743 | cm⁴ |
+| Massa distribuída do piso | $m$ | 480,3 | kg/m² |
+| Deslocamento do piso (modo A) | $\delta$ | 7,18 | mm |
+| Frequência fundamental | $f_0$ | 6,72 | Hz |
+| Largura colaborante do piso | $B_b$ | 8,30 | m |
+| Massa modal | $M$ | 17929 | kg |
+| Razão de amortecimento | $\beta$ | 0,030 | — |
+| Aceleração de pico | $a_p$ | 0,0365 | m/s² |
+| Valor eficaz ponderado | $a_{w,rms}$ | 0,0493 | m/s² |
+| Fator de resposta | $R$ | 9,86 | — |
 
-### Tabela 3 – Estudo Comparativo de Soluções de Laje (Maciça vs. Steel Deck Perpendicular e Paralelo)
+### 1.2 Quadro de verificações
 
-| Parâmetro Analisado | Caso A: Laje Maciça ($120\text{ mm}$) | Caso B: Steel Deck Perpendicular ($50+70\text{ mm}$) | Caso C: Steel Deck Paralelo ($50+70\text{ mm}$) |
-| :--- | :---: | :---: | :---: |
-| Altura Total da Laje ($h_{laje}$) | $120\text{ mm}$ | $120\text{ mm}$ | $120\text{ mm}$ |
-| Largura Efetiva ($b_{ef}$) | 1750 mm | 1750 mm | 1750 mm |
-| Capacidade da Laje ($C_{c,max}$) | 3825.0 kN | 2231.2 kN | 2231.2 kN |
-| Capacidade do Perfil ($T_{a,max}$) | 1993.5 kN | 1993.5 kN | 1993.5 kN |
-| Localização da Linha Neutra (LNP) | Laje | Laje | Laje |
-| Altura do Bloco de Concreto ($a$) | 62.5 mm | 62.5 mm | 62.5 mm |
-| Braço de Alavanca Interno ($z$) | 266.2 mm | 266.2 mm | 266.2 mm |
-| Momento Resistente ($M_{pl,Rd}$) | **530.7 kNm** | **530.7 kNm** | **530.7 kNm** |
-| Ganho Resistente vs Laje Maciça | Referência | **+0.0 %** | **+0.0 %** |
-| Fator de Redução de Grupo ($R_g$) | 1.00 | 1.00 | 1.00 |
-| Fator de Posição do Pino ($R_p$) | 1.00 | 0.75 | 0.75 |
-| Capacidade de Cálculo $Q_{Rd}$ (por pino) | 95.3 kN | 71.4 kN | 71.4 kN |
-| Total de Pinos p/ Interação Completa | 42 pinos | 56 pinos | 56 pinos |
-| Flecha Total de Serviço ($\delta_{tot}$) | 13.2 mm ($L/532$) | 13.4 mm ($L/522$) | 13.4 mm ($L/522$) |
-| Limite Regulamentar de Flecha | 28.0 mm ($L/350$) | 28.0 mm ($L/350$) | 28.0 mm ($L/350$) |
+| Verificação | Solicitante | Resistente / limite | Utilização | Situação |
+| :--- | ---: | ---: | ---: | :---: |
+| Flexão Fase 1 (Perfil Isolado) | 136,600 kN.m | 343,714 kN.m | 39,7% | Atende |
+| Cortante Fase 1 (Perfil Isolado) | 60,711 kN | 643,582 kN | 9,4% | Atende |
+| Conectores - Grau de Interação | 0,280 - | 0,541 - | 51,8% | Atende |
+| Conectores - Espaçamento Longitudinal | 274,000 mm | 915,000 mm | 29,9% | Atende |
+| Conectores - Altura e Cobrimento | 115,000 mm | 125,000 mm | 92,0% | Atende |
+| Conectores - Geometria Transversal | 50,000 mm | 152,000 mm | 32,9% | Atende |
+| Flexão Fase 2 (Viga Mista) | 311,907 kN.m | 607,733 kN.m | 51,3% | Atende |
+| Cortante Fase 2 (Viga Mista) | 138,625 kN | 643,582 kN | 21,5% | Atende |
+| ELS Tensão Mesa Inferior | 181,070 MPa | 345,000 MPa | 52,5% | Atende |
+| ELS Flecha Máxima | 12,545 mm | 25,714 mm | 48,8% | Atende |
+| ELS Flecha Pós-Cura | 12,441 mm | 25,714 mm | 48,4% | Atende |
+| ELS Vibração do Piso | 0,037 m/s² | 0,050 m/s² | 73,1% | Atende |
 
-### Tabela 4 – Análise Paramétrica do Grau de Interação ($\eta$) para o Caso Steel Deck Perpendicular
+Resultado global: **aprovado**.
 
-| Grau $\eta$ | $N_{pinos}$ | Redução Pinos | $F_{hd}$ (kN) | Posição LNP | $M_{Rd}$ (kNm) | $\Delta M_{Rd}$ | $I_{ef}$ (cm⁴) | $\delta_{tot}$ (mm) | Razão $L/\delta$ | Status |
-| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| 100 % | 56 | 0.0 % | 1993.5 | Laje (62mm) | 530.7 | -0.0 % | 34722 | 13.4 | L/522 | **OK** |
-| 90 % | 52 | 7.1 % | 1794.1 | Mesa (1mm) | 510.5 | -3.8 % | 33326 | 13.6 | L/514 | **OK** |
-| 80 % | 46 | 17.9 % | 1594.8 | Mesa (3mm) | 477.3 | -10.1 % | 31122 | 14.0 | L/499 | **OK** |
-| 70 % | 40 | 28.6 % | 1395.4 | Mesa (5mm) | 442.4 | -16.6 % | 28917 | 14.5 | L/483 | **OK** |
-| 60 % | 34 | 39.3 % | 1196.1 | Mesa (7mm) | 405.9 | -23.5 % | 26713 | 15.0 | L/466 | **OK** |
-| 50 % | 28 | 50.0 % | 996.7 | Mesa (9mm) | 367.7 | -30.7 % | 24509 | 15.7 | L/447 | **OK** |
-| 40 % | 24 | 57.1 % | 797.4 | Mesa (10mm) | 341.4 | -35.7 % | 23039 | 16.2 | L/433 | **OK** |
+## 2. Mesmo caso nas duas edições da norma
 
-### Tabela 5 – Comparativo Rigoroso entre as Edições de 2008 e 2024 da NBR 8800 (Caso Steel Deck)
+| Grandeza | NBR 8800:2008 | NBR 8800:2024 | Variação |
+| :--- | ---: | ---: | ---: |
+| Módulo do concreto $E_c$ (MPa) | 26072 | 26072 | 0,0% |
+| $Q_{Rd}$ (kN) | 70,60 | 70,60 | 0,0% |
+| Grau de interação $\eta$ | 0,541 | 0,541 | 0,0% |
+| Grau mínimo $\eta_i$ | 0,519 | 0,280 | -46,0% |
+| Conectores mínimos por meio vão | 16 | 9 | -43,8% |
+| $M_{Rd}$ da viga mista (kN·m) | 607,73 | 607,73 | 0,0% |
+| $V_{Rd}$ (kN) | 643,58 | 643,58 | 0,0% |
+| $I_{ef}$ curta duração (cm⁴) | 61991 | 61991 | 0,0% |
+| $\delta_{max}$ (mm) | 12,55 | 12,55 | 0,0% |
 
-| Item Técnico Verificado | ABNT NBR 8800:2008 | ABNT NBR 8800:2024 | Variação / Impacto Prático |
-| :--- | :---: | :---: | :--- |
-| Formulação Redutora do Deck | Fator Único $q_{rr} = 0,70$ | Decomposição $R_g \cdot R_p = 1,0 \cdot 0,67$ | Refinamento físico baseado no ensaio AISC 360 |
-| Capacidade $Q_{Rd}$ por Conector | 71.4 kN | 71.4 kN | Variação de 0.0 % na resistência individual |
-| Total de Pinos p/ Interação 100% | 56 pinos | 56 pinos | Acréscimo de segurança e prevenção de esmagamento |
-| Grau Mínimo de Interação ($\eta_{min}$) | 0.40 | 0.40 | Formulação contínua calibrada pelo vão $L$ |
-| Momento Resistente Misto ($M_{Rd}$) | 530.7 kNm | 530.7 kNm | Equivalência plástica integral mantida ($0,0\%$) |
-| Resistência ao Cortante da Alma ($V_{Rd}$) | 481.0 kN | 481.0 kN | Formulação de flambagem da alma mantida para perfis compactos |
-| Flecha Total de Serviço ($\delta_{tot}$) | 13.4 mm | 13.4 mm | Deformação idêntica sob mesma rigidez efetiva |
+Vibração: na edição 2008 (L.3.2) o critério é indireto — deslocamento frequente sem a parcela diferida = 22,63 mm ≤ 20 mm (**Não atende**). Na edição 2024 (Anexo I): f0 = 6,72 Hz, a_p = 0,0365 m/s² ≤ 0,050 m/s² (Atende).
 
-### Tabela 6 – Comportamento Estrutural em Função do Vão da Viga ($L = 5\text{ m}$ a $10\text{ m}$) para o Perfil W360x51
+## 3. Estudo paramétrico — variação do vão (V1, conectores em todas as nervuras)
 
-| Vão $L$ (m) | $b_{ef}$ (mm) | $M_{Sd2}$ (kNm) | $M_{Rd}$ (kNm) | Taxa Flexão | $\eta_{min}$ | Pinos (100%) | $\delta_{tot}$ (mm) | Limite ($L/350$) | Status ELS |
-| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| 5.0 m | 1250 | 80.4 | 453.5 | 17.7 % | 0.40 | 46 | 3.6 | 20.0 | **OK** |
-| 6.0 m | 1500 | 115.8 | 509.2 | 22.7 % | 0.40 | 54 | 7.4 | 24.0 | **OK** |
-| 7.0 m | 1750 | 157.6 | 530.7 | 29.7 % | 0.40 | 56 | 13.4 | 28.0 | **OK** |
-| 8.0 m | 1750 | 205.8 | 530.7 | 38.8 % | 0.40 | 56 | 22.9 | 32.0 | **OK** |
-| 9.0 m | 1750 | 260.5 | 530.7 | 49.1 % | 0.40 | 56 | 36.6 | 36.0 | **FALHA (ELS)** |
-| 10.0 m | 1750 | 321.5 | 530.7 | 60.6 % | 0.40 | 56 | 55.8 | 40.0 | **FALHA (ELS)** |
+| L (m) | $\eta$ | $\eta_i$ 2008 | $\eta_i$ 2024 | $M_{Sd}/M_{Rd}$ 2024 | $\delta_{max}/\delta_{lim}$ | $f_0$ (Hz) | $a_p$ (m/s²) | Global 2024 |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | :---: |
+| 6,0 | 0,398 | 0,428 | 0,280 | 25,8% | 17,3% | 13,62 | 0,0072 | Atende |
+| 7,0 | 0,409 | 0,458 | 0,280 | 33,4% | 22,7% | 10,54 | 0,0157 | Atende |
+| 8,0 | 0,473 | 0,488 | 0,280 | 41,9% | 28,0% | 8,33 | 0,0262 | Atende |
+| 9,0 | 0,541 | 0,519 | 0,280 | 51,3% | 48,8% | 6,72 | 0,0365 | Atende |
+| 10,0 | 0,608 | 0,549 | 0,280 | 61,4% | 87,3% | 5,52 | 0,0452 | Atende |
+| 11,0 | 0,676 | 0,579 | 0,289 | 72,2% | 130,8% | 4,61 | 0,0515 | **Não atende** |
+| 12,0 | 0,710 | 0,609 | 0,373 | 84,8% | 182,3% | 3,89 | 0,0557 | **Não atende** |
 
----
-### Conclusões Paramétricas para o Texto do TCC:
-1. **Economia de Concreto com Steel Deck:** Para uma mesma altura total de laje ($120\text{ mm}$), o uso do *steel deck* ($50\text{ mm de nervura} + 70\text{ mm de capa}$) reduz o peso próprio de concreto fresco em aproximadamente **30%** (de $10,5\text{ kN/m}$ para $7,4\text{ kN/m}$), mantendo integralmente a mesma capacidade resistente à flexão de $530,7\text{ kNm}$;
-2. **Influência dos Coeficientes $R_g$ e $R_p$ (NBR 8800:2024):** A decomposição analítica em $R_g$ e $R_p$ penaliza com precisão o posicionamento do pino na nervura perpendicular ($R_p = 0,75$), exigindo 56 conectores contra 42 da laje maciça para assegurar a ductilidade da conexão e evitar o colapso por fendilhamento do concreto;
-3. **Viabilidade Econômica da Interação Parcial:** Reduzir o grau de interação $\eta$ de 100% para 60% reduz o número de pinos de 56 para 34 (**-39,3% de conectores**), enquanto a capacidade resistente sofre um decréscimo de apenas $23,5\%$ (de $530,7\text{ kNm}$ para $405,9\text{ kNm}$), mantendo a viga plenamente aprovada com folga sobre a solicitação ($M_{Sd} = 157,6\text{ kNm}$) e flechas contidas em $15,0\text{ mm}$ ($L/466 < L/350$);
-4. **Limite de Vão para o Perfil W360x51:** Para a sobrecarga de edifício adotada ($3\text{ kN/m}^2$), o perfil W360x51 atende confortavelmente em ELU de flexão e cortante até $L = 10,0\text{ m}$ (taxa de $60,6\%$), porém a partir de $L \approx 8,5\text{ m}$ o critério de **deformabilidade em serviço (flechas ELS)** ultrapassa o limite normativo de $L/350$ ($36,6\text{ mm} > 36,0\text{ mm}$ para $L = 9\text{ m}$). Isso comprova que vigas mistas de vãos médios a longos são governadas pelo ELS, justificando plenamente a introdução de **cabos de protensão externos (VMP)** para pontes e grandes vãos.
+## 4. Estudo paramétrico — conector a cada k nervuras (V1, L = 9 m)
+
+| k | s (mm) | n por meio vão | $\eta$ | $\eta_i$ 2008 | $\eta_i$ 2024 | Atende 2008 | Atende 2024 | $M_{Rd}$ 2024 (kN·m) | $\delta_{max}$ (mm) |
+| ---: | ---: | ---: | ---: | ---: | ---: | :---: | :---: | ---: | ---: |
+| 1 | 274 | 16 | 0,541 | 0,519 | 0,280 | Atende | Atende | 607,7 | 12,55 |
+| 2 | 548 | 8 | 0,270 | 0,519 | 0,280 | **Não atende** | **Não atende** | 508,6 | 14,81 |
+| 3 | 822 | 5 | 0,169 | 0,519 | 0,280 | **Não atende** | **Não atende** | 452,4 | 16,32 |
+| 4 | 1096 | 4 | 0,135 | 0,519 | 0,289 | **Não atende** | **Não atende** | 431,3 | 17,02 |
+
+## 5. Estudo paramétrico — resistência do concreto (V1, interação completa)
+
+| $f_{ck}$ (MPa) | $\eta_c$ 2024 | $Q_{Rd}$ 2008 (kN) | $Q_{Rd}$ 2024 (kN) | $n_{compl}$ 2008 | $n_{compl}$ 2024 | $M_{Rd}$ 2008 (kN·m) | $M_{Rd}$ 2024 (kN·m) |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 25 | 1,000 | 87,48 | 70,60 | 24 | 30 | 656,8 | 656,8 |
+| 30 | 1,000 | 94,13 | 70,60 | 23 | 30 | 667,4 | 667,4 |
+| 35 | 1,000 | 94,13 | 70,60 | 23 | 30 | 675,0 | 675,0 |
+| 40 | 1,000 | 94,13 | 70,60 | 23 | 30 | 680,7 | 680,7 |
+| 45 | 0,961 | 94,13 | 70,60 | 23 | 30 | 685,2 | 683,7 |
+| 50 | 0,928 | 94,13 | 70,60 | 23 | 30 | 688,7 | 686,2 |
+
+Nos casos da seção 5 a laje é maciça (tc = 120 mm), o que torna visível o efeito de $R_p$ (1,00 em 2008 e 0,75 em 2024 para pinos soldados diretamente no perfil).

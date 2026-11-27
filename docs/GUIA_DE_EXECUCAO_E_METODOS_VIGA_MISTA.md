@@ -246,7 +246,7 @@ flowchart TD
     
     TipoLaje -- "Laje Maciça" --> Macica["Rg = 1.00<br/>Rp = 1.00 (2008) ou 0.75 (2024)"]
     TipoLaje -- "Steel Deck" --> Deck{"Nervuras Perpendiculares?"}
-    Deck -- "Sim" --> DeckPerp["Rg conforme nt (1.00, 0.85 ou 0.70)<br/>Rp = (emh >= 50 && livre >= 40) ? 0.75 : 0.60"]
+    Deck -- "Sim" --> DeckPerp["Rg conforme nt (1.00, 0.85 ou 0.70)<br/>Rp = (emh >= 50) ? 0.75 : 0.60"]
     Deck -- "Não (Paralelas)" --> DeckPar["Rg = (bF/hF >= 1.5) ? 1.00 : 0.85<br/>Rp = 0.75"]
     
     Macica & DeckPerp & DeckPar --> QRd["QRd1 = 0.5 * Acs * sqrt(fck * Ecs) / gamma_cs<br/>QRd2 = Rg * Rp * Acs * fu / gamma_cs<br/>QRd = min(QRd1, QRd2)"]
@@ -373,60 +373,48 @@ flowchart TD
 
 ### 3.6 Cálculo de Flechas e Verificação de Tensões no ELS (`calcularFlechasVM`)
 
-#### Embasamento Teórico (NBR 8800:2008 Anexo O.1.2 / NBR 8800:2024 Anexo L.1.2 e L.2.3.2)
-Avalia os deslocamentos verticais (flechas) no centro do vão e as tensões nas fibras extremas em serviço sob ações de curta e longa duração:
-1. **Relações Modulares e Seção Transformada**:
-   - Curta duração: $n_{cd} = E_a / E_{cs}$;
-   - Longa duração com efeito de fluência do concreto ($\phi = 2,0$): $n_{ld} = 3 \cdot n_{cd}$;
-   - Reutiliza a rotina unificada `calcularSecaoTransformada` para obter as inércias elásticas homogeneizadas $I_{tr,cd}$ e $I_{tr,ld}$, e os módulos $W_{tr,inf,cd}$ e $W_{tr,inf,ld}$.
-2. **Inércias e Módulos Efetivos com Interação Parcial**:
-   $$I_{ef} = I_a + \sqrt{\eta} \cdot (I_{tr} - I_a)$$
-   $$W_{ef,inf} = W_a + \sqrt{\eta} \cdot (W_{tr,inf} - W_a)$$
-3. **Parcelas de Flecha no Centro do Vão**:
-   - Fase 1 (Construção não escorada): $\delta_{fase1} = \frac{5 \cdot (g_1 + q_1) \cdot L^4}{384 \cdot E_a \cdot I_a}$ (se escorada: $\delta_{fase1} = 0$);
-   - Cargas Permanentes Fase 2 (longo prazo): $\delta_{perm,ld} = \frac{5 \cdot g_2 \cdot L^4}{384 \cdot E_a \cdot I_{ef,ld}}$;
-   - Sobrecarga Quase Permanente (longo prazo): $\delta_{var,ld} = \frac{5 \cdot (\psi_2 \cdot q_2) \cdot L^4}{384 \cdot E_a \cdot I_{ef,ld}}$;
-   - Sobrecarga Rápida (curto prazo): $\delta_{var,cd} = \frac{5 \cdot ((1 - \psi_2) \cdot q_2) \cdot L^4}{384 \cdot E_a \cdot I_{ef,cd}}$;
-   - Flecha Total Líquida: $\delta_{total} = \max(0,\; \delta_{bruta} - \delta_{contraflecha}) \le \frac{L}{350}$.
-4. **Verificação da Tensão em Serviço na Mesa Inferior**:
-   Combinação rara de serviço:
-   $$\sigma_{inf} = \frac{M_{g1}}{W_a} + \frac{M_{g2}}{W_{ef,inf,ld}} + \frac{M_{q2}}{W_{ef,inf,cd}} \le f_y$$
+#### Embasamento Teórico (NBR 8800:2008 O.1.2 / NBR 8800:2024 L.1.2, Anexo B e L.2.3.2)
+Modelo idêntico ao da planilha de referência (caso V1, calibrado em `tests/test_estudo_caso.cpp`):
+1. **Seção homogeneizada (`calcularSecaoHomogeneizadaELS`)**: curta duração $n = E_a/E_c$; longa duração $n = 3E_a/E_c$. Concreto tracionado desprezado: se a LNE cair na laje ($y_0 > d + h_F$), recalcula-se a profundidade comprimida $x$ por $\frac{b_{ef}}{n}\frac{x^2}{2} = A_a(t_c + h_F + d/2 - x)$.
+2. **Interação parcial**: $I_{ef} = I_a + \sqrt{\eta}\,(I_{tr} - I_a)$ e $W_{ef} = W_a + \sqrt{\eta}\,(W_{tr} - W_a)$.
+3. **Parcelas** ($k = 5L^4/(384E_a)$):
+   - $\delta_{g1} = k g_1/I_a$ (0 se escorada);
+   - $\delta_1 = \delta_{g1} + k g_2/I_{ef}$ (escorada: $k(g_1+g_2)/I_{ef}$);
+   - $\delta_{fl} = k\,g_{mista}\,(1/I_{ef,\infty} - 1/I_{ef})$;
+   - $\delta_{sh} = P_{sh} e_{sh} L^2/(8 E_a I_{ef,\infty})$, opcional, $P_{sh} = \varepsilon_{sh}(E_c/3) b_{ef} t_c$;
+   - $\delta_3 = k\psi q/I_{ef} + k\psi_2 q(1/I_{ef,\infty} - 1/I_{ef})$, com $\psi$ = $\psi_2$, $\psi_1$ ou 1,0 conforme a combinação.
+4. **Verificações**: $\delta_{max} = \delta_1 + \delta_2 + \delta_3 - \min(\text{contraflecha};\ \delta_1) \le L/350$ (combinação de `combinacao_flecha_max`) e $\delta_2 + \delta_3 \le L/350$ ou 15 mm com alvenaria (combinação de `combinacao_flecha_dano`). Também calcula a contraflecha sugerida (múltiplo de 5 mm ≤ $\delta_{g1}$) e o deslocamento do critério de vibração da edição 2008 (L.3.2).
+5. **Tensão em serviço (combinação rara)**:
+   $$\sigma_{inf} = \frac{M_{g1}}{W_a} + \frac{M_{g2}}{W_{ef,\infty}} + \frac{M_{q}}{W_{ef}} \le f_y$$
 
 #### Assinatura C++
 ```cpp
-// Em rotinas_nbr8800.h:
+// Em rotinas_nbr8800.h (mesma assinatura em v2008 e v2024):
 ResultadoFlechasVM calcularFlechasVM(
     const PerfilI& perfil,
     const Aco& aco,
     const Concreto& concreto,
     const Laje& laje,
     double Lv_mm,
-    double g1_kN_m,
-    double q1_kN_m,
-    double g2_kN_m,
-    double q2_kN_m,
-    double psi2,
+    const AcoesPiso& acoes,      // g1, g2, q2, psi1, psi2, contraflecha, combinações, alvenaria, retração
     double grau_interacao_eta,
-    bool escorada = false,
-    double contraflecha_mm = 0.0
+    bool escorada = false
 );
 ```
 
 #### Fluxograma de `calcularFlechasVM`
 ```mermaid
 flowchart TD
-    Start(["Início: calcularFlechasVM"]) --> SecTr["Chama calcularSecaoTransformada:<br/>Curto prazo (n = Ea / Ecs)<br/>Longo prazo fluência (n = 3 * Ea / Ecs)"]
-    SecTr --> Ief["Inércias e Módulos Efetivos:<br/>raiz_eta = sqrt(eta)<br/>Ief_cd = Ia + raiz_eta * (Itr_cd - Ia)<br/>Ief_ld = Ia + raiz_eta * (Itr_ld - Ia)<br/>Wef_ld = Wa + raiz_eta * (Wtr_ld - Wa)<br/>Wef_cd = Wa + raiz_eta * (Wtr_cd - Wa)"]
-    
-    Ief --> Escoramento{"Viga Escorada na Fase 1?"}
-    Escoramento -- "Não" --> NaoEsc["delta_fase1 = 5*(g1+q1)*L^4 / (384*E*Ia)<br/>delta_perm = 5*g2*L^4 / (384*E*Ief_ld)"]
-    Escoramento -- "Sim" --> SimEsc["delta_fase1 = 0.0<br/>delta_perm = 5*(g1+g2)*L^4 / (384*E*Ief_ld)"]
-    
-    NaoEsc & SimEsc --> Sobrecargas["delta_var_cd = 5*((1-psi2)*q2)*L^4 / (384*E*Ief_cd)<br/>delta_var_ld = 5*(psi2*q2)*L^4 / (384*E*Ief_ld)<br/>delta_total = max(0, delta_bruta - contraflecha)"]
-    
-    Sobrecargas --> TensaoServico["Tensao mesa inferior:<br/>sigma_inf = Mg1/Wa + Mg2/Wef_ld + Mq2/Wef_cd<br/>tensao_atende = (sigma_inf <= fy)"]
-    TensaoServico --> LimiteFlecha["limite_flecha = L / 350<br/>aprovado_flecha = (delta_total <= limite_flecha)"]
-    LimiteFlecha --> End(["Fim: Retorna ResultadoFlechasVM"])
+    Start(["Início: calcularFlechasVM"]) --> Sec["calcularSecaoHomogeneizadaELS:<br/>curta (n = Ea/Ec) e longa (n = 3 Ea/Ec)<br/>LNE na laje: recalcula x"]
+    Sec --> Ief["Ief = Ia + sqrt(eta) (Itr - Ia)<br/>Wef = Wa + sqrt(eta) (Wtr - Wa)"]
+    Ief --> Esc{"Escorada?"}
+    Esc -- "Não" --> NaoEsc["delta_g1 = k g1 / Ia<br/>delta1 = delta_g1 + k g2 / Ief<br/>delta_fl = k g2 (1/Ief_inf - 1/Ief)"]
+    Esc -- "Sim" --> SimEsc["delta_g1 = 0<br/>delta1 = k (g1+g2) / Ief<br/>delta_fl = k (g1+g2) (1/Ief_inf - 1/Ief)"]
+    NaoEsc & SimEsc --> Ret["delta_sh (opcional)<br/>delta2 = delta_fl + delta_sh"]
+    Ret --> Var["delta3(max) e delta3(dano) com psi da combinação"]
+    Var --> Lim["delta_max = delta1 + delta2 + delta3 - min(contraflecha, delta1) <= L/350<br/>delta2 + delta3(dano) <= L/350 (15 mm c/ alvenaria)"]
+    Lim --> Tensao["sigma_inf = Mg1/Wa + Mg2/Wef_inf + Mq/Wef <= fy"]
+    Tensao --> End(["Fim: Retorna ResultadoFlechasVM"])
 ```
 
 ---

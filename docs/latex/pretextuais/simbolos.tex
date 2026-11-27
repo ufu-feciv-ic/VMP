@@ -1,0 +1,90 @@
+% Lista de símbolos
+\begin{simbolos}
+
+  \item[] \textbf{Geometria e Propriedades do Perfil de Aço}
+  \item[$A_a$] Área bruta da seção transversal do perfil de aço
+  \item[$A_{af}$] Área da mesa superior do perfil ($b_f t_f$)
+  \item[$A_{aw}$] Área da alma do perfil ($h_w t_w$)
+  \item[$A_c, A_t$] Áreas das partes comprimida e tracionada do perfil na plastificação
+  \item[$A_{fb}, A_{ft}$] Áreas das mesas inferior e superior do perfil
+  \item[$b_f, t_f$] Largura e espessura da mesa
+  \item[$C_w$] Constante de empenamento
+  \item[$d$] Altura total do perfil
+  \item[$h$] Altura plana da alma usada na esbeltez ($d'$ do catálogo)
+  \item[$h_w$] Altura da alma entre faces internas das mesas ($d - 2t_f$)
+  \item[$I_t$ ($J$)] Constante de torção de Saint-Venant
+  \item[$I_x, I_y$] Momentos de inércia em relação aos eixos de maior e menor inércia
+  \item[$r_y$] Raio de giração em relação ao eixo de menor inércia
+  \item[$t_w$] Espessura da alma
+  \item[$W_x, Z_x$] Módulos de resistência elástico e plástico em relação ao eixo x
+  \item[$\rho$] Parâmetro de assimetria da seção de aço, $\rho = \frac{1}{2}(A_{fb}/A_{ft} - 1)$
+
+  \item[] \textbf{Laje e Materiais}
+  \item[$b$] Distância entre vigas secundárias (largura de influência)
+  \item[$b_{ef}$] Largura efetiva da laje
+  \item[$b_F, h_F$] Largura média e altura das nervuras da fôrma de aço
+  \item[$e_F$] Passo das nervuras da fôrma
+  \item[$E_a$] Módulo de elasticidade do aço (200\,000 MPa)
+  \item[$E_c, E_{ci}$] Módulo de elasticidade secante e tangente inicial do concreto
+  \item[$E_{c,din}$] Módulo de elasticidade dinâmico do concreto (vibração)
+  \item[$f_{ck}, f_{cd}$] Resistência característica e de cálculo do concreto à compressão
+  \item[$f_y, f_{yd}$] Resistência ao escoamento característica e de cálculo do aço
+  \item[$t_c$] Espessura de concreto considerada (total na laje maciça; acima da fôrma no \emph{steel deck})
+  \item[$\alpha_{ag}$] Coeficiente do agregado graúdo
+  \item[$\alpha_E$] Razão modular $E_a/E_c$
+  \item[$\eta_c$] Coeficiente de fragilidade do concreto, $\eta_c = \min[1{,}0;\ (40/f_{ck})^{1/3}]$
+
+  \item[] \textbf{Conectores e Grau de Interação}
+  \item[$A_{cs}$] Área da seção do fuste do conector pino com cabeça
+  \item[$c_p, c_r$] Coeficientes do tipo de construção e da utilização à flexão no grau mínimo
+  \item[$d_{cs}, h_{cs}$] Diâmetro e altura do conector após a instalação
+  \item[$e_{mh}$] Distância da borda do fuste à alma da nervura, à meia altura da nervura
+  \item[$F_{hd}$] Força de cisalhamento de cálculo entre o componente de aço e a laje
+  \item[$f_{ucs}$] Resistência à ruptura do aço do conector
+  \item[$k$] Número de nervuras entre conectores consecutivos (conector a cada $k$ nervuras)
+  \item[$L_e$] Comprimento do trecho de momento positivo ($L$ em vigas biapoiadas), em metros
+  \item[$n$] Número de conectores entre o apoio e o meio do vão
+  \item[$n_{compl}, n_{min}$] Conectores por meio vão para interação completa e para o grau mínimo
+  \item[$n_t$] Número de conectores por nervura (ou por linha transversal)
+  \item[$Q_{Rd}$] Resistência de cálculo de um conector
+  \item[$R_g, R_p$] Coeficientes de grupo e de posição do conector
+  \item[$s, s_{min}, s_{max}$] Espaçamento longitudinal adotado, mínimo e máximo
+  \item[$\eta$] Grau de interação, $\eta = \min(1;\ \sum Q_{Rd}/F_{hd})$
+  \item[$\eta_0, \eta_i, \eta_{lim}$] Grau de interação básico, mínimo e limite inferior
+
+  \item[] \textbf{Estados-Limites Últimos e de Serviço}
+  \item[$a$] Altura do bloco comprimido de concreto
+  \item[$C_{cd}, C_{ad}, T_{ad}$] Forças resultantes de compressão no concreto, de compressão no aço e de tração no aço
+  \item[$C_b$] Fator de modificação para diagrama de momento não uniforme
+  \item[$I_{tr}, I_{ef}$] Momentos de inércia da seção homogeneizada e efetivo (interação parcial)
+  \item[$k_v$] Coeficiente de flambagem da alma por cisalhamento
+  \item[$M_{Sd}, M_{Rd}$] Momento fletor solicitante e resistente de cálculo
+  \item[$M_{cr}, M_{pl}, M_r$] Momentos crítico elástico, de plastificação e de início de escoamento
+  \item[$V_{Sd}, V_{Rd}$] Força cortante solicitante e resistente de cálculo
+  \item[$y_p$] Posição da linha neutra plástica, medida a partir do topo do perfil
+  \item[$y_c$] Distância do topo do perfil ao centroide da parte comprimida
+  \item[$y_t$] Distância da face inferior do perfil ao centroide da parte tracionada
+  \item[$\beta_{vm}$] Coeficiente da viga mista (1,00 em vigas biapoiadas)
+  \item[$\delta_{g1}$] Flecha de $g_1$ no perfil isolado
+  \item[$\delta_1, \delta_2, \delta_3$] Flechas das permanentes, dos efeitos de longa duração e das variáveis
+  \item[$\delta_0$] Contraflecha considerada
+  \item[$\delta_{max}$] Flecha máxima final
+  \item[$\gamma_{a1}, \gamma_c, \gamma_{cs}$] Coeficientes de ponderação das resistências do aço (1,10), do concreto (1,40) e do conector (1,25)
+
+  \item[] \textbf{Vibração do Piso (Anexo I)}
+  \item[$a_p$] Aceleração de pico
+  \item[$a_{w,rms}$] Valor eficaz da aceleração ponderada
+  \item[$B_b$] Largura colaborante do piso relativa à viga secundária
+  \item[$f_0$] Frequência fundamental do piso
+  \item[$I_b$] Momento de inércia da viga mista secundária (concreto não fissurado, $E_{c,din}$)
+  \item[$I_s$] Momento de inércia da laje por unidade de largura, homogeneizado em aço
+  \item[$k_b$] Coeficiente da largura colaborante (2,0 para vigas internas)
+  \item[$M$] Massa modal do piso
+  \item[$m$] Massa distribuída do piso
+  \item[$P_0$] Peso de uma pessoa (750 N)
+  \item[$R$] Fator de resposta
+  \item[$W$] Fator de ponderação da aceleração
+  \item[$\beta$] Razão de amortecimento crítico
+  \item[$\zeta$] Coeficiente dinâmico
+  \item[$\psi_{vib}$] Fator de redução da ação variável para vibração
+\end{simbolos}

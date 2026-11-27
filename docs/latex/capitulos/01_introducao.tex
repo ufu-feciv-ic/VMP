@@ -1,0 +1,83 @@
+% Capítulo 1 -- convertido de docs/TCC_VIGA_MISTA_NBR8800_2024.md
+\chapter{Introdução}\label{cap:1}
+
+\section{Contextualização}\label{sec:1.1}
+A crescente demanda por rapidez de montagem e racionalização de materiais consolidou os sistemas mistos de aço e concreto como solução frequente para edifícios comerciais de múltiplos andares, garagens, hospitais e centros logísticos. Em pisos estruturados em aço, a laje de concreto deixou há décadas de ser tratada apenas como um elemento que transmite cargas ao vigamento.
+
+Ao ligar a mesa superior do perfil à laje por meio de conectores de cisalhamento, impede-se o escorregamento relativo na interface e os dois componentes passam a fletir em conjunto. Esse mecanismo aproveita as propriedades de cada material:
+\begin{itemize}
+\item o concreto, resistente à compressão e de baixo custo por unidade de volume, forma a mesa comprimida da seção;
+\item o perfil de aço, de elevada resistência à tração e ductilidade, trabalha predominantemente tracionado.
+\end{itemize}
+
+O resultado é uma viga com resistência e rigidez à flexão significativamente maiores que as do perfil isolado, o que permite especificar perfis mais baixos e mais leves para o mesmo vão e carregamento. No estudo de caso deste trabalho, por exemplo, o momento resistente da seção mista (607,7 kN\ensuremath{\cdot}m) é 1,77 vez o do perfil isolado com a mesa contida (343,7 kN\ensuremath{\cdot}m), e a inércia homogeneizada de curta duração (76\,609 cm\ensuremath{^4}) é 3,6 vezes a do perfil (21\,370 cm\ensuremath{^4}).
+
+No cenário brasileiro, a solução mais empregada é a \textbf{viga mista biapoiada de alma cheia} (perfil I laminado ou soldado) associada a lajes moldadas sobre fôrmas de aço perfiladas incorporadas (\emph{steel deck}). A fôrma atua como plataforma de trabalho durante a montagem, como fôrma na concretagem e como armadura positiva da laje em serviço, dispensando o escoramento nas modulações usuais de 2,5 m a 3,5 m entre vigas secundárias.
+
+\begin{figure}[htbp]
+  \centering
+  \caption{Viga sem conectores de cisalhamento e seção mista}\label{fig:secao-mista-intro}
+  \begin{tikzpicture}
+    \node[caixa=4.2cm] (a1) {Duas linhas neutras independentes};
+    \node[caixa=4.2cm, below=3mm of a1] (a2) {Escorregamento livre na interface};
+    \node[caixa=4.2cm, below=3mm of a2] (a3) {Resistência: $M_a + M_c$};
+    \node[titulogrupo, below=2mm of a3] (at) {(a) Sem conectores de cisalhamento};
+    \node[grupo, fit=(a1)(a2)(a3)(at)] (A) {};
+    \node[caixa=4.2cm, right=3.8cm of a1] (b1) {Linha neutra comum};
+    \node[caixa=4.2cm, below=3mm of b1] (b2) {Força de cisalhamento $F_{hd}$ transferida pelos conectores};
+    \node[caixa=4.2cm, below=3mm of b2] (b3) {Maior rigidez e resistência à flexão};
+    \node[titulogrupo, below=2mm of b3] (bt) {(b) Seção mista (com conectores)};
+    \node[grupo, fit=(b1)(b2)(b3)(bt)] (B) {};
+    \draw[seta] (A.east) -- node[above, font=\footnotesize, text width=2.6cm, align=center] {Instalação de conectores} (A.east -| B.west);
+  \end{tikzpicture}
+  \fonte{Elaborado pelo autor (2026).}
+\end{figure}
+
+\section{Justificativa e Motivação}\label{sec:1.2}
+Apesar da eficiência estrutural, o dimensionamento de uma viga mista de piso é um encadeamento multifásico, sensível e cheio de interdependências. Quando se adota a \textbf{construção não escorada} --- método predominante em edificações, por liberar os pavimentos inferiores e reduzir prazos ---, a viga atravessa duas fases com modelos de comportamento distintos:
+
+\begin{enumerate}
+\item \textbf{Fase 1 (perfil de aço isolado):} antes da cura do concreto, o perfil resiste sozinho ao peso próprio, à fôrma, ao concreto fresco e à sobrecarga de construção (no mínimo 1,0 kN/m\ensuremath{^2}, item N.4.1.3 da NBR 8800). Conforme a contenção lateral da mesa comprimida, o perfil fica sujeito à flambagem lateral com torção (FLT, Anexo D), às flambagens locais da mesa (FLM) e da alma (FLA) e à força cortante;
+\item \textbf{Fase 2 (seção mista):} após a cura, os conectores tipo pino com cabeça transmitem a força de cisalhamento longitudinal ($F_{hd}$). O momento resistente positivo depende da esbeltez da alma e da posição da linha neutra plástica (na laje, na mesa superior ou na alma). Se a quantidade de conectores não alcançar a interação completa, a viga trabalha com \textbf{interação parcial}, o que exige verificar o grau de interação mínimo ($\eta_i$) e reduz a rigidez efetiva ($I_{ef}$);
+\item \textbf{Estados-limites de serviço:} por serem leves e esbeltas, as vigas mistas são frequentemente governadas pelos deslocamentos em serviço (com fluência, retração e interação parcial) e pelo conforto humano quanto à \textbf{vibração pelo caminhar de pessoas}, que a ABNT NBR 8800:2024 \cite{abnt8800:2024} passou a tratar em procedimento próprio no Anexo I.
+\end{enumerate}
+
+Conduzir esse encadeamento manualmente ou em planilhas sem padronização expõe o projeto a erros de interpretação, sobretudo na geometria do \emph{steel deck} (coeficientes $R_g$ e $R_p$) e na escolha das combinações de serviço. Ferramentas computacionais dedicadas, com o cálculo transparente e verificado, reduzem esse risco.
+
+Além disso, a publicação da \textbf{ABNT NBR 8800:2024} trouxe mudanças relevantes para vigas mistas:
+\begin{itemize}
+\item migração dos requisitos do antigo Anexo O para o \textbf{Anexo L};
+\item consideração do tipo de agregado graúdo ($\alpha_{ag}$) no módulo de elasticidade do concreto;
+\item coeficiente de fragilidade $\eta_c = (40/f_{ck})^{1/3} \le 1{,}0$ no bloco de compressão (L.1.3.4);
+\item nova formulação do grau de interação mínimo ($\eta_i$), dependente da assimetria do perfil ($\rho$), do tipo de construção ($c_p$) e da utilização à flexão ($c_r$);
+\item coeficiente $R_p = 0{,}75$ também para conectores soldados diretamente no perfil, sem fôrma (era 1,00);
+\item coeficiente de flambagem da alma por cisalhamento $k_v = 5{,}34$ para almas sem enrijecedores (era 5,00);
+\item procedimento de avaliação de vibração de pisos no \textbf{Anexo I}.
+\end{itemize}
+
+Observou-se ainda, na expressão do momento resistente do caso b do item L.2.3.1.1.1, um termo que não é compatível com o equilíbrio da seção (ver~\ref{sec:2.7}). Integrar essas mudanças em uma ferramenta de cálculo aberta, verificada contra exemplos resolvidos, é a contribuição pretendida por este trabalho.
+
+\section{Objetivos do Trabalho}\label{sec:1.3}
+
+\subsection{Objetivo Geral}\label{sec:1.3.1}
+Desenvolver, formalizar e validar uma ferramenta computacional interativa, escrita em C++20 com interface em Dear ImGui e Raylib, para a verificação de vigas mistas de aço e concreto biapoiadas de alma cheia, em construção escorada ou não escorada, segundo as edições de 2008 e de 2024 da ABNT NBR 8800.
+
+\subsection{Objetivos Específicos}\label{sec:1.3.2}
+\begin{enumerate}
+\item \textbf{Verificação multifásica:} implementar a Fase 1 (FLT, FLM, FLA e força cortante do perfil isolado) e a Fase 2 (momento resistente plástico nos casos a, b e c do item L.2.3.1.1.1, verificação elástica de seções semicompactas e força cortante);
+\item \textbf{Conexão de cisalhamento:} implementar a disposição real dos conectores --- $n_t$ pinos por nervura a cada $k$ nervuras no \emph{steel deck} perpendicular ($s = k \cdot e_F$) e espaçamento contínuo nos demais casos ---, com $R_g$, $R_p$, $s_{min}$, $s_{max}$, $n_{compl}$, $n_{min}$ e a verificação $\eta \ge \eta_i$;
+\item \textbf{Estados-limites de serviço:} implementar as flechas por fases (com fluência, retração opcional, contraflecha e as combinações de serviço do Anexo B) e a tensão na face inferior do perfil em serviço;
+\item \textbf{Vibração do piso:} implementar a avaliação simplificada do Anexo I (modo A) --- frequência fundamental, largura colaborante, massa modal, aceleração de pico e fator de resposta --- e o critério indireto da edição de 2008 (L.3.2);
+\item \textbf{Interface gráfica:} construir uma interface interativa com desenho em escala da seção mista e quadro de verificações atualizado a cada alteração dos dados;
+\item \textbf{Validação:} verificar os resultados do software contra o exemplo resolvido da planilha \texttt{Viga\_Mista\_NBR8800-2024.xlsx} e contra um segundo exemplo independente de vibração, por meio de testes automatizados;
+\item \textbf{Comparação entre edições:} quantificar, no estudo de caso e em estudos paramétricos, o efeito das mudanças da edição de 2024 em relação à de 2008;
+\item \textbf{Base para pesquisa futura:} organizar o código de forma modular, para permitir a extensão a vigas mistas protendidas.
+\end{enumerate}
+
+\section{Estrutura do Documento}\label{sec:1.4}
+\begin{itemize}
+\item \textbf{Capítulo~\ref{cap:2} (Fundamentação teórica e prescrições normativas):} mecânica da viga mista, sistemas de laje, largura efetiva, Fase 1, conexão de cisalhamento e grau de interação, momento resistente na Fase 2, flechas, vibração e quadro comparativo entre as edições de 2008 e 2024;
+\item \textbf{Capítulo~\ref{cap:3} (Desenvolvimento da ferramenta computacional):} arquitetura do software, organização do código, algoritmos em pseudocódigo, verificação por testes automatizados e interface gráfica;
+\item \textbf{Capítulo~\ref{cap:4} (Estudo de caso, validação e estudos paramétricos):} resolução do estudo de caso V1, confronto com a planilha de referência, comparação entre as edições e estudos paramétricos de vão, densidade de conectores e resistência do concreto;
+\item \textbf{Capítulo~\ref{cap:5} (Conclusões e trabalhos futuros):} síntese dos resultados, limitações e extensão para vigas mistas protendidas.
+\end{itemize}
